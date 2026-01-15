@@ -9,7 +9,7 @@ function RegisterPage() {
         email: '',
         password: '',
         confirmPassword: '',
-        tipo_utilizador: 'formando'
+        tipo_utilizador: 'candidato'
     })
     const [loading, setLoading] = useState(false)
     const [message, setMessage] = useState({ text: '', type: '' })
@@ -86,20 +86,7 @@ function RegisterPage() {
                         />
                     </div>
 
-                    <div className="input-group">
-                        <label className="input-label">Tipo de Utilizador</label>
-                        <select
-                            name="tipo_utilizador"
-                            className="custom-input"
-                            value={formData.tipo_utilizador}
-                            onChange={handleChange}
-                            style={{ appearance: 'none' }}
-                        >
-                            <option value="formando">Formando</option>
-                            <option value="formador">Formador</option>
-                            <option value="secretaria">Secretaria</option>
-                        </select>
-                    </div>
+
 
                     <div className="input-group">
                         <label className="input-label">Palavra-passe</label>

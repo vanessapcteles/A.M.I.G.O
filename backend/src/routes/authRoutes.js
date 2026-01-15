@@ -2,7 +2,7 @@ import express from 'express';
 import passport from 'passport';
 import {
     register, login, updateUser, deleteUser, getUsers, getUserById,
-    setup2FA, verify2FA, validate2FA,
+    setup2FA, verify2FA, validate2FA, recover2FA, disable2FA,
     activateAccount, forgotPassword, resetPassword
 } from '../controllers/authControllers.js';
 
@@ -25,6 +25,8 @@ router.delete('/user/:id', deleteUser);
 router.post('/2fa/setup', setup2FA);       // Gera o QR Code
 router.post('/2fa/verify', verify2FA);     // Ativa o 2FA
 router.post('/2fa/validate', validate2FA); // Valida no login
+router.post('/2fa/recover', recover2FA);   // Enviar email
+router.post('/2fa/disable', disable2FA);   // Confirmar via token
 
 
 // --- AUTH GOOGLE ---
@@ -35,9 +37,19 @@ router.get('/google', passport.authenticate('google', { scope: ['profile', 'emai
 router.get('/google/callback',
     passport.authenticate('google', { session: false, failureRedirect: '/login' }),
     (req, res) => {
-        // Aqui podes gerar um JWT para o utilizador Google
-        // Por agora, vamos apenas redirecionar para o frontend com uma mensagem
-        res.redirect(`http://localhost:5173/login?token=token_google_success&user=${req.user.email}`);
+        // Redirecionamento dinâmico
+        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+        const nameEncoded = encodeURIComponent(req.user.nome_completo || req.user.nome || '');
+
+        // 1. Se tem 2FA ativado
+        if (req.user.two_fa_enabled === 1 || req.user.two_fa_enabled === true) {
+            // Redireciona para o login a pedir o código, SEM enviar o token de sessão ainda
+            return res.redirect(`${frontendUrl}/login?requires2FA=true&email=${req.user.email}&name=${nameEncoded}`);
+        }
+
+        // 2. Login normal (sem 2FA)
+        // Encode URI components to handle spaces/special chars in names
+        res.redirect(`${frontendUrl}/login?token=token_google_success&user=${req.user.email}&name=${nameEncoded}&id=${req.user.id}`);
     }
 );
 

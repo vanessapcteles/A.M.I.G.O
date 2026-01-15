@@ -11,10 +11,11 @@ USE atec_secretaria;
 -- =========================================================
 CREATE TABLE roles (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    nome ENUM('ADMIN', 'SECRETARIA', 'FORMADOR', 'FORMANDO') UNIQUE NOT NULL
+    nome ENUM('ADMIN', 'SECRETARIA', 'FORMADOR', 'FORMANDO','CANDIDATO') UNIQUE NOT NULL
 );
 
 INSERT INTO roles (nome) VALUES
+('CANDIDATO'),
 ('ADMIN'),
 ('SECRETARIA'),
 ('FORMADOR'),
@@ -60,9 +61,16 @@ INSERT INTO utilizadores (
 VALUES (
     'Administrador Geral',
     'admin@atec.pt',
-    'HASH_AQUI',
+    '$2b$10$K4RGbKl4BnVyPanu.QixiuPrP6hYh/nOL/Cp6xQvcM2.XrAZtPU3a', -- Password: '123456'
     TRUE,
     (SELECT id FROM roles WHERE nome = 'ADMIN')
+);
+
+-- Inserir o Admin na tabela de Secretaria também
+INSERT INTO secretaria (utilizador_id, cargo)
+VALUES (
+    (SELECT id FROM utilizadores WHERE email = 'admin@atec.pt'),
+    'Diretor'
 );
 
 -- =========================================================

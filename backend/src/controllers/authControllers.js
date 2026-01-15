@@ -262,6 +262,49 @@ export const validate2FA = async (req, res) => {
   }
 };
 
+// 4. Recuperar 2FA (Enviar email para desativar)
+export const recover2FA = async (req, res) => {
+  try {
+    const { email } = req.body;
+    const [users] = await db.query('SELECT id, two_fa_enabled FROM utilizadores WHERE email = ?', [email]);
+
+    if (users.length > 0 && users[0].two_fa_enabled) {
+      const token = uuidv4();
+      // Reutilizamos reset_password_token para evitar alterar schema DB agora
+      await db.query('UPDATE utilizadores SET reset_password_token = ? WHERE email = ?', [token, email]);
+
+      // É preciso importar a nova função lá em cima se não estiver
+      const { send2FADisableEmail } = await import('../config/mailer.js');
+      await send2FADisableEmail(email, token);
+    }
+
+    return res.status(200).json({ message: 'Se o email existir e tiver 2FA ativo, enviámos instruções.' });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'Erro ao processar pedido' });
+  }
+};
+
+// 5. Desativar 2FA via Token
+export const disable2FA = async (req, res) => {
+  try {
+    const { token } = req.body;
+
+    const [users] = await db.query('SELECT id FROM utilizadores WHERE reset_password_token = ?', [token]);
+    if (users.length === 0) return res.status(400).json({ message: 'Token inválido ou expirado.' });
+
+    await db.query(
+      'UPDATE utilizadores SET two_fa_enabled = false, two_fa_secret = NULL, reset_password_token = NULL WHERE reset_password_token = ?',
+      [token]
+    );
+
+    return res.status(200).json({ message: '2FA desativado com sucesso. Pode entrar sem código.' });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'Erro ao desativar 2FA' });
+  }
+};
+
 
 // Editar utilizador
 export const updateUser = async (req, res) => {
@@ -282,6 +325,24 @@ export const updateUser = async (req, res) => {
       'UPDATE utilizadores SET nome_completo = ?, email = ?, role_id = ? WHERE id = ?',
       [nome_completo || existing[0].nome_completo, email || existing[0].email, role_id, id]
     );
+
+    // Gestão de Perfis: Criar entrada na tabela respetiva se mudou de role
+    if (tipo_utilizador) {
+      const role = tipo_utilizador.toUpperCase();
+      try {
+        if (role === 'FORMANDO') {
+          await db.query('INSERT IGNORE INTO formandos (utilizador_id) VALUES (?)', [id]);
+        } else if (role === 'FORMADOR') {
+          await db.query('INSERT IGNORE INTO formadores (utilizador_id) VALUES (?)', [id]);
+        } else if (role === 'SECRETARIA' || role === 'ADMIN') {
+          // Admin também pode ter ficha na secretaria
+          await db.query('INSERT IGNORE INTO secretaria (utilizador_id, cargo) VALUES (?, ?)', [id, 'Técnico']);
+        }
+      } catch (profileError) {
+        console.error('Erro ao criar perfil:', profileError);
+        // Não falhar o request principal, apenas logar
+      }
+    }
 
     // Limpar cache
     await redis.del('users:all');
