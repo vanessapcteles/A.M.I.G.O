@@ -6,6 +6,7 @@ import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import ProfilePage from './pages/ProfilePage';
 import Disable2FAPage from './pages/Disable2FAPage';
+import UsersPage from './pages/UsersPage';
 import './App.css';
 
 function App() {
@@ -19,6 +20,7 @@ function App() {
         <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/disable-2fa" element={<Disable2FAPage />} />
+        <Route path="/users" element={<UsersPage />} />
       </Routes>
     </Router>
   );

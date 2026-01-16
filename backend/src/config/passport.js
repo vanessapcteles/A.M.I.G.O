@@ -13,7 +13,10 @@ passport.use(new GoogleStrategy({
         try {
             // Verificar se o utilizador já existe por Google ID
             const [users] = await db.query(
-                'SELECT * FROM utilizadores WHERE provider_id = ? AND auth_provider = ?',
+                `SELECT u.*, r.nome as tipo_utilizador 
+                 FROM utilizadores u 
+                 JOIN roles r ON u.role_id = r.id 
+                 WHERE provider_id = ? AND auth_provider = ?`,
                 [profile.id, 'google']
             );
 
@@ -24,7 +27,10 @@ passport.use(new GoogleStrategy({
             // Verificar se existe por Email
             const email = profile.emails[0].value;
             const [existingEmail] = await db.query(
-                'SELECT * FROM utilizadores WHERE email = ?',
+                `SELECT u.*, r.nome as tipo_utilizador 
+                 FROM utilizadores u 
+                 JOIN roles r ON u.role_id = r.id 
+                 WHERE email = ?`,
                 [email]
             );
 
@@ -40,8 +46,8 @@ passport.use(new GoogleStrategy({
             // Criar novo Utilizador (Por defeito: FORMANDO)
             const activation_token = uuidv4();
 
-            // Obter ID da role FORMANDO
-            const [roles] = await db.query("SELECT id FROM roles WHERE nome = 'FORMANDO'");
+            // Obter ID da role CANDIDATO
+            const [roles] = await db.query("SELECT id FROM roles WHERE nome = 'CANDIDATO'");
             const role_id = roles[0].id;
 
             await db.query(
@@ -52,7 +58,14 @@ passport.use(new GoogleStrategy({
             );
 
             // Obter o utilizador acabado de criar
-            const [finalUsers] = await db.query('SELECT * FROM utilizadores WHERE email = ?', [email]);
+            // Obter o utilizador acabado de criar
+            const [finalUsers] = await db.query(
+                `SELECT u.*, r.nome as tipo_utilizador 
+                 FROM utilizadores u 
+                 JOIN roles r ON u.role_id = r.id 
+                 WHERE email = ?`,
+                [email]
+            );
 
             // LIMPAR CACHE pois temos um novo utilizador
             await redis.del('users:all');
@@ -72,7 +85,13 @@ passport.serializeUser((user, done) => {
 
 passport.deserializeUser(async (id, done) => {
     try {
-        const [users] = await db.query('SELECT * FROM utilizadores WHERE id = ?', [id]);
+        const [users] = await db.query(
+            `SELECT u.*, r.nome as tipo_utilizador 
+             FROM utilizadores u 
+             JOIN roles r ON u.role_id = r.id 
+             WHERE u.id = ?`,
+            [id]
+        );
         done(null, users[0]);
     } catch (err) {
         done(err, null);

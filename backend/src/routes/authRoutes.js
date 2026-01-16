@@ -5,6 +5,8 @@ import {
     setup2FA, verify2FA, validate2FA, recover2FA, disable2FA,
     activateAccount, forgotPassword, resetPassword
 } from '../controllers/authControllers.js';
+import { generateToken } from '../utils/token.js';
+import { authenticateToken, authorizeRole } from '../middleware/authMiddleware.js';
 
 
 const router = express.Router();
@@ -15,11 +17,12 @@ router.post('/login', login);
 router.get('/activate', activateAccount); // GET para o link do email
 router.post('/forgot-password', forgotPassword);
 router.post('/reset-password', resetPassword);
-router.get('/user', getUsers);
+// --- USER MANAGEMENT ---
+router.get('/user', authenticateToken, authorizeRole(['ADMIN', 'SECRETARIA']), getUsers);
 
-router.get('/user/:id', getUserById);
-router.put('/user/:id', updateUser);
-router.delete('/user/:id', deleteUser);
+router.get('/user/:id', authenticateToken, authorizeRole(['ADMIN', 'SECRETARIA']), getUserById);
+router.put('/user/:id', authenticateToken, authorizeRole(['ADMIN']), updateUser);
+router.delete('/user/:id', authenticateToken, authorizeRole(['ADMIN']), deleteUser);
 
 // --- AUTH 2FA ---
 router.post('/2fa/setup', setup2FA);       // Gera o QR Code
@@ -49,7 +52,17 @@ router.get('/google/callback',
 
         // 2. Login normal (sem 2FA)
         // Encode URI components to handle spaces/special chars in names
-        res.redirect(`${frontendUrl}/login?token=token_google_success&user=${req.user.email}&name=${nameEncoded}&id=${req.user.id}`);
+
+        // Gerar token real
+        const userObj = {
+            id: req.user.id,
+            nome_completo: req.user.nome_completo || req.user.nome,
+            email: req.user.email,
+            tipo_utilizador: req.user.tipo_utilizador
+        };
+        const token = generateToken(userObj);
+
+        res.redirect(`${frontendUrl}/login?token=${token}&user=${req.user.email}&name=${nameEncoded}&id=${req.user.id}`);
     }
 );
 

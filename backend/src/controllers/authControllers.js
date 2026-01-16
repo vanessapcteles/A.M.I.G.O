@@ -5,6 +5,7 @@ import qrcode from 'qrcode';
 import { db } from '../config/db.js';
 import redis from '../config/redis.js';
 import { sendActivationEmail, sendPasswordResetEmail } from '../config/mailer.js';
+import { generateToken } from '../utils/token.js';
 
 
 
@@ -147,17 +148,21 @@ export const login = async (req, res) => {
       return res.status(403).json({ message: 'Conta ainda não ativada. Verifica o teu email.' });
     }
 
-    // Nota: Aqui podes gerar um JWT, mas para simplificar agora apenas devolvemos o user
+    // User Object para Token e Resposta
+    const userObj = {
+      id: user.id,
+      nome_completo: user.nome_completo,
+      email: user.email,
+      tipo_utilizador: user.tipo_utilizador
+    };
+
+    const token = user.two_fa_enabled === 1 ? null : generateToken(userObj);
+
     return res.status(200).json({
       success: true,
       requires2FA: user.two_fa_enabled === 1,
-      user: user.two_fa_enabled === 1 ? null : {
-        id: user.id,
-        nome_completo: user.nome_completo,
-        email: user.email,
-        tipo_utilizador: user.tipo_utilizador
-      },
-      token: user.two_fa_enabled === 1 ? null : 'token_temporario_ate_jwt'
+      user: user.two_fa_enabled === 1 ? null : userObj,
+      token: token
     });
 
   } catch (error) {
@@ -244,15 +249,19 @@ export const validate2FA = async (req, res) => {
     });
 
     if (verified) {
+      const userObj = {
+        id: user.id,
+        nome_completo: user.nome_completo,
+        email: user.email,
+        tipo_utilizador: user.tipo_utilizador
+      };
+
+      const jwtToken = generateToken(userObj);
+
       return res.status(200).json({
         success: true,
-        user: {
-          id: user.id,
-          nome_completo: user.nome_completo,
-          email: user.email,
-          tipo_utilizador: user.tipo_utilizador
-        },
-        token: 'token_apos_2fa_sucesso'
+        user: userObj,
+        token: jwtToken
       });
     } else {
       return res.status(401).json({ message: 'Código 2FA incorreto' });
@@ -330,6 +339,12 @@ export const updateUser = async (req, res) => {
     if (tipo_utilizador) {
       const role = tipo_utilizador.toUpperCase();
       try {
+        // 1. Limpar perfis antigos (Garanta que só existe numa tabela de perfil)
+        await db.query('DELETE FROM formandos WHERE utilizador_id = ?', [id]);
+        await db.query('DELETE FROM formadores WHERE utilizador_id = ?', [id]);
+        await db.query('DELETE FROM secretaria WHERE utilizador_id = ?', [id]);
+
+        // 2. Criar novo perfil
         if (role === 'FORMANDO') {
           await db.query('INSERT IGNORE INTO formandos (utilizador_id) VALUES (?)', [id]);
         } else if (role === 'FORMADOR') {
@@ -339,7 +354,7 @@ export const updateUser = async (req, res) => {
           await db.query('INSERT IGNORE INTO secretaria (utilizador_id, cargo) VALUES (?, ?)', [id, 'Técnico']);
         }
       } catch (profileError) {
-        console.error('Erro ao criar perfil:', profileError);
+        console.error('Erro ao gerir perfil:', profileError);
         // Não falhar o request principal, apenas logar
       }
     }
@@ -357,6 +372,14 @@ export const updateUser = async (req, res) => {
 export const deleteUser = async (req, res) => {
   try {
     const { id } = req.params;
+    // 1. Limpar perfis associados (para garantir que não falha por FK se o CASCADE não estiver ativo)
+    await db.query('DELETE FROM formandos WHERE utilizador_id = ?', [id]);
+    await db.query('DELETE FROM formadores WHERE utilizador_id = ?', [id]);
+    await db.query('DELETE FROM secretaria WHERE utilizador_id = ?', [id]);
+    await db.query('DELETE FROM ficheiros_anexos WHERE utilizador_id = ?', [id]);
+    await db.query('DELETE FROM horarios_eventos WHERE utilizador_id = ?', [id]);
+
+    // 2. Eliminar o utilizador
     const [result] = await db.query('DELETE FROM utilizadores WHERE id = ?', [id]);
     if (result.affectedRows === 0) return res.status(404).json({ message: 'Utilizador não encontrado' });
 
