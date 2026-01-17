@@ -35,19 +35,19 @@ function LoginPage() {
             // Guardar token
             localStorage.setItem('auth_token', token)
 
-            // Guardar dados do user (com nome real e ID vindos do backend)
+            // Guardar dados do user
             if (userEmail) {
                 localStorage.setItem('user', JSON.stringify({
                     id: userId,
                     email: userEmail,
                     nome_completo: userName || 'Utilizador Google',
-                    nome: userName // Fallback
+                    nome: userName 
                 }))
             }
 
             setMessage({ text: 'Login com Google efetuado! A redirecionar...', type: 'success' })
 
-            // Redirecionar após breve delay visual
+            // mandar depois de um delay
             setTimeout(() => {
                 navigate('/')
                 window.location.reload() // Forçar reload para atualizar navbar
@@ -102,7 +102,7 @@ function LoginPage() {
     }
 
     const handleGoogleLogin = () => {
-        // Redireciona para o backend que inicia o OAuth
+        // Manda para o backend que inicia o OAuth
         window.location.href = `${authService.API_URL}/api/auth/google`;
     }
 

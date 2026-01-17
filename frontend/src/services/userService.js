@@ -21,7 +21,7 @@ export const userService = {
         const response = await fetch(`${API_URL}/api/auth/user/${id}`, {
             method: 'PUT',
             headers: getAuthHeader(),
-            body: JSON.stringify(data) // data pode ser { nome_completo, email, tipo_utilizador }
+            body: JSON.stringify(data) 
         });
         if (!response.ok) throw new Error('Erro ao atualizar utilizador');
         return response.json();

@@ -9,7 +9,7 @@ function UsersPage() {
     const [error, setError] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
 
-    // Estado para Edição
+    // Edição
     const [editingUserId, setEditingUserId] = useState(null);
     const [editName, setEditName] = useState('');
 
@@ -33,7 +33,7 @@ function UsersPage() {
         }
     };
 
-    // Atualizado para usar o novo método genérico
+    
     const handleRoleChange = async (id, newRole) => {
         try {
             await userService.updateUser(id, { tipo_utilizador: newRole });
@@ -119,7 +119,7 @@ function UsersPage() {
                         <tbody>
                             {filteredUsers.map(user => (
                                 <tr key={user.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                                    {/* Coluna Nome (Editável) */}
+                                    {/*Editar*/}
                                     <td style={{ padding: '1rem' }}>
                                         {editingUserId === user.id ? (
                                             <input

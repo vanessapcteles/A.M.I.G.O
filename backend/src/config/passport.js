@@ -11,7 +11,7 @@ passport.use(new GoogleStrategy({
 },
     async (accessToken, refreshToken, profile, done) => {
         try {
-            // Verificar se o utilizador já existe por Google ID
+            // Ver se o utilizador já existe por Google ID
             const [users] = await db.query(
                 `SELECT u.*, r.nome as tipo_utilizador 
                  FROM utilizadores u 
@@ -24,7 +24,7 @@ passport.use(new GoogleStrategy({
                 return done(null, users[0]);
             }
 
-            // Verificar se existe por Email
+            // Ver se existe por Email
             const email = profile.emails[0].value;
             const [existingEmail] = await db.query(
                 `SELECT u.*, r.nome as tipo_utilizador 
@@ -35,7 +35,7 @@ passport.use(new GoogleStrategy({
             );
 
             if (existingEmail.length > 0) {
-                // Se o email já existe, vamos atualizar o provider_id para permitir login Google
+                // Se o email já existir atualizamos o provider_id para permitir login Google
                 await db.query(
                     'UPDATE utilizadores SET provider_id = ?, auth_provider = ? WHERE email = ?',
                     [profile.id, 'google', email]
@@ -43,10 +43,10 @@ passport.use(new GoogleStrategy({
                 return done(null, existingEmail[0]);
             }
 
-            // Criar novo Utilizador (Por defeito: formando)
+            // Criar novo Utilizador (Candidato)
             const activation_token = uuidv4();
 
-            // Obter id da role candidato
+            // ter o id da role candidato
             const [roles] = await db.query("SELECT id FROM roles WHERE nome = 'CANDIDATO'");
             const role_id = roles[0].id;
 
@@ -57,7 +57,7 @@ passport.use(new GoogleStrategy({
                 [profile.displayName, email, role_id, 'google', profile.id, true, activation_token]
             );
 
-            // Obter o utilizador acabado de criar
+            // ter o utilizador acabado de criar
             const [finalUsers] = await db.query(
                 `SELECT u.*, r.nome as tipo_utilizador 
                  FROM utilizadores u 

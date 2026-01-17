@@ -9,7 +9,7 @@ function ProfilePage() {
     const [qrCode, setQrCode] = useState(null);
     const [verificationCode, setVerificationCode] = useState('');
     const [message, setMessage] = useState({ text: '', type: '' });
-    const [step, setStep] = useState('initial'); // initial, setup, verified
+    const [step, setStep] = useState('initial'); 
 
     useEffect(() => {
         const currentUser = authService.getCurrentUser();

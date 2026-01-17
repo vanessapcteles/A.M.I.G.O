@@ -39,7 +39,7 @@ export const register = async (req, res) => {
       console.error('Erro ao enviar email:', mailError.message);
     }
 
-    // Limpar cache após inserir novo utilizador
+    // Limpar cache depois de inserir novo utilizador
     await redis.del('users:all');
 
     return res.status(201).json({ message: 'Utilizador registado com sucesso. Verifica o teu email para ativar a conta.' });
@@ -61,7 +61,7 @@ export const activateAccount = async (req, res) => {
 
     await db.query('UPDATE utilizadores SET is_active = true, activation_token = NULL WHERE activation_token = ?', [token]);
 
-    // Redirecionar para o login do frontend ou mostrar mensagem
+    // Mandar para o login ou mostrar mensagem
     return res.send('<h1>Conta activada com sucesso! Já pode fazer login.</h1><a href="http://localhost:5173/login">Ir para o Login</a>');
   } catch (error) {
     return res.status(500).json({ message: 'Erro ao ativar conta' });
@@ -80,14 +80,14 @@ export const forgotPassword = async (req, res) => {
       await sendPasswordResetEmail(email, resetToken);
     }
 
-    // Mesma resposta quer o email exista ou não (por segurança)
+    //Resposta dada independentemente se o email existe ou não (segurança)
     return res.status(200).json({ message: 'Se o email existir, enviámos instruções para a recuperação.' });
   } catch (error) {
     return res.status(500).json({ message: 'Erro no servidor' });
   }
 };
 
-// Efetuar o reset da password
+// reset da password
 export const resetPassword = async (req, res) => {
   try {
     const { token, newPassword } = req.body;
@@ -120,7 +120,7 @@ export const login = async (req, res) => {
       return res.status(400).json({ message: 'Dados em falta' });
     }
 
-    // Join com a tabela roles para obter o nome da role
+    // Join com a tabela roles para ter o nome da role
     const [users] = await db.query(
       `SELECT u.*, r.nome as tipo_utilizador 
        FROM utilizadores u 
@@ -167,27 +167,27 @@ export const login = async (req, res) => {
   }
 };
 
-// Gerar Segredo e QR Code (apenas funciona com o autenticador google ler o QR Code)
+// Gerar QR Code (apenas funciona com o autenticador google ler o QR Code)
 export const setup2FA = async (req, res) => {
   try {
-    const { userId } = req.body; // Num sistema real, viria do JWT (req.user.id)
+    const { userId } = req.body; 
 
     const secret = speakeasy.generateSecret({
       name: `AcademyManager (ID: ${userId})`
     });
 
-    // Guardar segredo temporariamente 
+    // Guardar temporariamente 
     await db.query(
       'UPDATE utilizadores SET two_fa_secret = ? WHERE id = ?',
       [secret.base32, userId]
     );
 
-    // Gerar imagem do QR Code
+    // imagem do QR Code
     const qrCodeUrl = await qrcode.toDataURL(secret.otpauth_url);
 
     return res.status(200).json({
       qrCode: qrCodeUrl,
-      secret: secret.base32 // Para o utilizador caso não consiga ler o QR
+      secret: secret.base32 //caso não consiga ler o QR
     });
   } catch (error) {
     console.error(error);
@@ -195,7 +195,7 @@ export const setup2FA = async (req, res) => {
   }
 };
 
-// Verificar o primeiro código e ativar definitivamente
+// Verificar primeiro e ativar definitivamente
 export const verify2FA = async (req, res) => {
   try {
     const { userId, token } = req.body;
@@ -344,7 +344,7 @@ export const updateUser = async (req, res) => {
         } else if (role === 'FORMADOR') {
           await db.query('INSERT IGNORE INTO formadores (utilizador_id) VALUES (?)', [id]);
         } else if (role === 'SECRETARIA' || role === 'ADMIN') {
-          // Admin também tem ficha na secretaria
+          // Admin faz parte da secretaria
           await db.query('INSERT IGNORE INTO secretaria (utilizador_id, cargo) VALUES (?, ?)', [id, 'Técnico']);
         }
       } catch (profileError) {
@@ -366,7 +366,7 @@ export const updateUser = async (req, res) => {
 export const deleteUser = async (req, res) => {
   try {
     const { id } = req.params;
-    // Limpar perfis associados (para garantir que não falha por FK se o cascade não estiver ativo)
+    // Limpar perfis associados
     await db.query('DELETE FROM formandos WHERE utilizador_id = ?', [id]);
     await db.query('DELETE FROM formadores WHERE utilizador_id = ?', [id]);
     await db.query('DELETE FROM secretaria WHERE utilizador_id = ?', [id]);
@@ -389,15 +389,15 @@ export const deleteUser = async (req, res) => {
 // Listar todos os utilizadores (com a cache)
 export const getUsers = async (req, res) => {
   try {
-    // Tentar ler da Cache
+    //ler da Cache
     const cachedUsers = await redis.get('users:all');
     if (cachedUsers) {
-      console.log('⚡ Dados vindos da Cache (Redis)');
+      console.log('Dados vindos da Cache (Redis)');
       return res.status(200).json(JSON.parse(cachedUsers));
     }
 
     // Se não existir, vai à Base de Dados
-    console.log('🗄️ Dados vindos da Base de Dados (MySQL)');
+    console.log('Dados vindos da Base de Dados (MySQL)');
     const [users] = await db.query(
       `SELECT u.id, u.nome_completo, u.email, u.is_active, r.nome as tipo_utilizador, u.data_criacao 
        FROM utilizadores u 
@@ -414,7 +414,7 @@ export const getUsers = async (req, res) => {
   }
 };
 
-// Obter um utilizador específico (também pode-se fazer cache por ID)
+// Obter um utilizador específico (também se pode fazer cache por ID)
 export const getUserById = async (req, res) => {
   try {
     const { id } = req.params;

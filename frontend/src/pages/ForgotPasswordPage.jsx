@@ -17,7 +17,7 @@ const ForgotPasswordPage = () => {
 
         try {
             await authService.forgotPassword(email);
-            setMessage('Se o email existir, enviámos instruções para a recuperação.');
+            setMessage('Se o email existir, enviámos instruções para o email para a recuperação.');
         } catch (err) {
             setError('Ocorreu um erro ao tentar recuperar a password.');
             console.error(err);

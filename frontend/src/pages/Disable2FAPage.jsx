@@ -7,7 +7,7 @@ function Disable2FAPage() {
     const navigate = useNavigate();
     const token = searchParams.get('token');
 
-    const [status, setStatus] = useState('loading'); // loading, success, error
+    const [status, setStatus] = useState('loading'); 
     const [message, setMessage] = useState('A processar o pedido...');
 
     useEffect(() => {

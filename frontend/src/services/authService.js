@@ -1,7 +1,7 @@
 export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 export const authService = {
-    API_URL, // Exposing for external use (like Google Login)
+    API_URL, 
     login: async (email, password) => {
         try {
             const response = await fetch(`${API_URL}/api/auth/login`, {
@@ -18,7 +18,7 @@ export const authService = {
                 throw new Error(data.message || 'Erro ao fazer login');
             }
 
-            // Guardar token (se houver)
+            // Guardar token
             if (data.token) {
                 localStorage.setItem('auth_token', data.token);
                 localStorage.setItem('user', window.JSON.stringify(data.user));
@@ -84,7 +84,7 @@ export const authService = {
         return response.json();
     },
 
-    // --- 2FA Methods ---
+    // Metodo 2FA 
     setup2FA: async (userId) => {
         const response = await fetch(`${API_URL}/api/auth/2fa/setup`, {
             method: 'POST',

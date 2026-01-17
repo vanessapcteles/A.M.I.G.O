@@ -4,7 +4,7 @@ FROM node:18
 # Definir o diretório de trabalho dentro do contentor
 WORKDIR /app
 
-# Copiar os ficheiros de dependências (estão um nível acima do Dockerfile no contexto do compose)
+# Copiar os ficheiros de dependências 
 COPY package*.json ./
 
 # Instalar as dependências

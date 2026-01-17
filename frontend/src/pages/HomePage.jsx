@@ -16,10 +16,10 @@ function HomePage() {
                 padding: '2rem'
             }}>
                 <h1 style={{ fontSize: '4rem', marginBottom: '1.5rem', maxWidth: '800px' }}>
-                    A gestão da sua academia num só <span style={{ color: 'var(--primary)' }}>Lugar</span>.
+                    Academy Manager <span style={{ color: 'var(--primary)' }}>Your Best Choice</span>.
                 </h1>
                 <p style={{ color: 'var(--text-dim)', fontSize: '1.25rem', maxWidth: '600px', marginBottom: '3rem' }}>
-                    Uma plataforma integrada para gerir alunos, cursos e autenticação de forma simples e segura.
+                    Organiza tudo da melhor forma com esta plataforma.
                 </p>
 
                 <div style={{ display: 'flex', gap: '1rem' }}>
@@ -34,15 +34,15 @@ function HomePage() {
                 <div className="glass-card" style={{ marginTop: '5rem', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '2rem', textAlign: 'left' }}>
                     <div>
                         <h3 style={{ color: 'var(--primary)' }}>Segurança</h3>
-                        <p style={{ fontSize: '0.9rem', color: 'var(--text-dim)' }}>Autenticação 2FA e encriptação de dados de última geração.</p>
+                        <p style={{ fontSize: '0.9rem', color: 'var(--text-dim)' }}>Autenticação 2FA e encriptação de dados.</p>
                     </div>
                     <div>
                         <h3 style={{ color: 'var(--primary)' }}>Simplicidade</h3>
-                        <p style={{ fontSize: '0.9rem', color: 'var(--text-dim)' }}>Interface intuitiva desenhada para a melhor experiência do utilizador.</p>
+                        <p style={{ fontSize: '0.9rem', color: 'var(--text-dim)' }}>Interface intuitiva.</p>
                     </div>
                     <div>
                         <h3 style={{ color: 'var(--primary)' }}>Integração</h3>
-                        <p style={{ fontSize: '0.9rem', color: 'var(--text-dim)' }}>Login social com Google e Facebook integrado.</p>
+                        <p style={{ fontSize: '0.9rem', color: 'var(--text-dim)' }}>Login social com Google.</p>
                     </div>
                 </div>
             </main>
