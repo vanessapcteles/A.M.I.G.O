@@ -62,7 +62,67 @@ export const activateAccount = async (req, res) => {
     await db.query('UPDATE utilizadores SET is_active = true, activation_token = NULL WHERE activation_token = ?', [token]);
 
     // Mandar para o login ou mostrar mensagem
-    return res.send('<h1>Conta activada com sucesso! Já pode fazer login.</h1><a href="http://localhost:5173/login">Ir para o Login</a>');
+    return res.send(`
+      <head>
+        <title>Conta Ativada - Academy Manager</title>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+        <style>
+          body { 
+            background: radial-gradient(circle at 50% 50%, #1e293b 0%, #020617 100%);
+            color: white; 
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            text-align: center;
+          }
+          .card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            padding: 3.5rem;
+            border-radius: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            max-width: 450px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+          }
+          .icon {
+            width: 72px;
+            height: 72px;
+            background: rgba(59, 130, 246, 0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+            color: #3b82f6;
+            font-size: 32px;
+          }
+          h1 { color: white; margin-bottom: 1rem; font-weight: 700; }
+          p { color: #94a3b8; margin-bottom: 2.5rem; line-height: 1.6; }
+          a {
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+            color: white;
+            padding: 1rem 2.5rem;
+            border-radius: 12px;
+            text-decoration: none;
+            font-weight: 600;
+            display: inline-block;
+            transition: transform 0.2s;
+          }
+          a:hover { transform: translateY(-2px); }
+        </style>
+      </head>
+      <body>
+        <div class="card">
+          <div class="icon">✓</div>
+          <h1>Sucesso!</h1>
+          <p>A sua conta foi ativada com sucesso. Já pode aceder à plataforma e começar a gerir a sua academia.</p>
+          <a href="http://localhost:5173/login">Ir para o Login</a>
+        </div>
+      </body>
+    `);
   } catch (error) {
     return res.status(500).json({ message: 'Erro ao ativar conta' });
   }
@@ -211,7 +271,20 @@ export const verify2FA = async (req, res) => {
 
     if (verified) {
       await db.query('UPDATE utilizadores SET two_fa_enabled = true WHERE id = ?', [userId]);
-      return res.status(200).json({ message: '2FA ativado com sucesso!' });
+
+      // Obter utilizador atualizado para sincronizar frontend
+      const [updatedUsers] = await db.query(
+        `SELECT u.id, u.nome_completo, u.email, r.nome as tipo_utilizador, u.two_fa_enabled 
+         FROM utilizadores u 
+         JOIN roles r ON u.role_id = r.id 
+         WHERE u.id = ?`,
+        [userId]
+      );
+
+      return res.status(200).json({
+        message: '2FA ativado com sucesso!',
+        user: updatedUsers[0]
+      });
     } else {
       return res.status(400).json({ message: 'Código inválido. Tenta novamente.' });
     }

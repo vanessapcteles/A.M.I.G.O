@@ -1,7 +1,7 @@
 export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 export const authService = {
-    API_URL, 
+    API_URL,
     login: async (email, password) => {
         try {
             const response = await fetch(`${API_URL}/api/auth/login`, {
@@ -132,5 +132,39 @@ export const authService = {
         });
         if (!response.ok) throw new Error('Token inválido ou expirado');
         return response.json();
+    },
+
+    updateProfile: async (userId, userData) => {
+        try {
+            const token = localStorage.getItem('auth_token');
+            const response = await fetch(`${API_URL}/api/users/${userId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: window.JSON.stringify(userData)
+            });
+
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.message || 'Erro ao atualizar perfil');
+
+            const storedUser = localStorage.getItem('user');
+            if (storedUser) {
+                const currentUser = JSON.parse(storedUser);
+                const updatedUser = {
+                    ...currentUser,
+                    ...userData,
+                    // Sincronizar campo nome se nome_completo mudar
+                    nome: userData.nome_completo || currentUser.nome
+                };
+                localStorage.setItem('user', JSON.stringify(updatedUser));
+            }
+
+            return data;
+        } catch (error) {
+            console.error('Update profile error:', error);
+            throw error;
+        }
     }
 };

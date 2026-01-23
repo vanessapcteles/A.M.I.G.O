@@ -23,8 +23,23 @@ export const userService = {
             headers: getAuthHeader(),
             body: JSON.stringify(data)
         });
+
         if (!response.ok) throw new Error('Erro ao atualizar utilizador');
-        return response.json();
+        const result = await response.json();
+
+        // Se estivermos a atualizar o próprio utilizador, sincronizamos o localStorage
+        const currentUser = JSON.parse(localStorage.getItem('user'));
+        if (currentUser && currentUser.id === id) {
+            const updatedUser = {
+                ...currentUser,
+                ...data,
+                // Garantir compatibilidade com campos nome/nome_completo
+                nome: data.nome_completo || currentUser.nome
+            };
+            localStorage.setItem('user', JSON.stringify(updatedUser));
+        }
+
+        return result;
     },
 
     deleteUser: async (id) => {
