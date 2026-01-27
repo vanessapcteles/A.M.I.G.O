@@ -35,6 +35,7 @@ const DashboardLayout = ({ children }) => {
         }
     };
 
+
     return (
         <div className="app-container">
             <Sidebar />
@@ -87,6 +88,7 @@ const DashboardLayout = ({ children }) => {
                         </div>
                     </Link>
                 </header>
+
 
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}

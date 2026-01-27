@@ -73,7 +73,23 @@ const LandingPage = () => {
 
                 <div style={{ display: 'flex', gap: '2rem', alignItems: 'center' }}>
                     {user ? (
-                        <Link to="/dashboard" className="btn-primary" style={{ padding: '0.6rem 1.5rem' }}>Ir para Dashboard</Link>
+                        user.tipo_utilizador === 'CANDIDATO' ? (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                <Link to="/candidato" className="btn-primary" style={{ padding: '0.5rem 1rem', fontSize: '0.9rem', background: 'var(--primary)', border: 'none' }}>
+                                    Minha Candidatura
+                                </Link>
+                                <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.9rem' }}>Olá, {user.nome_completo || 'Candidato'}</span>
+                                <button
+                                    onClick={() => { authService.logout(); window.location.reload(); }}
+                                    className="btn-glass"
+                                    style={{ padding: '0.5rem 1rem', fontSize: '0.9rem' }}
+                                >
+                                    Sair
+                                </button>
+                            </div>
+                        ) : (
+                            <Link to="/dashboard" className="btn-primary" style={{ padding: '0.6rem 1.5rem' }}>Ir para Dashboard</Link>
+                        )
                     ) : (
                         <>
                             <Link to="/login" style={{ textDecoration: 'none', color: 'rgba(255,255,255,0.7)', fontWeight: '500' }}>Entrar</Link>
@@ -136,25 +152,7 @@ const LandingPage = () => {
             {/* Main Content */}
             <main style={{ padding: '2rem 5% 10rem', maxWidth: '1400px', margin: '0 auto' }}>
 
-                {/* Statistics Banner */}
-                <div style={{
-                    display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-                    gap: '2rem', marginBottom: '8rem', padding: '3rem',
-                    background: 'rgba(255,255,255,0.02)', borderRadius: '24px',
-                    border: '1px solid rgba(255,255,255,0.05)'
-                }}>
-                    {[
-                        { label: 'Cursos Ativos', value: '25+', icon: BookOpen },
-                        { label: 'Alunos Inscritos', value: '1200+', icon: Users },
-                        { label: 'Taxa de Empregabilidade', value: '94%', icon: Award },
-                        { label: 'Anos de Experiência', value: '15+', icon: Globe }
-                    ].map((stat, i) => (
-                        <div key={i} style={{ textAlign: 'center' }}>
-                            <h3 style={{ fontSize: '2.5rem', fontWeight: '800' }} className="text-gradient-secondary">{stat.value}</h3>
-                            <p style={{ color: 'rgba(255,255,255,0.5)', marginTop: '0.5rem' }}>{stat.label}</p>
-                        </div>
-                    ))}
-                </div>
+
 
                 {/* Areas Grid */}
                 <h2 style={{ fontSize: '2rem', fontWeight: '700', marginBottom: '3rem' }}>Áreas de <span style={{ color: 'var(--primary)' }}>Especialização</span></h2>
@@ -231,20 +229,37 @@ const LandingPage = () => {
                                             <span>Próxima Turma: {course.proxima_data_inicio ? new Date(course.proxima_data_inicio).toLocaleDateString() : 'A anunciar'}</span>
                                         </div>
 
-                                        <Link
-                                            to="/register"
-                                            state={{ interestedIn: course.id }}
-                                            style={{
-                                                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
-                                                padding: '0.85rem', width: '100%', borderRadius: '12px',
-                                                background: 'rgba(255,255,255,0.05)', color: 'white', textDecoration: 'none',
-                                                fontWeight: '600', border: '1px solid rgba(255,255,255,0.1)',
-                                                transition: 'all 0.2s'
-                                            }}
-                                            className="hover-glow"
-                                        >
-                                            Quero me Candidatar <ArrowRight size={18} />
-                                        </Link>
+                                        {user ? (
+                                            <Link
+                                                to="/candidato"
+                                                state={{ interestedIn: course.id }}
+                                                style={{
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+                                                    padding: '0.85rem', width: '100%', borderRadius: '12px',
+                                                    background: 'rgba(255,255,255,0.05)', color: 'white', textDecoration: 'none',
+                                                    fontWeight: '600', border: '1px solid rgba(255,255,255,0.1)',
+                                                    transition: 'all 0.2s'
+                                                }}
+                                                className="hover-glow"
+                                            >
+                                                Quero me Candidatar <ArrowRight size={18} />
+                                            </Link>
+                                        ) : (
+                                            <Link
+                                                to="/register"
+                                                state={{ interestedIn: course.id }}
+                                                style={{
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+                                                    padding: '0.85rem', width: '100%', borderRadius: '12px',
+                                                    background: 'rgba(255,255,255,0.05)', color: 'white', textDecoration: 'none',
+                                                    fontWeight: '600', border: '1px solid rgba(255,255,255,0.1)',
+                                                    transition: 'all 0.2s'
+                                                }}
+                                                className="hover-glow"
+                                            >
+                                                Quero me Candidatar <ArrowRight size={18} />
+                                            </Link>
+                                        )}
                                     </div>
                                 </motion.div>
                             ))}

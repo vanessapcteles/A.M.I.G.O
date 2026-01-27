@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { authService } from '../services/authService';
 import { useNavigate } from 'react-router-dom';
-import DashboardLayout from '../components/layout/DashboardLayout';
 import { Shield, User, Mail, Save, Smartphone, ShieldAlert, CheckCircle2, Upload, Camera } from 'lucide-react';
 import { API_URL, getAuthHeader } from '../services/authService';
 import { motion } from 'framer-motion';
@@ -151,7 +150,7 @@ function ProfilePage() {
     if (!user) return null;
 
     return (
-        <DashboardLayout>
+        <>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
                 {/* Informações Básicas */}
                 <div className="glass-card">
@@ -309,26 +308,28 @@ function ProfilePage() {
                 </div>
             </div>
 
-            {message.text && (
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    style={{
-                        position: 'fixed',
-                        bottom: '2rem',
-                        right: '2rem',
-                        padding: '1rem 2rem',
-                        borderRadius: '12px',
-                        background: message.type === 'success' ? '#10b981' : '#f87171',
-                        color: 'white',
-                        boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.4)',
-                        zIndex: 1000
-                    }}
-                >
-                    {message.text}
-                </motion.div>
-            )}
-        </DashboardLayout>
+            {
+                message.text && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        style={{
+                            position: 'fixed',
+                            bottom: '2rem',
+                            right: '2rem',
+                            padding: '1rem 2rem',
+                            borderRadius: '12px',
+                            background: message.type === 'success' ? '#10b981' : '#f87171',
+                            color: 'white',
+                            boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.4)',
+                            zIndex: 1000
+                        }}
+                    >
+                        {message.text}
+                    </motion.div>
+                )
+            }
+        </>
     );
 }
 

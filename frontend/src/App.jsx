@@ -17,44 +17,93 @@ import FormadoresPage from './pages/FormadoresPage';
 import TurmaDetailsPage from './pages/TurmaDetailsPage';
 import TurmaSchedulePage from './pages/TurmaSchedulePage';
 import SchedulesPage from './pages/SchedulesPage';
+import CandidatoPage from './pages/CandidatoPage';
+import CandidaturasPage from './pages/CandidaturasPage';
 import ChatWidget from './components/ChatWidget';
 import { authService } from './services/authService';
 import './App.css';
 
-// Proteção de rotas simples
-const PrivateRoute = ({ children }) => {
+// Componente de Rota Protegida por Role
+const RoleBasedRoute = ({ children, allowedRoles }) => {
   const user = authService.getCurrentUser();
-  return user ? children : <Navigate to="/login" />;
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  // Se allowedRoles for fornecido, verificar se o user tem permissão
+  if (allowedRoles && !allowedRoles.includes(user.tipo_utilizador)) {
+    // Se for Candidato a tentar aceder a pages internas, manda para a Landing Page
+    if (user.tipo_utilizador === 'CANDIDATO') {
+      return <Navigate to="/" replace />;
+    }
+    // Outros casos, manda para dashboard ou acesso negado
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return children;
 };
 
+// Componente para a Raiz (/)
+// Se for staff/aluno logado -> Dashboard
+// Se for candidato ou anonimo -> Landing Page
+const RootRoute = () => {
+  const user = authService.getCurrentUser();
+  if (user && user.tipo_utilizador !== 'CANDIDATO') {
+    return <Navigate to="/dashboard" replace />;
+  }
+  return <LandingPage />;
+};
+
+import DashboardRootLayout from './components/layout/DashboardRootLayout';
+
+// ... imports remain the same ...
+
 function App() {
+  // Roles que têm acesso à área interna
+  const internalRoles = ['ADMIN', 'SECRETARIA', 'FORMADOR', 'FORMANDO'];
+
   return (
     <Router>
       <ChatWidget />
       <Routes>
-        <Route path="/" element={<LandingPage />} />
+        {/* Raiz Inteligente */}
+        <Route path="/" element={<RootRoute />} />
+
+        {/* Public Routes */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
-
-        {/* Rotas Protegidas */}
-        <Route path="/dashboard" element={<PrivateRoute><HomePage /></PrivateRoute>} />
-        <Route path="/courses" element={<PrivateRoute><CoursesPage /></PrivateRoute>} />
-        <Route path="/profile" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
-        <Route path="/users" element={<PrivateRoute><UsersPage /></PrivateRoute>} />
-        <Route path="/rooms" element={<PrivateRoute><RoomsPage /></PrivateRoute>} />
-        <Route path="/turmas" element={<PrivateRoute><TurmasPage /></PrivateRoute>} />
-        <Route path="/turmas/:id" element={<PrivateRoute><TurmaDetailsPage /></PrivateRoute>} />
-        <Route path="/turmas/:id/schedule" element={<PrivateRoute><TurmaSchedulePage /></PrivateRoute>} />
-        <Route path="/modules" element={<PrivateRoute><ModulesPage /></PrivateRoute>} />
-        <Route path="/formandos" element={<PrivateRoute><FormandosPage /></PrivateRoute>} />
-        <Route path="/formadores" element={<PrivateRoute><FormadoresPage /></PrivateRoute>} />
-        <Route path="/schedules" element={<PrivateRoute><SchedulesPage /></PrivateRoute>} />
-        <Route path="/disable-2fa" element={<Disable2FAPage />} />
         <Route path="/disable-2fa" element={<Disable2FAPage />} />
 
-        {/* Redirecionar página inicial para dashboard se logado? Opcional */}
+        {/* Rota para Candidatos (Sem Sidebar) */}
+        <Route path="/candidato" element={<RoleBasedRoute allowedRoles={['CANDIDATO']}><CandidatoPage /></RoleBasedRoute>} />
+
+        {/* Layout Global com Sidebar para Todas as Rotas Internas */}
+        <Route element={<DashboardRootLayout />}>
+
+          {/* Rotas Comuns / Admin / Secretaria */}
+          <Route path="/dashboard" element={<RoleBasedRoute allowedRoles={internalRoles}><HomePage /></RoleBasedRoute>} />
+          <Route path="/profile" element={<RoleBasedRoute allowedRoles={internalRoles}><ProfilePage /></RoleBasedRoute>} />
+          <Route path="/candidaturas" element={<RoleBasedRoute allowedRoles={['ADMIN', 'SECRETARIA']}><CandidaturasPage /></RoleBasedRoute>} />
+
+          {/* Rota para Candidatos */}
+
+
+          <Route path="/courses" element={<RoleBasedRoute allowedRoles={internalRoles}><CoursesPage /></RoleBasedRoute>} />
+
+          {/* Rotas mais específicas (Admin/Secretaria) */}
+          <Route path="/users" element={<RoleBasedRoute allowedRoles={['ADMIN', 'SECRETARIA']}><UsersPage /></RoleBasedRoute>} />
+          <Route path="/rooms" element={<RoleBasedRoute allowedRoles={internalRoles}><RoomsPage /></RoleBasedRoute>} />
+          <Route path="/turmas" element={<RoleBasedRoute allowedRoles={internalRoles}><TurmasPage /></RoleBasedRoute>} />
+          <Route path="/turmas/:id" element={<RoleBasedRoute allowedRoles={internalRoles}><TurmaDetailsPage /></RoleBasedRoute>} />
+          <Route path="/turmas/:id/schedule" element={<RoleBasedRoute allowedRoles={internalRoles}><TurmaSchedulePage /></RoleBasedRoute>} />
+          <Route path="/modules" element={<RoleBasedRoute allowedRoles={internalRoles}><ModulesPage /></RoleBasedRoute>} />
+          <Route path="/formandos" element={<RoleBasedRoute allowedRoles={internalRoles}><FormandosPage /></RoleBasedRoute>} />
+          <Route path="/formadores" element={<RoleBasedRoute allowedRoles={internalRoles}><FormadoresPage /></RoleBasedRoute>} />
+          <Route path="/schedules" element={<RoleBasedRoute allowedRoles={internalRoles}><SchedulesPage /></RoleBasedRoute>} />
+        </Route>
       </Routes>
     </Router>
   );

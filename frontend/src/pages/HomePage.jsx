@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import DashboardLayout from '../components/layout/DashboardLayout';
 import { BookOpen, Users, GraduationCap, Calendar, BarChart3, TrendingUp, CheckCircle2 } from 'lucide-react';
 import { dashboardService } from '../services/dashboardService';
 import { motion } from 'framer-motion';
@@ -48,16 +47,14 @@ function HomePage() {
 
     if (loading) {
         return (
-            <DashboardLayout>
-                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh' }}>
-                    <p>Carregando dashboard...</p>
-                </div>
-            </DashboardLayout>
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh' }}>
+                <p>Carregando dashboard...</p>
+            </div>
         );
     }
 
     return (
-        <DashboardLayout>
+        <>
             <motion.div
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -65,7 +62,7 @@ function HomePage() {
             >
                 <h1 style={{ fontSize: '2rem', fontWeight: '700', marginBottom: '0.5rem' }}>Estatísticas Académicas</h1>
                 <p style={{ color: 'var(--text-secondary)' }}>Resumo em tempo real do progresso da academia.</p>
-            </motion.div>
+            </motion.div >
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem', marginBottom: '3rem' }}>
                 {stats.map((stat, index) => (
@@ -145,21 +142,9 @@ function HomePage() {
 
                             return (
                                 <div key={i}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontSize: '0.9rem' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', padding: '0.75rem', background: 'rgba(255,255,255,0.02)', borderRadius: '8px' }}>
                                         <span>{item.area}</span>
-                                        <span style={{ fontWeight: '600' }}>{item.count} ({percentage}%)</span>
-                                    </div>
-                                    <div style={{ width: '100%', height: '8px', background: 'rgba(255,255,255,0.05)', borderRadius: '4px', overflow: 'hidden' }}>
-                                        <motion.div
-                                            initial={{ width: 0 }}
-                                            animate={{ width: `${percentage}%` }}
-                                            transition={{ duration: 1, delay: 0.5 }}
-                                            style={{
-                                                height: '100%',
-                                                background: item.area === 'Informática' ? 'var(--primary)' : item.area === 'Robótica' ? 'var(--secondary)' : 'var(--accent)',
-                                                borderRadius: '4px'
-                                            }}
-                                        />
+                                        <span style={{ fontWeight: '600', color: 'var(--primary)' }}>{item.count}</span>
                                     </div>
                                 </div>
                             );
@@ -169,14 +154,10 @@ function HomePage() {
                         )}
                     </div>
 
-                    <div style={{ marginTop: 'auto', padding: '1.5rem', borderRadius: '15px', background: 'rgba(59, 130, 246, 0.05)', border: '1px solid rgba(59, 130, 246, 0.1)' }}>
-                        <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
-                            💡 <strong>Dica:</strong> Pode gerir todos os cursos e turmas nos respetivos menus laterais.
-                        </p>
-                    </div>
+
                 </div>
             </div>
-        </DashboardLayout>
+        </>
     );
 }
 

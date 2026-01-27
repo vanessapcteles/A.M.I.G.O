@@ -30,7 +30,7 @@ function Navbar() {
             left: 0,
             right: 0,
             zIndex: 100,
-            backgroundColor: 'rgba(15, 23, 42, 0.8)', 
+            backgroundColor: 'rgba(15, 23, 42, 0.8)',
             backdropFilter: 'blur(10px)'
         }}>
             <div style={{ fontSize: '1.5rem', fontWeight: 'bold', fontFamily: 'Outfit' }}>
@@ -43,9 +43,14 @@ function Navbar() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
 
                     {isAdminOrSecretaria && (
-                        <Link to="/users" style={{ color: 'white', textDecoration: 'none', fontSize: '0.9rem', fontWeight: '500' }}>
-                            Gerir Utilizadores
-                        </Link>
+                        <>
+                            <Link to="/candidaturas" style={{ color: 'white', textDecoration: 'none', fontSize: '0.9rem', fontWeight: '500' }}>
+                                Candidaturas
+                            </Link>
+                            <Link to="/users" style={{ color: 'white', textDecoration: 'none', fontSize: '0.9rem', fontWeight: '500' }}>
+                                Gerir Utilizadores
+                            </Link>
+                        </>
                     )}
 
                     <Link to="/profile" style={{ textDecoration: 'none' }}>

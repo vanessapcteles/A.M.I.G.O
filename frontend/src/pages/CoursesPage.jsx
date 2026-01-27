@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { courseService } from '../services/courseService';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import { motion } from 'framer-motion';
@@ -19,6 +20,7 @@ import {
 } from 'lucide-react';
 
 function CoursesPage() {
+    const navigate = useNavigate();
     const [courses, setCourses] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -192,12 +194,17 @@ function CoursesPage() {
                             }}
                         >
                             <div style={{ position: 'absolute', top: '1rem', right: '1rem', display: 'flex', gap: '0.5rem' }}>
-                                <button onClick={() => openEdit(course)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
-                                    <Edit2 size={16} />
-                                </button>
-                                <button onClick={() => handleDelete(course.id)} style={{ background: 'none', border: 'none', color: '#f87171', cursor: 'pointer' }}>
-                                    <Trash2 size={16} />
-                                </button>
+                                {/* Admin Actions */}
+                                {['ADMIN', 'SECRETARIA', 'FORMADOR'].includes(authService.getCurrentUser()?.tipo_utilizador?.toUpperCase()) && (
+                                    <>
+                                        <button onClick={() => openEdit(course)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
+                                            <Edit2 size={16} />
+                                        </button>
+                                        <button onClick={() => handleDelete(course.id)} style={{ background: 'none', border: 'none', color: '#f87171', cursor: 'pointer' }}>
+                                            <Trash2 size={16} />
+                                        </button>
+                                    </>
+                                )}
                             </div>
 
                             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
@@ -224,9 +231,25 @@ function CoursesPage() {
                                     <Activity size={14} />
                                     <span style={{ textTransform: 'capitalize' }}>{course.estado}</span>
                                 </div>
-                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                                    ID: #{course.id}
-                                </div>
+
+                                {/* Candidate Action */}
+                                {authService.getCurrentUser()?.tipo_utilizador?.toUpperCase() === 'CANDIDATO' && (
+                                    <button
+                                        onClick={() => navigate('/candidato', { state: { interestedIn: course.id } })}
+                                        style={{
+                                            background: 'var(--primary)', border: 'none', borderRadius: '20px',
+                                            padding: '0.3rem 1rem', fontSize: '0.8rem', color: 'white', cursor: 'pointer'
+                                        }}
+                                    >
+                                        Candidatar
+                                    </button>
+                                )}
+
+                                {['ADMIN', 'SECRETARIA'].includes(authService.getCurrentUser()?.tipo_utilizador?.toUpperCase()) && (
+                                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                                        ID: #{course.id}
+                                    </div>
+                                )}
                             </div>
                         </motion.div>
                     ))}

@@ -4,7 +4,7 @@ import { authenticateToken, authorizeRole } from '../middleware/authMiddleware.j
 
 const router = express.Router();
 
-// Apenas Admin e Secretaria devem ver as estatísticas globais
-router.get('/stats', authenticateToken, authorizeRole(['ADMIN', 'SECRETARIA']), getDashboardStats);
+// Todos podem ver estatísticas, exceto Candidatos (que nem têm acesso ao dashboard pelo front)
+router.get('/stats', authenticateToken, authorizeRole(['ADMIN', 'SECRETARIA', 'FORMADOR', 'FORMANDO']), getDashboardStats);
 
 export default router;

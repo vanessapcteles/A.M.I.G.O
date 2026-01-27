@@ -14,6 +14,7 @@ import formadorRoutes from './routes/formadorRoutes.js';
 import turmaDetalhesRoutes from './routes/turmaDetalhesRoutes.js';
 import horarioRoutes from './routes/horarioRoutes.js';
 import dashboardRoutes from './routes/dashboardRoutes.js';
+import candidatosRoutes from './routes/candidatosRoutes.js';
 
 const app = express();
 
@@ -31,8 +32,9 @@ app.use('/api/files', fileRoutes);
 app.use('/api/formandos', formandoRoutes);
 app.use('/api/formadores', formadorRoutes);
 app.use('/api/turma-details', turmaDetalhesRoutes);
-app.use('/api/schedules', horarioRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/candidatos', candidatosRoutes);
+
 
 app.listen(3001, () => {
   console.log('Servidor a correr em http://localhost:3001');

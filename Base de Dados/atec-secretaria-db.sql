@@ -194,17 +194,26 @@ CREATE TABLE turma_detalhes (
 
 CREATE TABLE inscricoes (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    id_formando INT NOT NULL,
-    id_turma INT NOT NULL,
+    id_formando INT, -- Nullable initially if we link by user_id, or we create a creating 'potential' formando
+    user_id INT, -- Direct link to user for candidates who aren't formandos yet
+    id_turma INT, -- Nullable, candidate applies to a course, not a specific class
+    id_curso INT, -- The course they are applying for
 
-    data_inscricao DATE,
+    estado ENUM('PENDENTE', 'APROVADO', 'REJEITADO') DEFAULT 'PENDENTE',
+    
+    -- Dados da candidatura
+    dados_candidatura JSON,
+    pdf_file_id INT,
+
+    data_inscricao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     nota_final DECIMAL(4,2) CHECK(nota_final BETWEEN 0.0 AND 20.0),
     observacoes TEXT,
 
-    UNIQUE (id_formando, id_turma),
-
-    FOREIGN KEY (id_formando) REFERENCES formandos(id) ON DELETE RESTRICT,
-    FOREIGN KEY (id_turma) REFERENCES turmas(id) ON DELETE RESTRICT
+    FOREIGN KEY (id_formando) REFERENCES formandos(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES utilizadores(id) ON DELETE CASCADE,
+    FOREIGN KEY (id_turma) REFERENCES turmas(id) ON DELETE SET NULL,
+    FOREIGN KEY (id_curso) REFERENCES cursos(id) ON DELETE CASCADE,
+    FOREIGN KEY (pdf_file_id) REFERENCES ficheiros_anexos(id) ON DELETE SET NULL
 );
 
 -- ---------------------------------------------------------------------------------------------------
