@@ -59,7 +59,7 @@ const Sidebar = () => {
     return (
         <aside className="sidebar">
             <div style={{ padding: '1rem 0 2rem 0', textAlign: 'center' }}>
-                <h2 className="text-gradient" style={{ fontSize: '1.5rem' }}>ATEC Academy</h2>
+                <h2 className="text-gradient" style={{ fontSize: '1.5rem' }}>Academy Manager</h2>
             </div>
 
             <nav style={{ flex: 1 }}>

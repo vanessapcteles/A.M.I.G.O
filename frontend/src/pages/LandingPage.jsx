@@ -68,7 +68,7 @@ const LandingPage = () => {
                     <div style={{ padding: '8px', background: 'var(--primary)', borderRadius: '10px' }}>
                         <BookOpen size={20} color="white" />
                     </div>
-                    <span>ATEC <span style={{ color: 'var(--primary)' }}>ACADEMY</span></span>
+                    <span>Academy <span style={{ color: 'var(--primary)' }}>Manager</span></span>
                 </div>
 
                 <div style={{ display: 'flex', gap: '2rem', alignItems: 'center' }}>
@@ -120,7 +120,7 @@ const LandingPage = () => {
                     </span>
                     <h1 style={{ fontSize: '4.5rem', fontWeight: '800', marginTop: '2rem', lineHeight: '1.1' }}>
                         Transforme o seu <span className="text-gradient">Futuro</span> <br />
-                        na ATEC Academy.
+                        na Academy Manager.
                     </h1>
                     <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '1.25rem', maxWidth: '750px', margin: '2rem auto 3rem', lineHeight: '1.6' }}>
                         Seja um especialista em tecnologia com os nossos cursos certificados.
@@ -276,7 +276,7 @@ const LandingPage = () => {
                 <div style={{ maxWidth: '1400px', margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '4rem', marginBottom: '5rem' }}>
                     <div>
                         <div style={{ fontSize: '1.25rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.5rem' }}>
-                            ATEC <span style={{ color: 'var(--primary)' }}>ACADEMY</span>
+                            Academy <span style={{ color: 'var(--primary)' }}>Manager</span>
                         </div>
                         <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.9rem', lineHeight: '1.6' }}>
                             Formação profissional de alta qualidade financiada pela União Europeia e pelo Estado Português.
@@ -302,7 +302,7 @@ const LandingPage = () => {
                     </div>
                 </div>
                 <div style={{ textAlign: 'center', color: 'rgba(255,255,255,0.2)', fontSize: '0.85rem' }}>
-                    &copy; 2026 ATEC Academy Manager &bull; Desenvolvido para Excelência de Gestão
+                    &copy; 2026 Academy Manager &bull; Desenvolvido para Excelência de Gestão
                 </div>
             </footer>
         </div>
