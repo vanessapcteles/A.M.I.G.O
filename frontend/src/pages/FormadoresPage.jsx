@@ -13,6 +13,7 @@ import getDay from 'date-fns/getDay';
 import pt from 'date-fns/locale/pt';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import { horarioService } from '../services/horarioService';
+import Modal from '../components/ui/Modal';
 
 const locales = { 'pt': pt };
 const localizer = dateFnsLocalizer({ format, parse, startOfWeek, getDay, locales });
@@ -29,6 +30,7 @@ function FormadoresPage() {
     const [viewingSchedule, setViewingSchedule] = useState(false);
     const [formadorEvents, setFormadorEvents] = useState([]);
     const [profilePhoto, setProfilePhoto] = useState(null);
+    const [modalConfig, setModalConfig] = useState({ isOpen: false });
 
     // Form States
     const [editData, setEditData] = useState({
@@ -279,14 +281,25 @@ function FormadoresPage() {
         }
     };
 
-    const handleDeleteFile = async (fileId) => {
-        if (!window.confirm('Tem a certeza?')) return;
+    const handleDeleteFile = (fileId) => {
+        setModalConfig({
+            isOpen: true,
+            title: 'Eliminar Ficheiro',
+            type: 'danger',
+            children: 'Tem a certeza que deseja eliminar este ficheiro permanentemente?',
+            confirmText: 'Eliminar',
+            onConfirm: () => performDeleteFile(fileId)
+        });
+    };
+
+    const performDeleteFile = async (fileId) => {
         try {
             await fetch(`${API_URL}/api/files/${fileId}`, {
                 method: 'DELETE',
                 headers: getAuthHeader()
             });
             setFiles(prev => prev.filter(f => f.id !== fileId));
+            setModalConfig({ isOpen: false });
         } catch (error) {
             console.error('Erro delete:', error);
         }
@@ -536,6 +549,11 @@ function FormadoresPage() {
                     )}
                 </AnimatePresence>
             </div>
+
+            <Modal
+                {...modalConfig}
+                onClose={() => setModalConfig({ isOpen: false })}
+            />
         </>
     );
 }

@@ -4,10 +4,12 @@ import { useNavigate } from 'react-router-dom';
 import { Shield, User, Mail, Save, Smartphone, ShieldAlert, CheckCircle2, Upload, Camera } from 'lucide-react';
 import { API_URL, getAuthHeader } from '../services/authService';
 import { motion } from 'framer-motion';
+import Modal from '../components/ui/Modal';
 
 function ProfilePage() {
     const navigate = useNavigate();
     const [user, setUser] = useState(null);
+    const [extraProfile, setExtraProfile] = useState(null);
     const [nome_completo, setNomeCompleto] = useState('');
     const [qrCode, setQrCode] = useState(null);
     const [verificationCode, setVerificationCode] = useState('');
@@ -16,6 +18,7 @@ function ProfilePage() {
     const [loading, setLoading] = useState(false);
     const [profilePhoto, setProfilePhoto] = useState(null);
     const [uploading, setUploading] = useState(false);
+    const [modalConfig, setModalConfig] = useState({ isOpen: false });
 
     useEffect(() => {
         const currentUser = authService.getCurrentUser();
@@ -28,7 +31,30 @@ function ProfilePage() {
         // Corrigido para o nome correto da coluna na DB
         if (currentUser.two_fa_enabled) setStep('verified');
         loadProfilePhoto(currentUser.id);
+
+        if (currentUser.tipo_utilizador === 'FORMANDO') {
+            loadFormandoProfile(currentUser.id);
+        }
     }, [navigate]);
+
+    const loadFormandoProfile = async (userId) => {
+        try {
+            const res = await fetch(`${API_URL}/api/formandos/${userId}/profile`, {
+                headers: getAuthHeader()
+            });
+            if (!res.ok) { // Changed from uploadRes to res
+                const errorText = await res.text(); // Changed from uploadRes to res
+                throw new Error(`Erro ao carregar perfil do formando: ${res.status} - ${errorText}`); // Adjusted error message
+            }
+            const data = await res.json(); // Changed from result to data, and uploadRes to res
+            setExtraProfile(data); // Kept original logic for setting state
+            console.log('Perfil do formando carregado:', data); // Added log
+            return data; // Return data instead of result.id or result.insertId
+        } catch (e) {
+            console.error('Erro detalhado ao carregar perfil do formando:', e); // Added detailed error log
+            setMessage({ text: `Erro ao carregar perfil: ${e.message}`, type: 'error' }); // Set message for UI
+        }
+    };
 
     const loadProfilePhoto = async (userId) => {
         try {
@@ -129,9 +155,18 @@ function ProfilePage() {
         }
     };
 
-    const handleDisable2FAAuthenticated = async () => {
-        if (!window.confirm('Tem a certeza que deseja desativar a proteção 2FA?')) return;
+    const handleDisable2FAAuthenticated = () => {
+        setModalConfig({
+            isOpen: true,
+            title: 'Desativar 2FA',
+            type: 'warning',
+            children: 'Tem a certeza que deseja desativar a proteção 2FA? Isto tornará a sua conta menos segura.',
+            confirmText: 'Sim, Desativar',
+            onConfirm: performDisable2FA
+        });
+    };
 
+    const performDisable2FA = async () => {
         try {
             setLoading(true);
             // Fazemos o pedido de recuperação para o email por segurança
@@ -140,6 +175,7 @@ function ProfilePage() {
                 text: 'Enviámos um link de desativação para o seu email por motivos de segurança.',
                 type: 'success'
             });
+            setModalConfig({ isOpen: false });
         } catch (error) {
             setMessage({ text: 'Erro ao processar pedido.', type: 'error' });
         } finally {
@@ -228,6 +264,13 @@ function ProfilePage() {
                             <Save size={18} />
                             {loading ? 'A guardar...' : 'Guardar Alterações'}
                         </button>
+
+                        {extraProfile?.curso_atual && (
+                            <div style={{ marginTop: '1.5rem', padding: '1rem', borderRadius: '12px', background: 'rgba(56, 189, 248, 0.1)', border: '1px solid rgba(56, 189, 248, 0.2)' }}>
+                                <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--primary)', marginBottom: '0.25rem', fontWeight: 'bold' }}>CURSO ATUAL</label>
+                                <div style={{ fontSize: '1.1rem', fontWeight: '600' }}>{extraProfile.curso_atual}</div>
+                            </div>
+                        )}
                     </form>
                 </div>
 
@@ -329,6 +372,11 @@ function ProfilePage() {
                     </motion.div>
                 )
             }
+
+            <Modal
+                {...modalConfig}
+                onClose={() => setModalConfig({ isOpen: false })}
+            />
         </>
     );
 }

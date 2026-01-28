@@ -57,55 +57,57 @@ const RootRoute = () => {
 
 import DashboardRootLayout from './components/layout/DashboardRootLayout';
 
-// ... imports remain the same ...
+import { ToastProvider } from './context/ToastContext';
 
 function App() {
   // Roles que têm acesso à área interna
   const internalRoles = ['ADMIN', 'SECRETARIA', 'FORMADOR', 'FORMANDO'];
 
   return (
-    <Router>
-      <ChatWidget />
-      <Routes>
-        {/* Raiz Inteligente */}
-        <Route path="/" element={<RootRoute />} />
+    <ToastProvider>
+      <Router>
+        <ChatWidget />
+        <Routes>
+          {/* Raiz Inteligente */}
+          <Route path="/" element={<RootRoute />} />
 
-        {/* Public Routes */}
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
-        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-        <Route path="/reset-password" element={<ResetPasswordPage />} />
-        <Route path="/disable-2fa" element={<Disable2FAPage />} />
+          {/* Public Routes */}
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
+          <Route path="/disable-2fa" element={<Disable2FAPage />} />
 
-        {/* Rota para Candidatos (Sem Sidebar) */}
-        <Route path="/candidato" element={<RoleBasedRoute allowedRoles={['CANDIDATO']}><CandidatoPage /></RoleBasedRoute>} />
+          {/* Rota para Candidatos (Sem Sidebar) */}
+          <Route path="/candidato" element={<RoleBasedRoute allowedRoles={['CANDIDATO']}><CandidatoPage /></RoleBasedRoute>} />
 
-        {/* Layout Global com Sidebar para Todas as Rotas Internas */}
-        <Route element={<DashboardRootLayout />}>
+          {/* Layout Global com Sidebar para Todas as Rotas Internas */}
+          <Route element={<DashboardRootLayout />}>
 
-          {/* Rotas Comuns / Admin / Secretaria */}
-          <Route path="/dashboard" element={<RoleBasedRoute allowedRoles={internalRoles}><HomePage /></RoleBasedRoute>} />
-          <Route path="/profile" element={<RoleBasedRoute allowedRoles={internalRoles}><ProfilePage /></RoleBasedRoute>} />
-          <Route path="/candidaturas" element={<RoleBasedRoute allowedRoles={['ADMIN', 'SECRETARIA']}><CandidaturasPage /></RoleBasedRoute>} />
+            {/* Rotas Comuns / Admin / Secretaria */}
+            <Route path="/dashboard" element={<RoleBasedRoute allowedRoles={internalRoles}><HomePage /></RoleBasedRoute>} />
+            <Route path="/profile" element={<RoleBasedRoute allowedRoles={internalRoles}><ProfilePage /></RoleBasedRoute>} />
+            <Route path="/candidaturas" element={<RoleBasedRoute allowedRoles={['ADMIN', 'SECRETARIA']}><CandidaturasPage /></RoleBasedRoute>} />
 
-          {/* Rota para Candidatos */}
+            {/* Rota para Candidatos */}
 
 
-          <Route path="/courses" element={<RoleBasedRoute allowedRoles={internalRoles}><CoursesPage /></RoleBasedRoute>} />
+            <Route path="/courses" element={<RoleBasedRoute allowedRoles={internalRoles}><CoursesPage /></RoleBasedRoute>} />
 
-          {/* Rotas mais específicas (Admin/Secretaria) */}
-          <Route path="/users" element={<RoleBasedRoute allowedRoles={['ADMIN', 'SECRETARIA']}><UsersPage /></RoleBasedRoute>} />
-          <Route path="/rooms" element={<RoleBasedRoute allowedRoles={internalRoles}><RoomsPage /></RoleBasedRoute>} />
-          <Route path="/turmas" element={<RoleBasedRoute allowedRoles={internalRoles}><TurmasPage /></RoleBasedRoute>} />
-          <Route path="/turmas/:id" element={<RoleBasedRoute allowedRoles={internalRoles}><TurmaDetailsPage /></RoleBasedRoute>} />
-          <Route path="/turmas/:id/schedule" element={<RoleBasedRoute allowedRoles={internalRoles}><TurmaSchedulePage /></RoleBasedRoute>} />
-          <Route path="/modules" element={<RoleBasedRoute allowedRoles={internalRoles}><ModulesPage /></RoleBasedRoute>} />
-          <Route path="/formandos" element={<RoleBasedRoute allowedRoles={internalRoles}><FormandosPage /></RoleBasedRoute>} />
-          <Route path="/formadores" element={<RoleBasedRoute allowedRoles={internalRoles}><FormadoresPage /></RoleBasedRoute>} />
-          <Route path="/schedules" element={<RoleBasedRoute allowedRoles={internalRoles}><SchedulesPage /></RoleBasedRoute>} />
-        </Route>
-      </Routes>
-    </Router>
+            {/* Rotas mais específicas (Admin/Secretaria) */}
+            <Route path="/users" element={<RoleBasedRoute allowedRoles={['ADMIN', 'SECRETARIA']}><UsersPage /></RoleBasedRoute>} />
+            <Route path="/rooms" element={<RoleBasedRoute allowedRoles={internalRoles}><RoomsPage /></RoleBasedRoute>} />
+            <Route path="/turmas" element={<RoleBasedRoute allowedRoles={internalRoles}><TurmasPage /></RoleBasedRoute>} />
+            <Route path="/turmas/:id" element={<RoleBasedRoute allowedRoles={internalRoles}><TurmaDetailsPage /></RoleBasedRoute>} />
+            <Route path="/turmas/:id/schedule" element={<RoleBasedRoute allowedRoles={internalRoles}><TurmaSchedulePage /></RoleBasedRoute>} />
+            <Route path="/modules" element={<RoleBasedRoute allowedRoles={internalRoles}><ModulesPage /></RoleBasedRoute>} />
+            <Route path="/formandos" element={<RoleBasedRoute allowedRoles={internalRoles}><FormandosPage /></RoleBasedRoute>} />
+            <Route path="/formadores" element={<RoleBasedRoute allowedRoles={internalRoles}><FormadoresPage /></RoleBasedRoute>} />
+            <Route path="/schedules" element={<RoleBasedRoute allowedRoles={internalRoles}><SchedulesPage /></RoleBasedRoute>} />
+          </Route>
+        </Routes>
+      </Router>
+    </ToastProvider>
   );
 }
 

@@ -4,14 +4,14 @@ import { db } from '../config/db.js';
 export const getTurmaSchedule = async (req, res) => {
     try {
         const { turmaId } = req.params;
-        // Precisamos juntar com turma_detalhes e modulos para saber o que é a aula
-        const [aulas] = await db.query(`
+        const { start, end } = req.query;
+
+        let query = `
             SELECT 
                 h.id, 
                 h.inicio, 
                 h.fim, 
                 m.nome_modulo,
-                f.biografia, -- aqui idealmente seria nome, mas f é tabela formadores
                 u.nome_completo as nome_formador,
                 s.nome_sala,
                 td.id as id_turma_detalhe
@@ -22,9 +22,17 @@ export const getTurmaSchedule = async (req, res) => {
             JOIN utilizadores u ON f.utilizador_id = u.id
             JOIN salas s ON td.id_sala = s.id
             WHERE td.id_turma = ?
-            ORDER BY h.inicio ASC
-        `, [turmaId]);
+        `;
+        let params = [turmaId];
 
+        if (start && end) {
+            query += ` AND h.inicio >= ? AND h.inicio <= ?`;
+            params.push(start, end);
+        }
+
+        query += ` ORDER BY h.inicio ASC`;
+
+        const [aulas] = await db.query(query, params);
         return res.json(aulas);
     } catch (error) {
         console.error('Erro ao listar horários:', error);
@@ -55,17 +63,44 @@ export const createLesson = async (req, res) => {
             return res.status(400).json({ message: 'A data de fim deve ser posterior à de início.' });
         }
 
-        // 2. Detetar Conflitos (Sala, Formador, Turma)
-        // Primeiro, obter os recursos do detalhe (sala, formador, turma)
-        const [detalhes] = await db.query('SELECT id_sala, id_formador, id_turma FROM turma_detalhes WHERE id = ?', [id_turma_detalhe]);
+        // 2. Detetar Conflitos e Validar Carga Horária
+        // Obter recursos e limites (sala, formador, turma e horas totais do módulo)
+        const [detalhes] = await db.query(`
+            SELECT td.id_sala, td.id_formador, td.id_turma, td.horas_planeadas, m.nome_modulo
+            FROM turma_detalhes td
+            JOIN modulos m ON td.id_modulo = m.id
+            WHERE td.id = ?
+        `, [id_turma_detalhe]);
 
         if (detalhes.length === 0) return res.status(404).json({ message: 'Módulo/Detalhe não encontrado' });
 
-        const { id_sala, id_formador, id_turma } = detalhes[0];
+        const { id_sala, id_formador, id_turma, horas_planeadas, nome_modulo } = detalhes[0];
 
-        // Verificar sobreposição genérica
-        // Uma aula sobrepõe se: (NewStart < ExistingEnd) AND (NewEnd > ExistingStart)
+        // Formatar datas para MySQL usando objetos Date (mysql2 trata a conversão)
+        const dateInicio = new Date(inicio);
+        const dateFim = new Date(fim);
 
+        console.log('Agendando aula:', {
+            id_turma_detalhe,
+            inicio: dateInicio.toISOString(),
+            fim: dateFim.toISOString()
+        });
+
+        // 3. Validar se ultrapassa as horas planeadas
+        const [hourCheck] = await db.query(`
+            SELECT COALESCE(SUM(TIMESTAMPDIFF(SECOND, inicio, fim)) / 3600, 0) as horas_agendadas
+            FROM horarios_aulas 
+            WHERE id_turma_detalhe = ?
+        `, [id_turma_detalhe]);
+
+        const horasAgendadas = parseFloat(hourCheck[0].horas_agendadas);
+        if (horasAgendadas + durationHours > horas_planeadas) {
+            return res.status(400).json({
+                message: `Limite de horas excedido para o módulo ${nome_modulo}. Planeado: ${horas_planeadas}h, Já agendado: ${horasAgendadas}h, Tentativa: ${durationHours}h.`
+            });
+        }
+
+        // 4. Verificar sobreposição genérica
         const [conflicts] = await db.query(`
             SELECT h.id, 'Sala' as tipo
             FROM horarios_aulas h
@@ -89,9 +124,9 @@ export const createLesson = async (req, res) => {
             WHERE td.id_turma = ?
             AND ? < h.fim AND ? > h.inicio
         `, [
-            id_sala, inicio, fim,
-            id_formador, inicio, fim,
-            id_turma, inicio, fim
+            id_sala, dateInicio, dateFim,
+            id_formador, dateInicio, dateFim,
+            id_turma, dateInicio, dateFim
         ]);
 
         if (conflicts.length > 0) {
@@ -99,13 +134,14 @@ export const createLesson = async (req, res) => {
             return res.status(409).json({ message: `Conflito de horário detetado: ${types} já ocupado(a) neste intervalo.` });
         }
 
-        await db.query('INSERT INTO horarios_aulas (id_turma_detalhe, inicio, fim) VALUES (?, ?, ?)', [id_turma_detalhe, inicio, fim]);
+        await db.query('INSERT INTO horarios_aulas (id_turma_detalhe, inicio, fim) VALUES (?, ?, ?)',
+            [id_turma_detalhe, dateInicio, dateFim]);
 
         return res.status(201).json({ message: 'Aula agendada com sucesso' });
 
     } catch (error) {
-        console.error('Erro ao agendar aula:', error);
-        return res.status(500).json({ message: 'Erro ao agendar aula' });
+        console.error('ERRO CRÍTICO AO AGENDAR:', error);
+        return res.status(500).json({ message: error.sqlMessage || 'Erro ao agendar aula' });
     }
 };
 
@@ -124,7 +160,9 @@ export const deleteLesson = async (req, res) => {
 export const getFormadorSchedule = async (req, res) => {
     try {
         const { userId } = req.params;
-        const [aulas] = await db.query(`
+        const { start, end } = req.query;
+
+        let query = `
             SELECT 
                 h.id, h.inicio, h.fim, m.nome_modulo,
                 t.codigo_turma, s.nome_sala
@@ -135,8 +173,17 @@ export const getFormadorSchedule = async (req, res) => {
             JOIN formadores f ON td.id_formador = f.id
             JOIN salas s ON td.id_sala = s.id
             WHERE f.utilizador_id = ?
-            ORDER BY h.inicio ASC
-        `, [userId]);
+        `;
+        let params = [userId];
+
+        if (start && end) {
+            query += ` AND h.inicio >= ? AND h.inicio <= ?`;
+            params.push(start, end);
+        }
+
+        query += ` ORDER BY h.inicio ASC`;
+
+        const [aulas] = await db.query(query, params);
         return res.json(aulas);
     } catch (error) {
         return res.status(500).json({ message: 'Erro ao carregar horário do formador' });
@@ -147,7 +194,9 @@ export const getFormadorSchedule = async (req, res) => {
 export const getRoomSchedule = async (req, res) => {
     try {
         const { roomId } = req.params;
-        const [aulas] = await db.query(`
+        const { start, end, dia } = req.query;
+
+        let query = `
             SELECT 
                 h.id, h.inicio, h.fim, m.nome_modulo,
                 t.codigo_turma, u.nome_completo as nome_formador
@@ -158,8 +207,20 @@ export const getRoomSchedule = async (req, res) => {
             JOIN formadores f ON td.id_formador = f.id
             JOIN utilizadores u ON f.utilizador_id = u.id
             WHERE td.id_sala = ?
-            ORDER BY h.inicio ASC
-        `, [roomId]);
+        `;
+        let params = [roomId];
+
+        if (dia) {
+            query += ` AND DATE(h.inicio) = ?`;
+            params.push(dia);
+        } else if (start && end) {
+            query += ` AND h.inicio >= ? AND h.inicio <= ?`;
+            params.push(start, end);
+        }
+
+        query += ` ORDER BY h.inicio ASC`;
+
+        const [aulas] = await db.query(query, params);
         return res.json(aulas);
     } catch (error) {
         return res.status(500).json({ message: 'Erro ao carregar ocupação da sala' });

@@ -6,9 +6,11 @@ export const getFormandoProfile = async (req, res) => {
     try {
         const { userId } = req.params;
         const [profiles] = await db.query(
-            `SELECT f.*, u.nome_completo, u.email 
+            `SELECT f.*, u.nome_completo, u.email, c.nome_curso as curso_atual
              FROM formandos f 
              JOIN utilizadores u ON f.utilizador_id = u.id 
+             LEFT JOIN inscricoes i ON i.id_formando = f.id AND i.estado = 'APROVADO'
+             LEFT JOIN cursos c ON i.id_curso = c.id
              WHERE u.id = ?`,
             [userId]
         );

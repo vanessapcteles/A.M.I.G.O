@@ -33,6 +33,7 @@ app.use('/api/formandos', formandoRoutes);
 app.use('/api/formadores', formadorRoutes);
 app.use('/api/turma-details', turmaDetalhesRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/schedules', horarioRoutes);
 app.use('/api/candidatos', candidatosRoutes);
 
 

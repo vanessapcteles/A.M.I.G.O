@@ -22,11 +22,14 @@ import {
     Calendar as CalendarIcon
 } from 'lucide-react';
 import { horarioService } from '../services/horarioService';
+import Modal from '../components/ui/Modal';
+import { useToast } from '../context/ToastContext';
 
 const locales = { 'pt': pt };
 const localizer = dateFnsLocalizer({ format, parse, startOfWeek, getDay, locales });
 
 function RoomsPage() {
+    const { toast } = useToast();
     const [rooms, setRooms] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -34,6 +37,7 @@ function RoomsPage() {
     const [editingRoom, setEditingRoom] = useState(null);
     const [viewingSchedule, setViewingSchedule] = useState(null);
     const [roomEvents, setRoomEvents] = useState([]);
+    const [modalConfig, setModalConfig] = useState({ isOpen: false });
 
     const [formData, setFormData] = useState({
         nome: '',
@@ -68,7 +72,7 @@ function RoomsPage() {
             setRoomEvents(formatted);
             setViewingSchedule(room);
         } catch (error) {
-            alert('Erro ao carregar horário da sala');
+            toast('Erro ao carregar horário da sala', 'error');
         }
     };
 
@@ -85,17 +89,29 @@ function RoomsPage() {
             setFormData({ nome: '', capacidade: '', localizacao: 'Edifício Principal' });
             loadRooms();
         } catch (error) {
-            alert(error.message);
+            toast(error.message, 'error');
         }
     };
 
-    const handleDelete = async (id) => {
-        if (!window.confirm('Tem a certeza que deseja eliminar esta sala?')) return;
+    const handleDelete = (id) => {
+        setModalConfig({
+            isOpen: true,
+            title: 'Eliminar Sala',
+            type: 'danger',
+            children: 'Tem a certeza que deseja eliminar esta sala? Esta ação pode afetar horários existentes.',
+            confirmText: 'Eliminar',
+            onConfirm: () => performDelete(id)
+        });
+    };
+
+    const performDelete = async (id) => {
         try {
             await roomService.deleteRoom(id);
             loadRooms();
+            setModalConfig({ isOpen: false });
+            toast('Sala eliminada com sucesso!');
         } catch (error) {
-            alert(error.message);
+            toast(error.message, 'error');
         }
     };
 
@@ -308,6 +324,11 @@ function RoomsPage() {
                     </motion.div>
                 </div>
             )}
+
+            <Modal
+                {...modalConfig}
+                onClose={() => setModalConfig({ isOpen: false })}
+            />
         </>
     );
 }

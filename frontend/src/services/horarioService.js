@@ -2,8 +2,14 @@ import { API_URL, getAuthHeader } from './authService';
 
 export const horarioService = {
     // Obter horários da turma
-    getTurmaSchedule: async (turmaId) => {
-        const response = await fetch(`${API_URL}/api/schedules/turma/${turmaId}`, { headers: getAuthHeader() });
+    getTurmaSchedule: async (turmaId, start, end) => {
+        let url = `${API_URL}/api/schedules/turma/${turmaId}`;
+        const params = new URLSearchParams();
+        if (start) params.append('start', start);
+        if (end) params.append('end', end);
+        if (params.toString()) url += `?${params.toString()}`;
+
+        const response = await fetch(url, { headers: getAuthHeader() });
         if (!response.ok) throw new Error('Erro ao carregar horários');
         return response.json();
     },
@@ -32,20 +38,39 @@ export const horarioService = {
         return response.json();
     },
 
-    getFormadorSchedule: async (userId) => {
-        const response = await fetch(`${API_URL}/api/schedules/formador/${userId}`, { headers: getAuthHeader() });
+    getFormadorSchedule: async (userId, start, end) => {
+        let url = `${API_URL}/api/schedules/formador/${userId}`;
+        const params = new URLSearchParams();
+        if (start) params.append('start', start);
+        if (end) params.append('end', end);
+        if (params.toString()) url += `?${params.toString()}`;
+
+        const response = await fetch(url, { headers: getAuthHeader() });
         if (!response.ok) throw new Error('Erro ao carregar horário do formador');
         return response.json();
     },
 
-    getRoomSchedule: async (roomId) => {
-        const response = await fetch(`${API_URL}/api/schedules/room/${roomId}`, { headers: getAuthHeader() });
+    getRoomSchedule: async (roomId, start, end, dia) => {
+        let url = `${API_URL}/api/schedules/room/${roomId}`;
+        const params = new URLSearchParams();
+        if (dia) params.append('dia', dia);
+        if (start) params.append('start', start);
+        if (end) params.append('end', end);
+        if (params.toString()) url += `?${params.toString()}`;
+
+        const response = await fetch(url, { headers: getAuthHeader() });
         if (!response.ok) throw new Error('Erro ao carregar ocupação da sala');
         return response.json();
     },
 
-    getAllSchedules: async () => {
-        const response = await fetch(`${API_URL}/api/schedules/all`, { headers: getAuthHeader() });
+    getAllSchedules: async (start, end) => {
+        let url = `${API_URL}/api/schedules/all`;
+        const params = new URLSearchParams();
+        if (start) params.append('start', start);
+        if (end) params.append('end', end);
+        if (params.toString()) url += `?${params.toString()}`;
+
+        const response = await fetch(url, { headers: getAuthHeader() });
         if (!response.ok) throw new Error('Erro ao carregar todos os horários');
         return response.json();
     }

@@ -5,8 +5,10 @@ import { authService, API_URL } from '../services/authService';
 import { Upload, CheckCircle, ChevronRight, User, Phone, MapPin, AlertCircle, FileText } from 'lucide-react';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
+import Modal from '../components/ui/Modal';
 
 const CandidacyPage = () => {
+    const [modalConfig, setModalConfig] = useState({ isOpen: false });
     const location = useLocation();
     const [user, setUser] = useState(authService.getCurrentUser());
     const [step, setStep] = useState(1);
@@ -16,6 +18,7 @@ const CandidacyPage = () => {
     const [courseOfInterest, setCourseOfInterest] = useState(null);
     const [errors, setErrors] = useState({});
     const [candidacyStatus, setCandidacyStatus] = useState(null);
+    const [existingCandidacy, setExistingCandidacy] = useState(null);
 
     // Form Data
     const [formData, setFormData] = useState({
@@ -41,6 +44,7 @@ const CandidacyPage = () => {
             const data = await res.json();
             if (data && data.id) {
                 // User already has a candidacy -> Show Status Code
+                setExistingCandidacy(data);
                 setFormData(data.dados_candidatura || {});
                 setCandidacyStatus(data.estado);
                 // Ensure we know the course so Step 1 shows the form instead of "Welcome"
@@ -133,16 +137,15 @@ const CandidacyPage = () => {
 
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(10);
-        doc.text(`Nome: ${formData.nome_completo}`, 70, 65); // Use formData name
+        doc.text(`Nome: ${formData.nome_completo}`, 70, 65);
         doc.text(`Email: ${user.email}`, 70, 72);
         doc.text(`Telemóvel: ${formData.telemovel}`, 70, 79);
         doc.text(`Data Nascimento: ${formData.data_nascimento}`, 70, 86);
         doc.text(`Morada: ${formData.morada}`, 70, 93);
 
         const pdfBlob = doc.output('blob');
-        const pdfFile = new File([pdfBlob], `Candidatura_${formData.nome_completo.replace(/\s+/g, '_')}.pdf`, { type: 'application/pdf' }); // Use formData name for filename
+        const pdfFile = new File([pdfBlob], `Candidatura_${formData.nome_completo.replace(/\s+/g, '_')}.pdf`, { type: 'application/pdf' });
 
-        // Upload do PDF
         const uploadData = new FormData();
         uploadData.append('file', pdfFile);
         uploadData.append('categoria', 'documento');
@@ -153,17 +156,13 @@ const CandidacyPage = () => {
             body: uploadData
         });
 
-        // Precisamos do ID do ficheiro recém criado para ligar à candidatura
-        // Workaround: Listar ficheiros e pegar o PDF
-        const listRes = await fetch(`${API_URL}/api/files/user/${user.id}`, {
-            headers: { 'Authorization': `Bearer ${localStorage.getItem('auth_token')}` }
-        });
-        const files = await listRes.json();
-
-        // Find the PDF file we just uploaded (assuming it's the most recent PDF or by mime type)
-        const pdfFileObj = files.find(f => f.tipo_ficheiro === 'application/pdf');
-
-        return pdfFileObj?.id || files[0]?.id; // Fallback to first if filtering fails, but prefer PDF
+        if (!uploadRes.ok) {
+            const errorText = await uploadRes.text();
+            throw new Error(`Erro no upload do PDF: ${uploadRes.status} - ${errorText}`);
+        }
+        const result = await uploadRes.json();
+        console.log('Resultado do upload do PDF:', result);
+        return result.id || result.insertId;
     };
 
     const handleSubmit = async () => {
@@ -174,36 +173,49 @@ const CandidacyPage = () => {
                 const photoData = new FormData();
                 photoData.append('file', photoFile);
                 photoData.append('categoria', 'foto');
-                await fetch(`${API_URL}/api/files/user/${user.id}`, {
+                const photoRes = await fetch(`${API_URL}/api/files/user/${user.id}`, {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer ${localStorage.getItem('auth_token')}` },
                     body: photoData
                 });
+                if (!photoRes.ok) throw new Error('Erro ao carregar foto de perfil.');
             }
 
             // 2. Gerar e Upload PDF
             const pdfId = await generateAndUploadPDF();
+            if (!pdfId) throw new Error('Erro ao gerar ID do PDF.');
 
             // 3. Submeter Candidatura
-            await fetch(`${API_URL}/api/candidatos/submit`, {
+            const submitRes = await fetch(`${API_URL}/api/candidatos/submit`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
                 },
                 body: JSON.stringify({
-                    // user_id is extracted from token in backend
-                    curso_id: courseOfInterest || 1, // Default para 1 se não vier (TBD: Dropdown de cursos)
-                    dados_candidatura: formData, // Backend expects dados_candidatura
+                    curso_id: courseOfInterest || 1,
+                    dados_candidatura: formData,
                     pdf_file_id: pdfId
                 })
             });
 
-            setCandidacyStatus('PENDENTE'); // Assume pendente logo após envio
-            setStep(3); // Sucesso
+            if (submitRes.ok) {
+                await checkExistingCandidacy();
+                setStep(3);
+            } else {
+                const err = await submitRes.json();
+                throw new Error(err.message || 'Erro ao submeter candidatura no servidor.');
+            }
         } catch (error) {
             console.error(error);
-            alert('Erro ao submeter candidatura.');
+            setModalConfig({
+                isOpen: true,
+                title: 'Erro na Candidatura',
+                type: 'danger',
+                children: error.message || 'Ocorreu um erro ao processar a sua candidatura. Por favor, tente novamente.',
+                confirmText: 'Entendido',
+                onConfirm: () => setModalConfig({ isOpen: false })
+            });
         } finally {
             setLoading(false);
         }
@@ -239,7 +251,7 @@ const CandidacyPage = () => {
                     </div>
                     <h3 style={{ fontSize: '2rem', fontWeight: 'bold', marginBottom: '1rem', fontFamily: 'var(--font-title)' }}>Candidatura Aprovada!</h3>
                     <p style={{ color: 'var(--text-secondary)', maxWidth: '400px', marginBottom: '2rem', lineHeight: '1.6' }}>
-                        Parabéns! A sua candidatura foi validada pela secretaria.
+                        Parabéns! A sua candidatura para o curso <strong>{existingCandidacy?.nome_curso}</strong> foi validada pela secretaria.
                         Brevemente receberá mais informações sobre a matrícula.
                     </p>
                 </>
@@ -254,7 +266,7 @@ const CandidacyPage = () => {
                 </div>
                 <h3 style={{ fontSize: '2rem', fontWeight: 'bold', marginBottom: '1rem', fontFamily: 'var(--font-title)' }}>Candidatura em Análise</h3>
                 <p style={{ color: 'var(--text-secondary)', maxWidth: '400px', marginBottom: '2rem', lineHeight: '1.6' }}>
-                    Os seus dados foram enviados com sucesso.
+                    Os seus dados para o curso <strong>{existingCandidacy?.nome_curso}</strong> foram enviados com sucesso.
                     A secretaria irá analisar a sua candidatura e notificá-lo brevemente.
                 </p>
                 <button className="btn-primary" style={{ background: 'transparent', border: '1px solid var(--border-glass)' }} onClick={() => { authService.logout(); window.location.href = '/'; }}>
@@ -486,6 +498,11 @@ const CandidacyPage = () => {
                     </div>
                 </div>
             )}
+
+            <Modal
+                {...modalConfig}
+                onClose={() => setModalConfig({ isOpen: false })}
+            />
         </div>
     );
 };

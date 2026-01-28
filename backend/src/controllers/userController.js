@@ -54,7 +54,13 @@ export const updateUser = async (req, res) => {
         const { id } = req.params;
         const { nome_completo, email, tipo_utilizador } = req.body;
 
-        const [existing] = await db.query('SELECT * FROM utilizadores WHERE id = ?', [id]);
+        const [existing] = await db.query(
+            `SELECT u.*, r.nome as tipo_utilizador 
+             FROM utilizadores u 
+             JOIN roles r ON u.role_id = r.id 
+             WHERE u.id = ?`,
+            [id]
+        );
         if (existing.length === 0) return res.status(404).json({ message: 'Utilizador não encontrado' });
 
         let role_id = existing[0].role_id;
@@ -69,26 +75,40 @@ export const updateUser = async (req, res) => {
         );
 
         // Gestão de Perfis
+        // Gestão de Perfis - Apenas se a role mudar ou se não existir perfil
         if (tipo_utilizador) {
             const role = tipo_utilizador.toUpperCase();
-            try {
-                // Limpar perfis antigos (Garantir que só existe numa tabela de perfil)
-                await db.query('DELETE FROM formandos WHERE utilizador_id = ?', [id]);
-                await db.query('DELETE FROM formadores WHERE utilizador_id = ?', [id]);
-                await db.query('DELETE FROM secretaria WHERE utilizador_id = ?', [id]);
+            const oldRole = existing[0].tipo_utilizador?.toUpperCase();
 
-                // Criar novo perfil
+            try {
+                // Se a role mudou, podemos limpar perfis antigos (opcional, dependendo da regra de negócio)
+                // Mas o mais importante é NÃO apagar se a role for a mesma
+                if (role !== oldRole) {
+                    // Só removemos se for uma mudança real de categoria
+                    // Nota: Admin e Secretaria partilham a mesma tabela 'secretaria'
+                    const isNewSecretaria = (role === 'SECRETARIA' || role === 'ADMIN');
+                    const isOldSecretaria = (oldRole === 'SECRETARIA' || oldRole === 'ADMIN');
+
+                    if (!((isNewSecretaria && isOldSecretaria) || (role === oldRole))) {
+                        await db.query('DELETE FROM formandos WHERE utilizador_id = ?', [id]);
+                        await db.query('DELETE FROM formadores WHERE utilizador_id = ?', [id]);
+                        // Se não for admin/secretaria, remove da secretaria
+                        if (!isNewSecretaria) {
+                            await db.query('DELETE FROM secretaria WHERE utilizador_id = ?', [id]);
+                        }
+                    }
+                }
+
+                // Criar novo perfil se não existir (INSERT IGNORE preserva dados se já existir)
                 if (role === 'FORMANDO') {
                     await db.query('INSERT IGNORE INTO formandos (utilizador_id) VALUES (?)', [id]);
                 } else if (role === 'FORMADOR') {
                     await db.query('INSERT IGNORE INTO formadores (utilizador_id) VALUES (?)', [id]);
                 } else if (role === 'SECRETARIA' || role === 'ADMIN') {
-                    // Admin faz parte da secretaria
                     await db.query('INSERT IGNORE INTO secretaria (utilizador_id, cargo) VALUES (?, ?)', [id, 'Técnico']);
                 }
             } catch (profileError) {
                 console.error('Erro ao gerir perfil:', profileError);
-                // faz apenas o login, não falha o request
             }
         }
 

@@ -135,34 +135,80 @@ function TurmaSchedulePage() {
                 </button>
             </div>
 
-            <div className="glass-card" style={{ height: '600px', color: 'black' }}> {/* BigCalendar precisa de cor de texto escura ou CSS adaptado */}
-                <style>{`
-                    .rbc-calendar { color: var(--text-primary); }
-                    .rbc-off-range-bg { background: rgba(255,255,255,0.05); }
-                    .rbc-header { color: var(--text-secondary); border-bottom: 1px solid var(--border-glass); }
-                    .rbc-today { background: rgba(59, 130, 246, 0.1); }
-                    .rbc-event { background-color: var(--primary); border: none; }
-                `}</style>
-                <Calendar
-                    localizer={localizer}
-                    events={events}
-                    startAccessor="start"
-                    endAccessor="end"
-                    style={{ height: '100%' }}
-                    messages={{
-                        next: "Seguinte",
-                        previous: "Anterior",
-                        today: "Hoje",
-                        month: "Mês",
-                        week: "Semana",
-                        day: "Dia"
-                    }}
-                    culture='pt'
-                    selectable
-                    onSelectSlot={handleSelectSlot}
-                    onSelectEvent={handleSelectEvent}
-                    defaultView='week'
-                />
+            <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: '1.5rem', alignItems: 'start' }}>
+                {/* Painel Lateral de Módulos */}
+                <div className="glass-card" style={{ padding: '1.5rem' }}>
+                    <h3 style={{ fontSize: '1.1rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <CalendarIcon size={18} color="var(--primary)" /> Monitorização de Horas
+                    </h3>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                        {turmaModules.map(m => {
+                            const percent = Math.min((m.horas_agendadas / m.horas_planeadas) * 100, 100);
+                            const isFull = m.horas_agendadas >= m.horas_planeadas;
+
+                            return (
+                                <div key={m.id}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontSize: '0.85rem' }}>
+                                        <span style={{ fontWeight: '500', color: isFull ? 'var(--text-muted)' : 'white' }}>{m.nome_modulo}</span>
+                                        <span style={{ color: isFull ? '#10b981' : 'var(--text-secondary)' }}>
+                                            {m.horas_agendadas} / {m.horas_planeadas}h
+                                        </span>
+                                    </div>
+                                    <div className="progress-container">
+                                        <div
+                                            className="progress-bar"
+                                            style={{
+                                                width: `${percent}%`,
+                                                backgroundColor: isFull ? '#10b981' : (percent > 90 ? '#f59e0b' : 'var(--primary)')
+                                            }}
+                                        />
+                                    </div>
+                                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '0.4rem' }}>
+                                        {m.nome_formador} • {m.nome_sala}
+                                    </div>
+                                </div>
+                            );
+                        })}
+                        {turmaModules.length === 0 && <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Nenhum módulo associado.</p>}
+                    </div>
+                </div>
+
+                {/* Calendário */}
+                <div className="glass-card" style={{ height: '700px', color: 'black' }}>
+                    <style>{`
+                        .rbc-calendar { color: var(--text-primary); }
+                        .rbc-off-range-bg { background: rgba(255,255,255,0.02); }
+                        .rbc-header { color: var(--text-secondary); border-bottom: 1px solid var(--border-glass); padding: 10px 0; }
+                        .rbc-today { background: rgba(56, 189, 248, 0.05); }
+                        .rbc-time-content { border-top: 1px solid var(--border-glass); }
+                        .rbc-time-gutter { color: var(--text-secondary); }
+                        .rbc-timeslot-group { border-bottom: 1px solid var(--border-glass); }
+                        .rbc-toolbar button { color: white; border: 1px solid var(--border-glass); background: rgba(255,255,255,0.05); }
+                        .rbc-toolbar button:active, .rbc-toolbar button.rbc-active { background: var(--primary); box-shadow: none; }
+                        .rbc-event { padding: 4px 8px; font-size: 0.85rem; border-radius: 6px; }
+                    `}</style>
+                    <Calendar
+                        localizer={localizer}
+                        events={events}
+                        startAccessor="start"
+                        endAccessor="end"
+                        style={{ height: '100%' }}
+                        messages={{
+                            next: "Seguinte",
+                            previous: "Anterior",
+                            today: "Hoje",
+                            month: "Mês",
+                            week: "Semana",
+                            day: "Dia"
+                        }}
+                        culture='pt'
+                        selectable
+                        onSelectSlot={handleSelectSlot}
+                        onSelectEvent={handleSelectEvent}
+                        defaultView='week'
+                    />
+                </div>
             </div>
 
             {showModal && (

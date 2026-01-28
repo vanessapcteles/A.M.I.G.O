@@ -5,6 +5,8 @@ export const submitCandidacy = async (req, res) => {
         const { curso_id, dados_candidatura, pdf_file_id } = req.body;
         const user_id = req.user.id;
 
+        console.log('Submetendo candidatura:', { user_id, curso_id, pdf_file_id });
+
         if (!curso_id || !pdf_file_id) {
             return res.status(400).json({ message: 'Curso e PDF são obrigatórios.' });
         }
@@ -34,8 +36,8 @@ export const submitCandidacy = async (req, res) => {
 
         await db.query(
             `INSERT INTO inscricoes 
-            (user_id, id_curso, estado, dados_candidatura, pdf_file_id) 
-            VALUES (?, ?, 'PENDENTE', ?, ?)`,
+            (user_id, id_curso, estado, dados_candidatura, pdf_file_id, data_inscricao) 
+            VALUES (?, ?, 'PENDENTE', ?, ?, NOW())`,
             [user_id, curso_id, JSON.stringify(dados_candidatura), pdf_file_id]
         );
 

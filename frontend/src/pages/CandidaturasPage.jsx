@@ -2,13 +2,19 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { API_URL } from '../services/authService';
 import { Check, X, FileText, Search, Filter, AlertCircle } from 'lucide-react';
-import { authService } from '../services/authService';
+import Modal from '../components/ui/Modal';
+import { useToast } from '../context/ToastContext';
 
 const CandidaciesListPage = () => {
+    const { toast } = useToast();
     const [candidacies, setCandidacies] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [actionLoading, setActionLoading] = useState(false);
     const [filter, setFilter] = useState('ALL'); // ALL, PENDENTE, APROVADO, REJEITADO
     const [searchTerm, setSearchTerm] = useState('');
+
+    // Modal State
+    const [modalConfig, setModalConfig] = useState({ isOpen: false });
 
     useEffect(() => {
         fetchCandidacies();
@@ -29,36 +35,71 @@ const CandidaciesListPage = () => {
         }
     };
 
-    const handleApprove = async (id) => {
-        if (!window.confirm('Tem a certeza? Isso promoverá o utilizador a Formando.')) return;
+    const handleApprove = (id) => {
+        setModalConfig({
+            isOpen: true,
+            title: 'Aprovar Candidatura',
+            type: 'info',
+            children: 'Tem a certeza que deseja aprovar esta candidatura? O utilizador será promovido a Formando.',
+            onConfirm: () => performApprove(id),
+            confirmText: 'Aprovar'
+        });
+    };
+
+    const performApprove = async (id) => {
         try {
+            setActionLoading(true);
             const token = localStorage.getItem('auth_token');
             const res = await fetch(`${API_URL}/api/candidatos/${id}/approve`, {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (res.ok) {
-                alert('Candidatura aprovada!');
-                fetchCandidacies();
+                toast('Candidatura aprovada com sucesso!');
+                await fetchCandidacies();
+                setModalConfig({ isOpen: false });
             } else {
-                alert('Erro ao aprovar.');
+                toast('Erro ao aprovar candidatura', 'error');
             }
         } catch (error) {
             console.error(error);
+            toast('Erro de ligação ao servidor', 'error');
+        } finally {
+            setActionLoading(false);
         }
     };
 
-    const handleReject = async (id) => {
-        if (!window.confirm('Rejeitar esta candidatura?')) return;
+    const handleReject = (id) => {
+        setModalConfig({
+            isOpen: true,
+            title: 'Rejeitar Candidatura',
+            type: 'danger',
+            children: 'Tem a certeza que deseja rejeitar esta candidatura? Esta ação não pode ser desfeita.',
+            onConfirm: () => performReject(id),
+            confirmText: 'Rejeitar'
+        });
+    };
+
+    const performReject = async (id) => {
         try {
+            setActionLoading(true);
             const token = localStorage.getItem('auth_token');
-            await fetch(`${API_URL}/api/candidatos/${id}/reject`, {
+            const res = await fetch(`${API_URL}/api/candidatos/${id}/reject`, {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}` }
             });
-            fetchCandidacies();
+            if (res.ok) {
+                toast('Candidatura rejeitada.');
+                await fetchCandidacies();
+                setModalConfig({ isOpen: false });
+            } else {
+                toast('Erro ao rejeitar candidatura', 'error');
+            }
         } catch (error) {
             console.error(error);
+            toast('Erro de ligação ao servidor', 'error');
+        } finally {
+            setActionLoading(false);
         }
     };
 
@@ -222,8 +263,13 @@ const CandidaciesListPage = () => {
                     </table>
                 </div>
             </div>
-        </div>
 
+            <Modal
+                {...modalConfig}
+                loading={actionLoading}
+                onClose={() => setModalConfig({ isOpen: false })}
+            />
+        </div>
     );
 };
 

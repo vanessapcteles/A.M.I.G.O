@@ -7,20 +7,27 @@ export const uploadFile = async (req, res) => {
             return res.status(400).json({ message: 'Nenhum ficheiro enviado.' });
         }
 
-        const { id } = req.params; // ID do Utilizador a quem pertence o ficheiro
-        const { categoria } = req.body; // 'foto', 'documento', 'outro'
+        const { id } = req.params;
+        const { categoria } = req.body;
+
+        console.log(`Upload pedido para user ${id}, categoria ${categoria}`);
 
         const allowedCategories = ['foto', 'documento', 'outro'];
         const fileCategory = allowedCategories.includes(categoria) ? categoria : 'documento';
 
         // Inserir na DB (BLOB)
-        await db.query(
+        const [result] = await db.query(
             `INSERT INTO ficheiros_anexos (utilizador_id, categoria, nome_original, tipo_ficheiro, dados)
              VALUES (?, ?, ?, ?, ?)`,
             [id, fileCategory, req.file.originalname, req.file.mimetype, req.file.buffer]
         );
 
-        return res.status(201).json({ message: 'Ficheiro guardado com sucesso.' });
+        console.log('Ficheiro guardado. ID:', result.insertId);
+
+        return res.status(201).json({
+            message: 'Ficheiro guardado com sucesso.',
+            id: result.insertId
+        });
     } catch (error) {
         console.error('Erro no upload:', error);
         return res.status(500).json({ message: 'Erro ao guardar ficheiro.' });

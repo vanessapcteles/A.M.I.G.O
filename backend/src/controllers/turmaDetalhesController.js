@@ -14,7 +14,10 @@ export const getTurmaModules = async (req, res) => {
                 u.nome_completo as nome_formador,
                 f.id as id_formador,
                 s.nome_sala,
-                s.id as id_sala
+                s.id as id_sala,
+                (SELECT COALESCE(SUM(TIMESTAMPDIFF(SECOND, h.inicio, h.fim)) / 3600, 0) 
+                 FROM horarios_aulas h 
+                 WHERE h.id_turma_detalhe = td.id) as horas_agendadas
             FROM turma_detalhes td
             JOIN modulos m ON td.id_modulo = m.id
             JOIN formadores f ON td.id_formador = f.id

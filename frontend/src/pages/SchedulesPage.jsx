@@ -25,14 +25,25 @@ const localizer = dateFnsLocalizer({
 function SchedulesPage() {
     const [events, setEvents] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [startDate, setStartDate] = useState('');
+    const [endDate, setEndDate] = useState('');
 
     useEffect(() => {
         loadAllSchedules();
-    }, []);
+    }, [startDate, endDate]);
 
     const loadAllSchedules = async () => {
+        setLoading(true);
         try {
-            const data = await horarioService.getAllSchedules();
+            // Se as datas estiverem preenchidas, enviamos no request
+            let data;
+            if (startDate && endDate) {
+                // Aqui podemos usar getAllSchedules com parâmetros se o service suportar, 
+                // ou apenas filtrar no frontend se preferir, mas o requisito pede consulta rápida (backend)
+                data = await horarioService.getAllSchedules(startDate, endDate);
+            } else {
+                data = await horarioService.getAllSchedules();
+            }
 
             const formattedEvents = data.map(lesson => ({
                 id: lesson.id,
@@ -69,9 +80,41 @@ function SchedulesPage() {
                 <div style={{ padding: '0.75rem', borderRadius: '12px', background: 'rgba(56, 189, 248, 0.1)', color: 'var(--primary)' }}>
                     <CalendarIcon size={24} />
                 </div>
-                <div>
+                <div style={{ flex: 1 }}>
                     <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>Horário Geral</h1>
                     <p style={{ color: 'var(--text-secondary)' }}>Visualize todas as aulas agendadas na academia</p>
+                </div>
+
+                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                        <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Desde</label>
+                        <input
+                            type="date"
+                            className="input-field"
+                            style={{ padding: '0.4rem 0.75rem', fontSize: '0.85rem' }}
+                            value={startDate}
+                            onChange={(e) => setStartDate(e.target.value)}
+                        />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                        <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Até</label>
+                        <input
+                            type="date"
+                            className="input-field"
+                            style={{ padding: '0.4rem 0.75rem', fontSize: '0.85rem' }}
+                            value={endDate}
+                            onChange={(e) => setEndDate(e.target.value)}
+                        />
+                    </div>
+                    {(startDate || endDate) && (
+                        <button
+                            onClick={() => { setStartDate(''); setEndDate(''); }}
+                            className="btn-glass"
+                            style={{ marginTop: '1.2rem', padding: '0.4rem' }}
+                        >
+                            Limpar
+                        </button>
+                    )}
                 </div>
             </div>
 

@@ -187,3 +187,18 @@ select.input-field option {
   background-clip: text;
   -webkit-text-fill-color: transparent;
 }
+
+/* Progress Bars */
+.progress-container {
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.progress-bar {
+  height: 100%;
+  border-radius: 10px;
+  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
