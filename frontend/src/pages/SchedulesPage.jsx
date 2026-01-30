@@ -66,7 +66,7 @@ function SchedulesPage() {
             backgroundColor: 'var(--primary)',
             borderRadius: '10px',
             opacity: 0.9,
-            color: 'white',
+            color: 'var(--text-primary)',
             border: 'none',
             display: 'block',
             padding: '5px 10px',
@@ -79,7 +79,7 @@ function SchedulesPage() {
     return (
         <>
             <div style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                <div style={{ padding: '0.75rem', borderRadius: '12px', background: 'rgba(56, 189, 248, 0.1)', color: 'var(--primary)' }}>
+                <div style={{ padding: '0.75rem', borderRadius: '12px', background: 'var(--primary-glow)', color: 'var(--primary)' }}>
                     <CalendarIcon size={24} />
                 </div>
                 <div style={{ flex: 1 }}>
@@ -114,7 +114,7 @@ function SchedulesPage() {
             <div className="glass-card" style={{ padding: '1.5rem', minHeight: '750px' }}>
                 <style>{`
                     .rbc-calendar { font-family: inherit; }
-                    .rbc-off-range-bg { background: rgba(0,0,0,0.1); }
+                    .rbc-off-range-bg { background: var(--card-hover-bg); }
                     .rbc-header { 
                         color: var(--text-secondary); 
                         border-bottom: 1px solid var(--border-glass) !important; 
@@ -124,23 +124,23 @@ function SchedulesPage() {
                         font-size: 0.75rem;
                         letter-spacing: 0.05em;
                     }
-                    .rbc-today { background: rgba(56, 189, 248, 0.1) !important; }
+                    .rbc-today { background: var(--primary-glow) !important; }
                     .rbc-time-content { border-top: 2px solid var(--border-glass) !important; }
                     .rbc-time-gutter { color: var(--text-muted); font-size: 0.75rem; font-weight: 500; }
                     .rbc-timeslot-group { border-bottom: 1px solid var(--border-glass) !important; min-height: 50px !important; }
-                    .rbc-day-slot .rbc-time-slot { border-top: 1px solid rgba(255,255,255,0.03) !important; }
+                    .rbc-day-slot .rbc-time-slot { border-top: 1px solid var(--border-glass) !important; }
                     .rbc-month-view, .rbc-time-view, .rbc-agenda-view { 
                         border: 1px solid var(--border-glass) !important; 
                         border-radius: 12px;
                         overflow: hidden;
-                        background: rgba(0,0,0,0.2);
+                        background: var(--card-hover-bg);
                     }
                     .rbc-day-bg + .rbc-day-bg { border-left: 1px solid var(--border-glass) !important; }
                     .rbc-time-header-content { border-left: 1px solid var(--border-glass) !important; }
                     .rbc-time-content > * + * > * { border-left: 1px solid var(--border-glass) !important; }
-                    .rbc-agenda-view table.rbc-agenda-table { border: none !important; color: white; }
+                    .rbc-agenda-view table.rbc-agenda-table { border: none !important; color: var(--text-primary); }
                     .rbc-agenda-view table.rbc-agenda-table thead > tr > th { border-bottom: 2px solid var(--border-glass) !important; color: var(--text-secondary); }
-                    .rbc-agenda-event-cell { color: white !important; }
+                    .rbc-agenda-event-cell { color: var(--text-primary) !important; }
                 `}</style>
 
                 {loading ? (

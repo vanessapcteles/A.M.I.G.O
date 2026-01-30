@@ -9,8 +9,11 @@ import {
     DoorOpen,
     Settings,
     LogOut,
-    FileText
+    FileText,
+    Sun,
+    Moon
 } from 'lucide-react';
+import { useTheme } from '../../context/ThemeContext';
 
 const Sidebar = () => {
     const navigate = useNavigate();
@@ -74,6 +77,8 @@ const Sidebar = () => {
         navigate('/'); // Redirecionar para a Landing Page
     };
 
+    const { isDarkMode, toggleTheme } = useTheme();
+
     return (
         <aside className="sidebar">
             <div style={{ padding: '1rem 0 2rem 0', textAlign: 'center' }}>
@@ -94,6 +99,15 @@ const Sidebar = () => {
             </nav>
 
             <div style={{ marginTop: 'auto', borderTop: '1px solid var(--border-glass)', paddingTop: '1rem' }}>
+                <button
+                    onClick={toggleTheme}
+                    className="nav-link"
+                    style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
+                >
+                    {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
+                    <span>{isDarkMode ? 'Modo Claro' : 'Modo Escuro'}</span>
+                </button>
+
                 <NavLink to="/profile" className="nav-link">
                     <Settings size={20} />
                     <span>Configurações</span>

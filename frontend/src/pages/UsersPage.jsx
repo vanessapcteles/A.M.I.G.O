@@ -169,9 +169,9 @@ function UsersPage() {
                     </div>
                 ) : (
                     <div style={{ overflowX: 'auto' }}>
-                        <table style={{ width: '100%', borderCollapse: 'collapse', color: 'var(--text-primary)' }}>
+                        <table style={{ color: 'var(--text-primary)' }}>
                             <thead>
-                                <tr style={{ background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid var(--border-glass)' }}>
+                                <tr>
                                     <th style={{ padding: '1.25rem 1.5rem', textAlign: 'left', fontWeight: '600', fontSize: '0.875rem' }}>Utilizador</th>
                                     <th style={{ padding: '1.25rem 1.5rem', textAlign: 'left', fontWeight: '600', fontSize: '0.875rem' }}>Função</th>
                                     <th style={{ padding: '1.25rem 1.5rem', textAlign: 'left', fontWeight: '600', fontSize: '0.875rem' }}>Estado</th>
@@ -186,9 +186,7 @@ function UsersPage() {
                                             initial={{ opacity: 0 }}
                                             animate={{ opacity: 1 }}
                                             exit={{ opacity: 0 }}
-                                            style={{ borderBottom: '1px solid var(--border-glass)', transition: 'background 0.2s' }}
-                                            onMouseOver={e => e.currentTarget.style.background = 'rgba(255,255,255,0.02)'}
-                                            onMouseOut={e => e.currentTarget.style.background = 'transparent'}
+                                            style={{ borderBottom: '1px solid var(--border-glass)' }}
                                         >
                                             <td style={{ padding: '1rem 1.5rem' }}>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
@@ -232,17 +230,15 @@ function UsersPage() {
                                                         style={{
                                                             padding: '0.25rem 0.5rem',
                                                             width: 'auto',
-                                                            background: 'rgba(15, 23, 42, 0.9)',
-                                                            border: '1px solid var(--border-glass)',
                                                             fontSize: '0.875rem',
-                                                            color: 'white'
+                                                            cursor: 'pointer'
                                                         }}
                                                     >
-                                                        <option value="CANDIDATO" style={{ background: '#1e293b', color: 'white' }}>Candidato</option>
-                                                        <option value="FORMANDO" style={{ background: '#1e293b', color: 'white' }}>Formando</option>
-                                                        <option value="FORMADOR" style={{ background: '#1e293b', color: 'white' }}>Formador</option>
-                                                        <option value="SECRETARIA" style={{ background: '#1e293b', color: 'white' }}>Secretaria</option>
-                                                        <option value="ADMIN" style={{ background: '#1e293b', color: 'white' }}>Admin</option>
+                                                        <option value="CANDIDATO">Candidato</option>
+                                                        <option value="FORMANDO">Formando</option>
+                                                        <option value="FORMADOR">Formador</option>
+                                                        <option value="SECRETARIA">Secretaria</option>
+                                                        <option value="ADMIN">Admin</option>
                                                     </select>
                                                 </div>
                                             </td>

@@ -193,7 +193,7 @@ function RoomsPage() {
                             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
                                 <div style={{
                                     padding: '0.75rem',
-                                    background: 'rgba(59, 130, 246, 0.1)',
+                                    background: 'var(--primary-glow)',
                                     borderRadius: '12px',
                                     color: 'var(--primary)'
                                 }}>
@@ -230,7 +230,7 @@ function RoomsPage() {
                 {viewingSchedule && (
                     <div style={{
                         position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-                        background: 'rgba(0,0,0,0.9)', display: 'flex', alignItems: 'center',
+                        background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center',
                         justifyContent: 'center', zIndex: 1100, backdropFilter: 'blur(10px)'
                     }}>
                         <motion.div
@@ -238,14 +238,14 @@ function RoomsPage() {
                             animate={{ opacity: 1, scale: 1 }}
                             exit={{ opacity: 0, scale: 0.9 }}
                             className="glass-card"
-                            style={{ maxWidth: '900px', width: '95%', height: '80vh', padding: '2rem', color: 'white' }}
+                            style={{ maxWidth: '900px', width: '95%', height: '80vh', padding: '2rem' }}
                         >
                             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
                                 <div>
                                     <h2>Estado de Alocação: {viewingSchedule.nome_sala}</h2>
                                     <p style={{ color: 'var(--text-secondary)' }}>{viewingSchedule.localizacao}</p>
                                 </div>
-                                <button onClick={() => setViewingSchedule(null)} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer' }}>
+                                <button onClick={() => setViewingSchedule(null)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}>
                                     <X size={24} />
                                 </button>
                             </div>
@@ -292,7 +292,7 @@ function RoomsPage() {
                         >
                             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2rem' }}>
                                 <h2>{editingRoom ? 'Editar Sala' : 'Nova Sala'}</h2>
-                                <button onClick={() => setShowModal(false)} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer' }}>
+                                <button onClick={() => setShowModal(false)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}>
                                     <X size={24} />
                                 </button>
                             </div>

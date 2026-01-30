@@ -9,8 +9,9 @@ const getAuthHeader = () => {
 };
 
 export const courseService = {
-    getAllCourses: async () => {
-        const response = await fetch(`${API_URL}/api/courses`, {
+    getAllCourses: async (params = {}) => {
+        const query = new URLSearchParams(params).toString();
+        const response = await fetch(`${API_URL}/api/courses?${query}`, {
             headers: getAuthHeader()
         });
         if (!response.ok) throw new Error('Erro ao carregar cursos');

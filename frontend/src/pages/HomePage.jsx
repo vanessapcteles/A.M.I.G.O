@@ -101,17 +101,17 @@ function HomePage() {
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                         {data?.charts.topFormadores.length > 0 ? (
                             data.charts.topFormadores.map((formador, i) => (
-                                <div key={i} style={{
+                                <div style={{
                                     display: 'flex',
                                     justifyContent: 'space-between',
                                     padding: '1rem',
                                     borderRadius: '12px',
-                                    background: 'rgba(255,255,255,0.03)',
+                                    background: 'var(--card-hover-bg)',
                                     alignItems: 'center'
                                 }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                                         <div style={{
-                                            width: '32px', height: '32px', borderRadius: '50%', background: 'rgba(255,255,255,0.1)',
+                                            width: '32px', height: '32px', borderRadius: '50%', background: 'var(--sidebar-item-hover)',
                                             display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', fontWeight: 'bold'
                                         }}>
                                             {i + 1}
@@ -142,7 +142,7 @@ function HomePage() {
 
                             return (
                                 <div key={i}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', padding: '0.75rem', background: 'rgba(255,255,255,0.02)', borderRadius: '8px' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', padding: '0.75rem', background: 'var(--card-hover-bg)', borderRadius: '8px' }}>
                                         <span>{item.area}</span>
                                         <span style={{ fontWeight: '600', color: 'var(--primary)' }}>{item.count}</span>
                                     </div>

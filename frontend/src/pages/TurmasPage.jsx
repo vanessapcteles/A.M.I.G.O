@@ -187,7 +187,7 @@ function TurmasPage() {
                                 }}>
                                     {turma.estado}
                                 </span>
-                                <h3 style={{ fontSize: '1.4rem', fontWeight: '700', color: 'white' }}>{turma.codigo_turma}</h3>
+                                <h3 style={{ fontSize: '1.4rem', fontWeight: '700' }}>{turma.codigo_turma}</h3>
                                 <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: '0.25rem' }}>{turma.nome_curso}</p>
                             </div>
 

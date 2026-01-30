@@ -1,15 +1,69 @@
 import { db } from '../config/db.js';
 
-// Listar todos os cursos
+// Listar cursos com paginação e filtros
 export const getCourses = async (req, res) => {
     try {
-        const [courses] = await db.query(`
+        const { page = 1, limit = 10, estado, search } = req.query;
+        const offset = (page - 1) * limit;
+
+        let query = `
             SELECT c.*, 
             (SELECT MIN(t.data_inicio) FROM turmas t WHERE t.id_curso = c.id AND t.data_inicio >= CURDATE()) as proxima_data_inicio
-            FROM cursos c 
-            ORDER BY c.nome_curso ASC
-        `);
-        return res.status(200).json(courses);
+            FROM cursos c
+        `;
+        const params = [];
+
+        if (estado && estado !== 'all') {
+            if (estado === 'brevemente') {
+                query += " JOIN turmas t_filter ON c.id = t_filter.id_curso WHERE t_filter.data_inicio BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 60 DAY)";
+            } else {
+                query += " WHERE c.estado = ?";
+                params.push(estado);
+            }
+        } else {
+            query += " WHERE 1=1";
+        }
+
+        if (search) {
+            query += " AND (c.nome_curso LIKE ? OR c.area LIKE ?)";
+            params.push(`%${search}%`, `%${search}%`);
+        }
+
+        if (estado === 'brevemente') {
+            query += " GROUP BY c.id";
+        }
+
+        query += " ORDER BY c.nome_curso ASC LIMIT ? OFFSET ?";
+        params.push(parseInt(limit), parseInt(offset));
+
+        const [courses] = await db.query(query, params);
+
+        // Count for pagination
+        let countQuery = "SELECT COUNT(DISTINCT c.id) as total FROM cursos c";
+        const countParams = [];
+
+        if (estado === 'brevemente') {
+            countQuery += " JOIN turmas t ON c.id = t.id_curso WHERE t.data_inicio BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 60 DAY)";
+        } else {
+            countQuery += " WHERE 1=1";
+            if (estado && estado !== 'all') {
+                countQuery += " AND c.estado = ?";
+                countParams.push(estado);
+            }
+        }
+
+        if (search) {
+            countQuery += " AND (c.nome_curso LIKE ? OR c.area LIKE ?)";
+            countParams.push(`%${search}%`, `%${search}%`);
+        }
+        const [totalCount] = await db.query(countQuery, countParams);
+
+        return res.status(200).json({
+            courses,
+            total: totalCount[0].total,
+            pages: Math.ceil(totalCount[0].total / limit),
+            currentPage: parseInt(page)
+        });
     } catch (error) {
         console.error('Erro ao listar cursos:', error);
         return res.status(500).json({ message: 'Erro ao listar cursos' });

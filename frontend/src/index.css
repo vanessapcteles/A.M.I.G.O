@@ -4,7 +4,7 @@
   --font-main: 'Inter', system-ui, sans-serif;
   --font-title: 'Outfit', sans-serif;
 
-  /* Color Palette - Professional Slate/Blue */
+  /* Dark Theme (Default) */
   --bg-main: #020617;
   --bg-sidebar: #0f172a;
   --bg-card: rgba(30, 41, 59, 0.5);
@@ -15,15 +15,65 @@
   --secondary: #6366f1;
   --accent: #f472b6;
 
-  --text-primary: #f8fafc;
-  --text-secondary: #94a3b8;
   --text-muted: #64748b;
+
+  --bg-gradient-start: #1e293b;
+  --bg-gradient-end: #020617;
+  --card-hover-bg: rgba(255, 255, 255, 0.03);
+  --table-header-bg: rgba(255, 255, 255, 0.02);
+  --sidebar-item-hover: rgba(255, 255, 255, 0.05);
 
   /* Layout Constants */
   --sidebar-width: 280px;
   --sidebar-collapsed-width: 80px;
   --header-height: 72px;
   --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  color-scheme: dark;
+}
+
+[data-theme='light'] {
+  --bg-main: #f1f5f9;
+  --bg-sidebar: #ffffff;
+  --bg-card: rgba(255, 255, 255, 0.85);
+  --border-glass: rgba(0, 0, 0, 0.08);
+
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #64748b;
+
+  --primary: #0284c7;
+  --secondary: #4f46e5;
+  --accent: #db2777;
+  --primary-glow: rgba(2, 132, 199, 0.05);
+  --input-bg: #ffffff;
+
+  --bg-gradient-start: #f1f5f9;
+  --bg-gradient-end: #f8fafc;
+  --card-hover-bg: rgba(0, 0, 0, 0.02);
+  --table-header-bg: rgba(0, 0, 0, 0.03);
+  --sidebar-item-hover: rgba(0, 0, 0, 0.03);
+  color-scheme: light;
+}
+
+.loader {
+  width: 48px;
+  height: 48px;
+  border: 5px solid var(--border-glass);
+  border-bottom-color: var(--primary);
+  border-radius: 50%;
+  display: inline-block;
+  box-sizing: border-box;
+  animation: rotation 1s linear infinite;
+}
+
+@keyframes rotation {
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 * {
@@ -83,7 +133,9 @@ h5 {
   margin-left: var(--sidebar-width);
   padding: 2rem;
   transition: var(--transition);
-  background: radial-gradient(circle at top right, #1e293b, #020617);
+  background: radial-gradient(circle at top right, var(--bg-gradient-start), var(--bg-gradient-end));
+  background-attachment: fixed;
+  min-height: 100vh;
 }
 
 /* Glassmorphism Cards */
@@ -127,19 +179,36 @@ h5 {
 .input-field {
   width: 100%;
   padding: 0.75rem 1rem;
-  background: rgba(15, 23, 42, 0.8);
+  background: var(--input-bg, rgba(15, 23, 42, 0.8));
   border: 1px solid var(--border-glass);
   border-radius: 10px;
-  color: white;
+  color: var(--text-primary);
   outline: none;
   transition: var(--transition);
 }
 
 /* Fix for unreadable dropdown options on some systems */
 select.input-field option {
-  background-color: #0f172a;
-  color: white;
+  background-color: var(--bg-sidebar);
+  color: var(--text-primary);
   padding: 8px;
+}
+
+select.input-field {
+  cursor: pointer;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+table thead tr {
+  background: var(--table-header-bg) !important;
+}
+
+table tbody tr:hover {
+  background: var(--card-hover-bg) !important;
 }
 
 .input-field:focus {
@@ -235,7 +304,24 @@ select.input-field option {
 }
 
 .rbc-off-range-bg {
-  background: rgba(0, 0, 0, 0.15) !important;
+  background: rgba(0, 0, 0, 0.1) !important;
+}
+
+[data-theme='light'] .rbc-off-range-bg {
+  background: rgba(0, 0, 0, 0.02) !important;
+}
+
+[data-theme='light'] .glass-card {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+}
+
+[data-theme='light'] .nav-link:hover,
+[data-theme='light'] .nav-link.active {
+  background: rgba(0, 0, 0, 0.04) !important;
+}
+
+[data-theme='light'] .btn-glass {
+  background: rgba(0, 0, 0, 0.04);
 }
 
 .rbc-header {
@@ -258,7 +344,7 @@ select.input-field option {
   border: 1px solid var(--border-glass) !important;
   border-radius: 16px;
   overflow: hidden;
-  background: rgba(0, 0, 0, 0.2);
+  background: var(--card-hover-bg);
 }
 
 .rbc-time-gutter {

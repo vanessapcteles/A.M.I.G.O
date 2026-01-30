@@ -8,48 +8,60 @@ import 'jspdf-autotable';
 function FormadorFichaPage() {
     const [user, setUser] = useState(authService.getCurrentUser());
     const [extra, setExtra] = useState(null);
+    const [teachingHistory, setTeachingHistory] = useState([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const fetchExtra = async () => {
+        const fetchData = async () => {
             try {
                 const token = localStorage.getItem('auth_token');
-                const res = await fetch(`${API_URL}/api/users/profile`, {
+
+                // Perfil
+                const res = await fetch(`${API_URL}/api/formadores/${user.id}/profile`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 const data = await res.json();
                 setExtra(data);
+
+                // Histórico de Lecionação
+                const historyRes = await fetch(`${API_URL}/api/formadores/${user.id}/history`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const historyData = await historyRes.json();
+                setTeachingHistory(historyData || []);
+
             } catch (error) {
                 console.error(error);
             } finally {
                 setLoading(false);
             }
         };
-        fetchExtra();
-    }, []);
+        fetchData();
+    }, [user.id]);
 
     const exportPDF = () => {
-        const doc = jsPDF();
+        const doc = new jsPDF();
+        const pageWidth = doc.internal.pageSize.getWidth();
 
         // Header
         doc.setFillColor(30, 41, 59);
-        doc.rect(0, 0, 210, 40, 'F');
+        doc.rect(0, 0, pageWidth, 40, 'F');
 
         doc.setTextColor(255, 255, 255);
         doc.setFontSize(22);
-        doc.text('FICHA DO FORMADOR', 105, 25, { align: 'center' });
+        doc.text('FICHA DO FORMADOR', pageWidth / 2, 25, { align: 'center' });
 
         // Personal Info
         doc.setTextColor(0, 0, 0);
         doc.setFontSize(16);
+        doc.setFont('helvetica', 'bold');
         doc.text('Dados do Formador', 20, 55);
 
         const personalData = [
             ['Nome Completo', user.nome_completo],
             ['Email', user.email],
-            ['Telemóvel', extra?.telemovel || 'N/A'],
             ['Especialidade', extra?.especialidade || 'Informática'],
-            ['Data de Admissão', '01/09/2024']
+            ['Telemóvel', extra?.telemovel || 'N/A']
         ];
 
         doc.autoTable({
@@ -60,32 +72,39 @@ function FormadorFichaPage() {
         });
 
         // Teaching History
+        const tableY = (doc.previousAutoTable ? doc.previousAutoTable.finalY : 110) + 15;
         doc.setFontSize(16);
-        doc.text('Módulos Lecionados', 20, doc.lastAutoTable.finalY + 15);
+        doc.text('Módulos Lecionados', 20, tableY);
 
-        const teachingData = [
-            ['Programação Web', 'Engenharia Informática', '120h'],
-            ['Bases de Dados', 'Cibersegurança', '90h'],
-            ['Algoritmos', 'Informática de Gestão', '60h']
-        ];
+        const tableRows = teachingHistory.map(rec => [
+            rec.nome_modulo,
+            rec.nome_curso,
+            rec.codigo_turma,
+            new Date(rec.data_inicio).toLocaleDateString()
+        ]);
 
         doc.autoTable({
-            startY: doc.lastAutoTable.finalY + 25,
-            head: [['Módulo', 'Curso', 'Duração']],
-            body: teachingData,
+            startY: tableY + 10,
+            head: [['Módulo', 'Curso', 'Turma', 'Data Início']],
+            body: tableRows,
             theme: 'grid',
             headStyles: { fillColor: [99, 102, 241] }
         });
 
         // Footer
+        const finalY = (doc.previousAutoTable ? doc.previousAutoTable.finalY : 250) + 20;
         doc.setFontSize(10);
         doc.setTextColor(150, 150, 150);
-        doc.text(`Academy Manager System - Ficha Gerada em ${new Date().toLocaleDateString()}`, 105, 285, { align: 'center' });
+        doc.text(`Academy Manager System - Ficha Gerada em ${new Date().toLocaleDateString()}`, pageWidth / 2, Math.min(finalY, 285), { align: 'center' });
 
         doc.save(`Ficha_Formador_${user.nome_completo.replace(/ /g, '_')}.pdf`);
     };
 
-    if (loading) return <div style={{ padding: '2rem', textAlign: 'center' }}>A carregar dados...</div>;
+    if (loading) return (
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100dvh' }}>
+            <div className="loader"></div>
+        </div>
+    );
 
     return (
         <div style={{ maxWidth: '900px', margin: '0 auto' }}>
@@ -119,8 +138,8 @@ function FormadorFichaPage() {
 
                     <div className="glass-card">
                         <h4 style={{ marginBottom: '1rem' }}>Resumo</h4>
-                        <div style={{ fontSize: '1.25rem', fontWeight: 'bold' }}>270 Horas</div>
-                        <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Lecionadas este ano</p>
+                        <div style={{ fontSize: '1.25rem', fontWeight: 'bold' }}>{teachingHistory.length} Módulos</div>
+                        <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Lecionados no sistema</p>
                     </div>
                 </div>
 
@@ -154,10 +173,16 @@ function FormadorFichaPage() {
                             <BookOpen size={20} color="var(--secondary)" /> Módulos Atribuídos
                         </h3>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                            {['Bases de Dados', 'Programação Avançada', 'Sistemas Cloud'].map((mod, i) => (
-                                <div key={i} style={{ padding: '1rem', background: 'rgba(255,255,255,0.03)', borderRadius: '10px', display: 'flex', justifyContent: 'space-between' }}>
-                                    <span>{mod}</span>
-                                    <span style={{ color: 'var(--secondary)', fontSize: '0.85rem' }}>Ativo</span>
+                            {teachingHistory.length === 0 && <p style={{ color: 'var(--text-muted)', textAlign: 'center' }}>Sem módulos registados.</p>}
+                            {teachingHistory.map((rec, i) => (
+                                <div key={i} style={{ padding: '1rem', background: 'rgba(255,255,255,0.03)', borderRadius: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <div>
+                                        <p style={{ fontWeight: 'bold' }}>{rec.nome_modulo}</p>
+                                        <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{rec.nome_curso}</p>
+                                    </div>
+                                    <span style={{ color: 'var(--secondary)', fontSize: '0.85rem', fontWeight: 'bold' }}>
+                                        {rec.codigo_turma}
+                                    </span>
                                 </div>
                             ))}
                         </div>

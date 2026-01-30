@@ -144,15 +144,16 @@ function FormandosPage() {
             doc.setFont('helvetica', 'normal');
             doc.text(`Nome: ${selectedFormando.nome_completo}`, 15, 68);
             doc.text(`Email: ${selectedFormando.email}`, 15, 75);
-            doc.text(`Telemóvel: ${selectedFormando.telemovel || 'N/A'}`, 15, 82);
-            doc.text(`Morada: ${selectedFormando.morada || 'N/A'}`, 15, 89);
-            doc.text(`Data de Nascimento: ${selectedFormando.data_nascimento ? new Date(selectedFormando.data_nascimento).toLocaleDateString() : 'N/A'}`, 15, 96);
+            doc.text(`Curso Atual: ${selectedFormando.curso_atual || 'Não inscrito'}`, 15, 82);
+            doc.text(`Telemóvel: ${selectedFormando.telemovel || 'N/A'}`, 15, 89);
+            doc.text(`Morada: ${selectedFormando.morada || 'N/A'}`, 15, 96);
+            doc.text(`Data de Nascimento: ${selectedFormando.data_nascimento ? new Date(selectedFormando.data_nascimento).toLocaleDateString() : 'N/A'}`, 15, 103);
 
             // Tabela de Avaliações
             doc.setFontSize(14);
             doc.setFont('helvetica', 'bold');
-            doc.text('Histórico Escolar', 15, 115);
-            doc.line(15, 118, 60, 118);
+            doc.text('Histórico Escolar', 15, 120);
+            doc.line(15, 123, 60, 123);
 
             const tableRows = academicRecords.map(rec => [
                 rec.nome_curso,
@@ -170,10 +171,10 @@ function FormandosPage() {
             });
 
             // Rodapé
-            const finalY = doc.lastAutoTable.finalY + 20;
+            const finalY = (doc.lastAutoTable ? doc.lastAutoTable.finalY : 200) + 20;
             doc.setFontSize(9);
             doc.setTextColor(150);
-            doc.text('Este documento é um comprovativo interno da academia.', pageWidth / 2, finalY, { align: 'center' });
+            doc.text('Este documento é um comprovativo interno da academia.', pageWidth / 2, Math.min(finalY, 285), { align: 'center' });
 
             doc.save(`Ficha_${selectedFormando.nome_completo.replace(/\s+/g, '_')}.pdf`);
         } catch (error) {
@@ -296,7 +297,7 @@ function FormandosPage() {
         <>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                    <div style={{ padding: '0.75rem', borderRadius: '12px', background: 'rgba(56, 189, 248, 0.1)', color: 'var(--primary)' }}>
+                    <div style={{ padding: '0.75rem', borderRadius: '12px', background: 'var(--primary-glow)', color: 'var(--primary)' }}>
                         <Users size={24} />
                     </div>
                     <div>
@@ -312,7 +313,7 @@ function FormandosPage() {
                         placeholder="Pesquisar formando..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        style={{ background: 'transparent', border: 'none', color: 'white', outline: 'none', width: '100%' }}
+                        style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', outline: 'none', width: '100%' }}
                     />
                 </div>
             </div>
@@ -335,7 +336,7 @@ function FormandosPage() {
                                     <tr key={formando.id}
                                         style={{
                                             borderBottom: '1px solid var(--border-glass)',
-                                            background: selectedFormando?.id === formando.id ? 'rgba(255,255,255,0.05)' : 'transparent'
+                                            background: selectedFormando?.id === formando.id ? 'var(--card-hover-bg)' : 'transparent'
                                         }}
                                     >
                                         <td style={{ padding: '1rem' }}>
@@ -391,7 +392,7 @@ function FormandosPage() {
                                     <div style={{ position: 'relative' }}>
                                         <div style={{
                                             width: '80px', height: '80px', borderRadius: '20px', overflow: 'hidden',
-                                            border: '2px solid var(--primary)', background: 'rgba(255,255,255,0.05)',
+                                            border: '2px solid var(--primary)', background: 'var(--card-hover-bg)',
                                             display: 'flex', alignItems: 'center', justifyContent: 'center'
                                         }}>
                                             {profilePhoto ? (

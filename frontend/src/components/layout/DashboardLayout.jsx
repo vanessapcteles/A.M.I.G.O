@@ -48,7 +48,7 @@ const DashboardLayout = ({ children }) => {
                 }}>
                     <div>
                         <h1 style={{ fontSize: '1.25rem', color: 'var(--text-secondary)' }}>Bem-vindo de volta,</h1>
-                        <h2 style={{ fontSize: '1.75rem' }}>{userName}</h2>
+                        <h2 style={{ fontSize: '1.75rem', color: 'var(--text-primary)' }}>{userName}</h2>
                     </div>
 
                     <Link to="/profile" style={{ textDecoration: 'none', color: 'inherit' }}>
@@ -62,14 +62,14 @@ const DashboardLayout = ({ children }) => {
                             <div style={{
                                 width: '42px',
                                 height: '42px',
-                                borderRadius: '12px', // Estilo Squircle moderno
+                                borderRadius: '12px',
                                 border: '2px solid var(--primary)',
                                 background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.2), rgba(59, 130, 246, 0.2))',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
                                 fontWeight: 'bold',
-                                color: 'white',
+                                color: 'var(--text-primary)',
                                 overflow: 'hidden',
                                 boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
                             }}>
@@ -82,7 +82,7 @@ const DashboardLayout = ({ children }) => {
                                 )}
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                <span style={{ fontWeight: '600', fontSize: '0.95rem', color: 'white' }}>{userName}</span>
+                                <span style={{ fontWeight: '600', fontSize: '0.95rem', color: 'var(--text-primary)' }}>{userName}</span>
                                 <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Ver Perfil</span>
                             </div>
                         </div>

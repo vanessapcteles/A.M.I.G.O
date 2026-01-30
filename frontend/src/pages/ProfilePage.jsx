@@ -19,6 +19,7 @@ function ProfilePage() {
     const [profilePhoto, setProfilePhoto] = useState(null);
     const [uploading, setUploading] = useState(false);
     const [modalConfig, setModalConfig] = useState({ isOpen: false });
+    const [loadingData, setLoadingData] = useState(true);
 
     useEffect(() => {
         const currentUser = authService.getCurrentUser();
@@ -30,11 +31,16 @@ function ProfilePage() {
         setNomeCompleto(currentUser.nome_completo || currentUser.nome || '');
         // Corrigido para o nome correto da coluna na DB
         if (currentUser.two_fa_enabled) setStep('verified');
-        loadProfilePhoto(currentUser.id);
 
-        if (currentUser.tipo_utilizador === 'FORMANDO') {
-            loadFormandoProfile(currentUser.id);
-        }
+        const init = async () => {
+            setLoadingData(true);
+            await Promise.all([
+                loadProfilePhoto(currentUser.id),
+                currentUser.tipo_utilizador === 'FORMANDO' ? loadFormandoProfile(currentUser.id) : Promise.resolve()
+            ]);
+            setLoadingData(false);
+        };
+        init();
     }, [navigate]);
 
     const loadFormandoProfile = async (userId) => {
@@ -183,6 +189,12 @@ function ProfilePage() {
         }
     };
 
+    if (loadingData) return (
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100dvh' }}>
+            <div className="loader"></div>
+        </div>
+    );
+
     if (!user) return null;
 
     return (
@@ -202,7 +214,7 @@ function ProfilePage() {
                                 height: '120px',
                                 borderRadius: '30px',
                                 border: '3px solid var(--primary)',
-                                background: 'rgba(255,255,255,0.05)',
+                                background: 'var(--card-hover-bg)',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
@@ -227,7 +239,7 @@ function ProfilePage() {
                                 alignItems: 'center',
                                 justifyContent: 'center',
                                 cursor: 'pointer',
-                                border: '4px solid #0f172a',
+                                border: '4px solid var(--bg-sidebar)',
                                 boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
                                 transition: 'transform 0.2s'
                             }} className="hover-scale">
@@ -247,14 +259,18 @@ function ProfilePage() {
                                 type="text"
                                 className="input-field"
                                 value={nome_completo}
-                                onChange={(e) => setNomeCompleto(e.target.value)}
+                                readOnly
+                                style={{ background: 'var(--card-hover-bg)', cursor: 'not-allowed', color: 'var(--text-muted)' }}
                                 placeholder="Seu nome"
                             />
+                            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>
+                                * O nome apenas pode ser alterado pela administração.
+                            </p>
                         </div>
 
                         <div>
                             <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Endereço de Email</label>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem 1rem', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-glass)', borderRadius: '10px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem 1rem', background: 'var(--card-hover-bg)', border: '1px solid var(--border-glass)', borderRadius: '10px' }}>
                                 <Mail size={18} color="var(--text-muted)" />
                                 <span style={{ color: 'var(--text-muted)' }}>{user.email}</span>
                             </div>
@@ -266,7 +282,7 @@ function ProfilePage() {
                         </button>
 
                         {extraProfile?.curso_atual && (
-                            <div style={{ marginTop: '1.5rem', padding: '1rem', borderRadius: '12px', background: 'rgba(56, 189, 248, 0.1)', border: '1px solid rgba(56, 189, 248, 0.2)' }}>
+                            <div style={{ marginTop: '1.5rem', padding: '1rem', borderRadius: '12px', background: 'var(--primary-glow)', border: '1px solid var(--border-glass)' }}>
                                 <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--primary)', marginBottom: '0.25rem', fontWeight: 'bold' }}>CURSO ATUAL</label>
                                 <div style={{ fontSize: '1.1rem', fontWeight: '600' }}>{extraProfile.curso_atual}</div>
                             </div>

@@ -15,8 +15,11 @@ import {
 } from 'lucide-react';
 import { publicService } from '../services/publicService';
 import { authService } from '../services/authService';
+import { useTheme } from '../context/ThemeContext';
+import { Sun, Moon } from 'lucide-react';
 
 const LandingPage = () => {
+    const { isDarkMode, toggleTheme } = useTheme();
     const [user, setUser] = useState(null);
     const [courses, setCourses] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
@@ -31,8 +34,10 @@ const LandingPage = () => {
     const loadCourses = async () => {
         try {
             const data = await publicService.getCourses();
-            setCourses(data);
-            setFilteredCourses(data);
+            // A API retorna { courses: [...], total, ... }
+            // Se a API retornar array direto, usa data, senão data.courses
+            setCourses(Array.isArray(data) ? data : data.courses || []);
+            setFilteredCourses(Array.isArray(data) ? data : data.courses || []);
         } catch (error) {
             console.error(error);
         } finally {
@@ -56,13 +61,13 @@ const LandingPage = () => {
     ];
 
     return (
-        <div style={{ background: '#020617', color: 'white', minHeight: '100vh', fontFamily: 'Outfit, sans-serif' }}>
+        <div style={{ background: 'var(--bg-main)', color: 'var(--text-primary)', minHeight: '100vh', fontFamily: 'Outfit, sans-serif' }}>
             {/* Header / Navbar */}
             <nav style={{
                 position: 'fixed', top: 0, left: 0, right: 0, zIndex: 1000,
                 padding: '1.25rem 5%', display: 'flex', justifyContent: 'space-between',
-                alignItems: 'center', background: 'rgba(2, 6, 23, 0.7)', backdropFilter: 'blur(15px)',
-                borderBottom: '1px solid rgba(255,255,255,0.05)'
+                alignItems: 'center', background: isDarkMode ? 'rgba(2, 6, 23, 0.7)' : 'rgba(255, 255, 255, 0.7)', backdropFilter: 'blur(15px)',
+                borderBottom: '1px solid var(--border-glass)'
             }}>
                 <div style={{ fontSize: '1.5rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <div style={{ padding: '8px', background: 'var(--primary)', borderRadius: '10px' }}>
@@ -72,6 +77,9 @@ const LandingPage = () => {
                 </div>
 
                 <div style={{ display: 'flex', gap: '2rem', alignItems: 'center' }}>
+                    <button onClick={toggleTheme} className="btn-glass" style={{ padding: '0.6rem', borderRadius: '50%' }}>
+                        {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
+                    </button>
                     {user ? (
                         user.tipo_utilizador === 'CANDIDATO' ? (
                             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
@@ -92,7 +100,7 @@ const LandingPage = () => {
                         )
                     ) : (
                         <>
-                            <Link to="/login" style={{ textDecoration: 'none', color: 'rgba(255,255,255,0.7)', fontWeight: '500' }}>Entrar</Link>
+                            <Link to="/login" style={{ textDecoration: 'none', color: 'var(--text-primary)', fontWeight: '500' }}>Entrar</Link>
                             <Link to="/register" className="btn-primary" style={{ padding: '0.6rem 1.5rem' }}>Criar Conta</Link>
                         </>
                     )}
@@ -102,7 +110,9 @@ const LandingPage = () => {
             {/* Hero Section */}
             <header style={{
                 padding: '12rem 5% 6rem', textAlign: 'center',
-                background: 'radial-gradient(circle at 50% 30%, rgba(59, 130, 246, 0.15), transparent 60%)',
+                background: isDarkMode
+                    ? 'radial-gradient(circle at 50% 30%, rgba(59, 130, 246, 0.15), transparent 60%)'
+                    : 'radial-gradient(circle at 50% 30%, rgba(59, 130, 246, 0.05), transparent 60%)',
                 position: 'relative', overflow: 'hidden'
             }}>
                 <motion.div
@@ -122,7 +132,7 @@ const LandingPage = () => {
                         Transforme o seu <span className="text-gradient">Futuro</span> <br />
                         na Academy Manager.
                     </h1>
-                    <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '1.25rem', maxWidth: '750px', margin: '2rem auto 3rem', lineHeight: '1.6' }}>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '1.25rem', maxWidth: '750px', margin: '2rem auto 3rem', lineHeight: '1.6' }}>
                         Seja um especialista em tecnologia com os nossos cursos certificados.
                         Aprenda com formadores de topo em laboratórios de última geração.
                     </p>
@@ -138,8 +148,8 @@ const LandingPage = () => {
                             placeholder="Pesquise por curso ou área (ex: C++, Robótica)..."
                             style={{
                                 width: '100%', padding: '1.25rem 1.5rem 1.25rem 4rem',
-                                borderRadius: '15px', background: 'rgba(255,255,255,0.03)',
-                                border: '1px solid rgba(255,255,255,0.1)', color: 'white',
+                                borderRadius: '15px', background: 'var(--card-hover-bg)',
+                                border: '1px solid var(--border-glass)', color: 'var(--text-primary)',
                                 fontSize: '1.1rem', outline: 'none'
                             }}
                             value={searchTerm}
@@ -162,8 +172,8 @@ const LandingPage = () => {
                             key={i}
                             whileHover={{ y: -5, background: 'rgba(255,255,255,0.05)' }}
                             style={{
-                                padding: '2rem', borderRadius: '20px', background: 'rgba(255,255,255,0.02)',
-                                border: '1px solid rgba(255,255,255,0.05)', cursor: 'pointer'
+                                padding: '2rem', borderRadius: '20px', background: 'var(--bg-card)',
+                                border: '1px solid var(--border-glass)', cursor: 'pointer'
                             }}
                         >
                             <div style={{
@@ -175,7 +185,7 @@ const LandingPage = () => {
                                 <area.icon size={24} />
                             </div>
                             <h3 style={{ fontSize: '1.25rem', marginBottom: '0.75rem' }}>{area.name}</h3>
-                            <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.9rem', lineHeight: '1.6' }}>
+                            <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: '1.6' }}>
                                 Domine as ferramentas mais requisitadas do mercado atual.
                             </p>
                         </motion.div>
@@ -187,9 +197,9 @@ const LandingPage = () => {
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '3rem' }}>
                         <div>
                             <h2 style={{ fontSize: '2.5rem', fontWeight: '800' }}>Cursos <span style={{ color: 'var(--primary)' }}>Disponíveis</span></h2>
-                            <p style={{ color: 'rgba(255,255,255,0.5)', marginTop: '0.5rem' }}>Encontre a formação ideal para o seu perfil.</p>
+                            <p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem' }}>Encontre a formação ideal para o seu perfil.</p>
                         </div>
-                        <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.9rem' }}>
+                        <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
                             Mostrando {filteredCourses.length} resultados
                         </div>
                     </div>
@@ -214,16 +224,17 @@ const LandingPage = () => {
                                                 course.area === 'Electrónica' ? '#f59e0b' : '#10b981'
                                     }} />
 
+
                                     <div style={{ padding: '2rem' }}>
-                                        <div style={{ fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)', marginBottom: '0.5rem', letterSpacing: '1px' }}>
+                                        <div style={{ fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '0.5rem', letterSpacing: '1px' }}>
                                             {course.area}
                                         </div>
                                         <h3 style={{ fontSize: '1.5rem', fontWeight: '700', marginBottom: '1.5rem', minHeight: '3.5rem' }}>
                                             {course.nome_curso}
                                         </h3>
 
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: 'rgba(255,255,255,0.5)', fontSize: '0.9rem', marginBottom: '2rem' }}>
-                                            <div style={{ width: '30px', height: '30px', borderRadius: '50%', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '2rem' }}>
+                                            <div style={{ width: '30px', height: '30px', borderRadius: '50%', background: 'var(--card-hover-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                                 <Zap size={14} />
                                             </div>
                                             <span>Próxima Turma: {course.proxima_data_inicio ? new Date(course.proxima_data_inicio).toLocaleDateString() : 'A anunciar'}</span>
@@ -233,14 +244,15 @@ const LandingPage = () => {
                                             <Link
                                                 to="/candidato"
                                                 state={{ interestedIn: course.id }}
+                                                className="btn-glass"
                                                 style={{
-                                                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
-                                                    padding: '0.85rem', width: '100%', borderRadius: '12px',
-                                                    background: 'rgba(255,255,255,0.05)', color: 'white', textDecoration: 'none',
-                                                    fontWeight: '600', border: '1px solid rgba(255,255,255,0.1)',
-                                                    transition: 'all 0.2s'
+                                                    width: '100%',
+                                                    justifyContent: 'center',
+                                                    padding: '0.85rem',
+                                                    borderRadius: '12px',
+                                                    fontWeight: '600',
+                                                    textDecoration: 'none'
                                                 }}
-                                                className="hover-glow"
                                             >
                                                 Quero me Candidatar <ArrowRight size={18} />
                                             </Link>
@@ -248,14 +260,15 @@ const LandingPage = () => {
                                             <Link
                                                 to="/register"
                                                 state={{ interestedIn: course.id }}
+                                                className="btn-glass"
                                                 style={{
-                                                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
-                                                    padding: '0.85rem', width: '100%', borderRadius: '12px',
-                                                    background: 'rgba(255,255,255,0.05)', color: 'white', textDecoration: 'none',
-                                                    fontWeight: '600', border: '1px solid rgba(255,255,255,0.1)',
-                                                    transition: 'all 0.2s'
+                                                    width: '100%',
+                                                    justifyContent: 'center',
+                                                    padding: '0.85rem',
+                                                    borderRadius: '12px',
+                                                    fontWeight: '600',
+                                                    textDecoration: 'none'
                                                 }}
-                                                className="hover-glow"
                                             >
                                                 Quero me Candidatar <ArrowRight size={18} />
                                             </Link>
@@ -269,22 +282,22 @@ const LandingPage = () => {
             </main>
 
             {/* Footer */}
-            <footer style={{
-                borderTop: '1px solid rgba(255,255,255,0.05)', padding: '5rem 5% 2rem',
-                background: '#010410'
+            < footer style={{
+                borderTop: '1px solid var(--border-glass)', padding: '5rem 5% 2rem',
+                background: 'var(--bg-sidebar)'
             }}>
                 <div style={{ maxWidth: '1400px', margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '4rem', marginBottom: '5rem' }}>
                     <div>
                         <div style={{ fontSize: '1.25rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.5rem' }}>
                             Academy <span style={{ color: 'var(--primary)' }}>Manager</span>
                         </div>
-                        <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.9rem', lineHeight: '1.6' }}>
+                        <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: '1.6' }}>
                             Formação profissional de alta qualidade financiada pela União Europeia e pelo Estado Português.
                         </p>
                     </div>
                     <div>
                         <h4 style={{ marginBottom: '1.5rem' }}>Cursos</h4>
-                        <ul style={{ listStyle: 'none', padding: 0, color: 'rgba(255,255,255,0.5)', fontSize: '0.9rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                        <ul style={{ listStyle: 'none', padding: 0, color: 'var(--text-secondary)', fontSize: '0.9rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                             <li>Cursos de Aprendizagem</li>
                             <li>Cursos CET (Nível 5)</li>
                             <li>Formação Modular</li>
@@ -293,7 +306,7 @@ const LandingPage = () => {
                     </div>
                     <div>
                         <h4 style={{ marginBottom: '1.5rem' }}>Links Úteis</h4>
-                        <ul style={{ listStyle: 'none', padding: 0, color: 'rgba(255,255,255,0.5)', fontSize: '0.9rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                        <ul style={{ listStyle: 'none', padding: 0, color: 'var(--text-secondary)', fontSize: '0.9rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                             <li>Sobre a ATEC</li>
                             <li>Como se Candidatar</li>
                             <li>Contactos</li>
@@ -301,11 +314,11 @@ const LandingPage = () => {
                         </ul>
                     </div>
                 </div>
-                <div style={{ textAlign: 'center', color: 'rgba(255,255,255,0.2)', fontSize: '0.85rem' }}>
+                <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
                     &copy; 2026 Academy Manager &bull; Desenvolvido para Excelência de Gestão
                 </div>
-            </footer>
-        </div>
+            </footer >
+        </div >
     );
 };
 

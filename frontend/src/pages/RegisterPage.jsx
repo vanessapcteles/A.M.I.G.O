@@ -55,7 +55,7 @@ function RegisterPage() {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            background: 'radial-gradient(circle at 50% 50%, #1e293b 0%, #020617 100%)',
+            background: 'radial-gradient(circle at 50% 50%, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%)',
             padding: '2rem'
         }}>
             <motion.div

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-import { BookOpen, Search, Edit2, Save, X, FileText, Upload, Download, Trash2, Printer, Calendar as CalendarIcon } from 'lucide-react';
+import { BookOpen, Search, Edit2, Save, X, FileText, Upload, Download, Trash2, Printer, Calendar as CalendarIcon, LayoutGrid, Clock, List } from 'lucide-react';
 import { API_URL } from '../services/authService';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
@@ -14,6 +14,7 @@ import pt from 'date-fns/locale/pt';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import { horarioService } from '../services/horarioService';
 import Modal from '../components/ui/Modal';
+import CalendarToolbar from '../components/ui/CalendarToolbar';
 
 const locales = { 'pt': pt };
 const localizer = dateFnsLocalizer({ format, parse, startOfWeek, getDay, locales });
@@ -31,6 +32,8 @@ function FormadoresPage() {
     const [formadorEvents, setFormadorEvents] = useState([]);
     const [profilePhoto, setProfilePhoto] = useState(null);
     const [modalConfig, setModalConfig] = useState({ isOpen: false });
+    const [currentDate, setCurrentDate] = useState(new Date());
+    const [currentView, setCurrentView] = useState('week');
 
     // Form States
     const [editData, setEditData] = useState({
@@ -194,6 +197,12 @@ function FormadoresPage() {
                 theme: 'striped'
             });
 
+            // Rodapé
+            const finalY = (doc.lastAutoTable ? doc.lastAutoTable.finalY : 200) + 20;
+            doc.setFontSize(9);
+            doc.setTextColor(150);
+            doc.text('Documento gerado pelo Academy Manager.', pageWidth / 2, Math.min(finalY, 285), { align: 'center' });
+
             doc.save(`Ficha_Formador_${selectedFormador.nome_completo.replace(/\s+/g, '_')}.pdf`);
         } catch (error) {
             console.error('Erro PDF:', error);
@@ -314,7 +323,7 @@ function FormadoresPage() {
         <>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                    <div style={{ padding: '0.75rem', borderRadius: '12px', background: 'rgba(56, 189, 248, 0.1)', color: 'var(--primary)' }}>
+                    <div style={{ padding: '0.75rem', borderRadius: '12px', background: 'var(--primary-glow)', color: 'var(--primary)' }}>
                         <BookOpen size={24} />
                     </div>
                     <div>
@@ -330,7 +339,7 @@ function FormadoresPage() {
                         placeholder="Pesquisar formador..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        style={{ background: 'transparent', border: 'none', color: 'white', outline: 'none', width: '100%' }}
+                        style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', outline: 'none', width: '100%' }}
                     />
                 </div>
             </div>
@@ -353,7 +362,7 @@ function FormadoresPage() {
                                     <tr key={formador.id}
                                         style={{
                                             borderBottom: '1px solid var(--border-glass)',
-                                            background: selectedFormador?.id === formador.id ? 'rgba(255,255,255,0.05)' : 'transparent'
+                                            background: selectedFormador?.id === formador.id ? 'var(--card-hover-bg)' : 'transparent'
                                         }}
                                     >
                                         <td style={{ padding: '1rem' }}>
@@ -428,7 +437,7 @@ function FormadoresPage() {
                                             <div style={{ position: 'relative' }}>
                                                 <div style={{
                                                     width: '80px', height: '80px', borderRadius: '20px', overflow: 'hidden',
-                                                    border: '2px solid var(--primary)', background: 'rgba(255,255,255,0.05)',
+                                                    border: '2px solid var(--primary)', background: 'var(--card-hover-bg)',
                                                     display: 'flex', alignItems: 'center', justifyContent: 'center'
                                                 }}>
                                                     {profilePhoto ? (
@@ -523,25 +532,38 @@ function FormadoresPage() {
                                     </div>
                                 </>
                             ) : (
-                                <div style={{ height: '400px', color: 'black' }}>
-                                    <style>{`
-                                        .rbc-calendar { color: white; }
-                                        .rbc-off-range-bg { background: rgba(255,255,255,0.05); }
-                                        .rbc-header { color: var(--text-secondary); border-bottom: 1px solid var(--border-glass); }
-                                        .rbc-today { background: rgba(59, 130, 246, 0.1); }
-                                        .rbc-event { background-color: var(--secondary); border: none; }
-                                    `}</style>
+                                <div style={{ height: '500px' }}>
                                     <Calendar
                                         localizer={localizer}
                                         events={formadorEvents}
                                         startAccessor="start"
                                         endAccessor="end"
                                         culture='pt'
-                                        defaultView='week'
+                                        date={currentDate}
+                                        view={currentView}
+                                        onNavigate={date => setCurrentDate(date)}
+                                        onView={view => setCurrentView(view)}
+                                        components={{
+                                            toolbar: CalendarToolbar
+                                        }}
                                         messages={{
                                             next: "Seg.", previous: "Ant.", today: "Hoje",
                                             month: "Mês", week: "Sem.", day: "Dia"
                                         }}
+                                        eventPropGetter={() => ({
+                                            style: {
+                                                backgroundColor: 'var(--secondary)',
+                                                borderRadius: '8px',
+                                                opacity: 0.9,
+                                                color: 'var(--text-primary)',
+                                                border: 'none',
+                                                display: 'block',
+                                                padding: '2px 8px',
+                                                fontSize: '0.75rem',
+                                                fontWeight: '600',
+                                                boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                                            }
+                                        })}
                                     />
                                 </div>
                             )}
