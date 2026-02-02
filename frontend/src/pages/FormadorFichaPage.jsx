@@ -3,32 +3,44 @@ import { motion } from 'framer-motion';
 import { FileText, Download, User, Mail, Phone, MapPin, Briefcase, BookOpen } from 'lucide-react';
 import { authService, API_URL } from '../services/authService';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 
 function FormadorFichaPage() {
     const [user, setUser] = useState(authService.getCurrentUser());
     const [extra, setExtra] = useState(null);
     const [teachingHistory, setTeachingHistory] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [profilePhoto, setProfilePhoto] = useState(null);
 
     useEffect(() => {
         const fetchData = async () => {
             try {
                 const token = localStorage.getItem('auth_token');
+                const headers = { 'Authorization': `Bearer ${token}` };
 
                 // Perfil
-                const res = await fetch(`${API_URL}/api/formadores/${user.id}/profile`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
+                const res = await fetch(`${API_URL}/api/formadores/${user.id}/profile`, { headers });
                 const data = await res.json();
                 setExtra(data);
 
                 // Histórico de Lecionação
-                const historyRes = await fetch(`${API_URL}/api/formadores/${user.id}/history`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
+                const historyRes = await fetch(`${API_URL}/api/formadores/${user.id}/history`, { headers });
                 const historyData = await historyRes.json();
                 setTeachingHistory(historyData || []);
+
+                // Carregar Foto
+                try {
+                    const photoRes = await fetch(`${API_URL}/api/files/user/${user.id}/photo`, { headers });
+                    if (photoRes.ok) {
+                        const blob = await photoRes.blob();
+                        const base64 = await new Promise((resolve) => {
+                            const reader = new FileReader();
+                            reader.onloadend = () => resolve(reader.result);
+                            reader.readAsDataURL(blob);
+                        });
+                        setProfilePhoto(base64);
+                    }
+                } catch (e) { console.log('Erro ao carregar foto', e); }
 
             } catch (error) {
                 console.error(error);
@@ -39,42 +51,52 @@ function FormadorFichaPage() {
         fetchData();
     }, [user.id]);
 
-    const exportPDF = () => {
+    const exportPDF = async () => {
         const doc = new jsPDF();
         const pageWidth = doc.internal.pageSize.getWidth();
 
-        // Header
+        // Header Premium
         doc.setFillColor(30, 41, 59);
         doc.rect(0, 0, pageWidth, 40, 'F');
 
         doc.setTextColor(255, 255, 255);
         doc.setFontSize(22);
-        doc.text('FICHA DO FORMADOR', pageWidth / 2, 25, { align: 'center' });
+        doc.text('FICHA DO FORMADOR', 15, 25);
 
-        // Personal Info
-        doc.setTextColor(0, 0, 0);
-        doc.setFontSize(16);
+        doc.setFontSize(10);
+        doc.text(`Gerado em: ${new Date().toLocaleDateString()}`, pageWidth - 15, 25, { align: 'right' });
+
+        // Usar a foto
+        let photoData = profilePhoto;
+
+        // Dados do Formador
+        doc.setTextColor(30, 41, 59);
+        doc.setFontSize(14);
         doc.setFont('helvetica', 'bold');
-        doc.text('Dados do Formador', 20, 55);
+        doc.text('Dados do Formador', 15, 55);
+        doc.line(15, 58, 60, 58);
 
-        const personalData = [
-            ['Nome Completo', user.nome_completo],
-            ['Email', user.email],
-            ['Especialidade', extra?.especialidade || 'Informática'],
-            ['Telemóvel', extra?.telemovel || 'N/A']
-        ];
+        // Inserir Foto se existir
+        if (photoData) {
+            try {
+                doc.addImage(photoData, 'JPEG', pageWidth - 55, 50, 40, 40);
+                doc.setDrawColor(99, 102, 241); // Indigo color for Trainer
+                doc.rect(pageWidth - 56, 49, 42, 42); // Moldura
+            } catch (e) { console.warn('Erro ao inserir imagem no PDF', e); }
+        }
 
-        doc.autoTable({
-            startY: 65,
-            body: personalData,
-            theme: 'striped',
-            headStyles: { fillColor: [30, 41, 59] }
-        });
+        doc.setFontSize(11);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`Nome: ${user.nome_completo}`, 15, 68);
+        doc.text(`Email: ${user.email}`, 15, 75);
+        doc.text(`Especialidade: ${extra?.especialidade || 'Informática'}`, 15, 82);
+        doc.text(`Telemóvel: ${extra?.telemovel || 'N/A'}`, 15, 89);
 
         // Teaching History
-        const tableY = (doc.previousAutoTable ? doc.previousAutoTable.finalY : 110) + 15;
-        doc.setFontSize(16);
-        doc.text('Módulos Lecionados', 20, tableY);
+        doc.setFontSize(14);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Módulos Lecionados', 15, 110);
+        doc.line(15, 113, 60, 113);
 
         const tableRows = teachingHistory.map(rec => [
             rec.nome_modulo,
@@ -83,8 +105,8 @@ function FormadorFichaPage() {
             new Date(rec.data_inicio).toLocaleDateString()
         ]);
 
-        doc.autoTable({
-            startY: tableY + 10,
+        autoTable(doc, {
+            startY: 115,
             head: [['Módulo', 'Curso', 'Turma', 'Data Início']],
             body: tableRows,
             theme: 'grid',
@@ -92,9 +114,9 @@ function FormadorFichaPage() {
         });
 
         // Footer
-        const finalY = (doc.previousAutoTable ? doc.previousAutoTable.finalY : 250) + 20;
-        doc.setFontSize(10);
-        doc.setTextColor(150, 150, 150);
+        const finalY = (doc.lastAutoTable ? doc.lastAutoTable.finalY : 250) + 20;
+        doc.setFontSize(9);
+        doc.setTextColor(150);
         doc.text(`Academy Manager System - Ficha Gerada em ${new Date().toLocaleDateString()}`, pageWidth / 2, Math.min(finalY, 285), { align: 'center' });
 
         doc.save(`Ficha_Formador_${user.nome_completo.replace(/ /g, '_')}.pdf`);
@@ -124,10 +146,10 @@ function FormadorFichaPage() {
                         <div style={{
                             width: '120px', height: '120px', borderRadius: '60px', background: 'rgba(99, 102, 241, 0.1)',
                             margin: '0 auto 1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            border: '2px solid var(--border-glass)'
+                            border: '2px solid var(--border-glass)', overflow: 'hidden'
                         }}>
-                            {extra?.foto_url ? (
-                                <img src={extra.foto_url} alt="Foto" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+                            {profilePhoto ? (
+                                <img src={profilePhoto} alt="Foto" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                             ) : (
                                 <User size={60} color="var(--secondary)" />
                             )}

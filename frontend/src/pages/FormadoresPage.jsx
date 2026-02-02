@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { BookOpen, Search, Edit2, Save, X, FileText, Upload, Download, Trash2, Printer, Calendar as CalendarIcon, LayoutGrid, Clock, List } from 'lucide-react';
 import { API_URL } from '../services/authService';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 import { Calendar, dateFnsLocalizer } from 'react-big-calendar';
 import format from 'date-fns/format';
 import parse from 'date-fns/parse';
@@ -189,7 +189,7 @@ function FormadoresPage() {
                 new Date(rec.data_inicio).toLocaleDateString()
             ]);
 
-            doc.autoTable({
+            autoTable(doc, {
                 startY: 135,
                 head: [['Módulo', 'Curso', 'Turma', 'Data Início']],
                 body: tableRows,

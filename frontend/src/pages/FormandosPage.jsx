@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Users, Search, Edit2, Save, X, FileText, Upload, Download, Trash2, Smartphone, MapPin, Printer } from 'lucide-react';
 import { API_URL } from '../services/authService';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 import Modal from '../components/ui/Modal';
 
 function FormandosPage() {
@@ -149,7 +149,6 @@ function FormandosPage() {
             doc.text(`Morada: ${selectedFormando.morada || 'N/A'}`, 15, 96);
             doc.text(`Data de Nascimento: ${selectedFormando.data_nascimento ? new Date(selectedFormando.data_nascimento).toLocaleDateString() : 'N/A'}`, 15, 103);
 
-            // Tabela de Avaliações
             doc.setFontSize(14);
             doc.setFont('helvetica', 'bold');
             doc.text('Histórico Escolar', 15, 120);
@@ -162,7 +161,7 @@ function FormandosPage() {
                 rec.nota_final ? `${rec.nota_final} val` : 'Em curso'
             ]);
 
-            doc.autoTable({
+            autoTable(doc, {
                 startY: 125,
                 head: [['Curso', 'Turma', 'Data Início', 'Nota Final']],
                 body: tableRows,

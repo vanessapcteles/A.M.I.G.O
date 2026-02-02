@@ -4,7 +4,7 @@ import { useLocation } from 'react-router-dom';
 import { authService, API_URL } from '../services/authService';
 import { Upload, CheckCircle, ChevronRight, User, Phone, MapPin, AlertCircle, FileText } from 'lucide-react';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+
 import Modal from '../components/ui/Modal';
 
 const CandidacyPage = () => {
