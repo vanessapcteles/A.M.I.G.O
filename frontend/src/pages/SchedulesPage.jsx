@@ -76,6 +76,12 @@ function SchedulesPage() {
         }
     });
 
+    const [selectedEvent, setSelectedEvent] = useState(null);
+
+    const handleSelectEvent = (event) => {
+        setSelectedEvent(event);
+    };
+
     return (
         <>
             <div style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
@@ -186,13 +192,9 @@ function SchedulesPage() {
                         date={currentDate}
                         view={currentView}
                         onNavigate={date => {
-                            // Se houver filtros, impedir navegação para fora do intervalo (simples)
                             if (startDate && endDate) {
                                 const start = new Date(startDate);
                                 const end = new Date(endDate);
-                                // Permitir pequena margem ou verificar se a data está "muito" fora?
-                                // Simples: Se a nova data for menor que start, volta ao start. Se maior que end, mantem end.
-                                // Mas o Calendar retorna a data de início da view.
                                 if (date < start) setCurrentDate(start);
                                 else if (date > end) setCurrentDate(end);
                                 else setCurrentDate(date);
@@ -201,6 +203,7 @@ function SchedulesPage() {
                             }
                         }}
                         onView={view => setCurrentView(view)}
+                        onSelectEvent={handleSelectEvent}
                         culture='pt'
                         components={{
                             toolbar: (props) => <CalendarToolbar {...props} locked={startDate && endDate} />
@@ -213,10 +216,64 @@ function SchedulesPage() {
                 <div className="glass-card" style={{ padding: '1rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                     <Info size={20} style={{ color: 'var(--primary)' }} />
                     <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
-                        Para agendar ou editar aulas, aceda à página específica da <strong>Turma</strong> desejada.
+                        Para agendar ou editar aulas, aceda à página específica da <strong>Turma</strong> desejada. Clique numa aula para ver detalhes.
                     </p>
                 </div>
             </div>
+
+            {selectedEvent && (
+                <div style={{
+                    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+                    background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(5px)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999
+                }} onClick={() => setSelectedEvent(null)}>
+                    <div
+                        className="glass-card"
+                        style={{ width: '90%', maxWidth: '500px', padding: '2rem', position: 'relative' }}
+                        onClick={e => e.stopPropagation()}
+                    >
+                        <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>Detalhes da Aula</h2>
+                        <div style={{ width: '100%', height: '1px', background: 'var(--border-glass)', marginBottom: '1.5rem' }}></div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                            <div>
+                                <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.3rem' }}>Módulo</label>
+                                <div style={{ fontWeight: '500', fontSize: '1.1rem' }}>{selectedEvent.resource.nome_modulo}</div>
+                            </div>
+                            <div>
+                                <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.3rem' }}>Turma</label>
+                                <div style={{ fontWeight: '500' }}>{selectedEvent.resource.codigo_turma}</div>
+                            </div>
+                            <div>
+                                <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.3rem' }}>Início</label>
+                                <div style={{ fontWeight: '500' }}>{format(selectedEvent.start, "dd/MM/yyyy HH:mm")}</div>
+                            </div>
+                            <div>
+                                <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.3rem' }}>Fim</label>
+                                <div style={{ fontWeight: '500' }}>{format(selectedEvent.end, "HH:mm")}</div>
+                            </div>
+                            <div>
+                                <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.3rem' }}>Sala</label>
+                                <div style={{ fontWeight: '500', color: 'var(--primary)' }}>{selectedEvent.resource.nome_sala}</div>
+                            </div>
+                            <div>
+                                <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.3rem' }}>Formador</label>
+                                <div style={{ fontWeight: '500' }}>{selectedEvent.resource.nome_formador}</div>
+                            </div>
+                        </div>
+
+                        <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'flex-end' }}>
+                            <button
+                                className="btn-primary"
+                                onClick={() => setSelectedEvent(null)}
+                                style={{ padding: '0.8rem 2rem' }}
+                            >
+                                Fechar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </>
     );
 }
