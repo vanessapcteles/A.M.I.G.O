@@ -230,6 +230,7 @@ export const getRoomSchedule = async (req, res) => {
 export const listAllLessons = async (req, res) => {
     try {
         const { start, end } = req.query;
+        const user = req.user; // Obtido pelo middleware authenticateToken
 
         let query = `
             SELECT 
@@ -247,10 +248,21 @@ export const listAllLessons = async (req, res) => {
             JOIN formadores f ON td.id_formador = f.id
             JOIN utilizadores u ON f.utilizador_id = u.id
             JOIN salas s ON td.id_sala = s.id
-            WHERE 1=1
         `;
 
         const params = [];
+
+        // Se for Formando, filtrar apenas pela sua turma
+        if (user.role === 'FORMANDO') {
+            query += `
+                JOIN inscricoes i ON t.id = i.id_turma
+                JOIN formandos frm ON i.id_formando = frm.id
+                WHERE frm.utilizador_id = ?
+            `;
+            params.push(user.id);
+        } else {
+            query += ` WHERE 1=1`;
+        }
 
         if (start && end) {
             query += ` AND h.inicio >= ? AND h.inicio <= ?`;
