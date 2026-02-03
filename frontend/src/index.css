@@ -260,16 +260,18 @@ table tbody tr:hover {
 /* Progress Bars */
 .progress-container {
   width: 100%;
-  height: 6px;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 10px;
+  height: 12px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 999px;
   overflow: hidden;
+  border: 1px solid var(--border-glass);
 }
 
 .progress-bar {
   height: 100%;
-  border-radius: 10px;
+  border-radius: 999px;
   transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
 }
 
 /* Glass Buttons */
