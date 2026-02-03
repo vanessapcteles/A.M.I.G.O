@@ -56,7 +56,11 @@ function TurmaDetailsPage() {
 
             setTurmaModules(modules);
             setTurmaFormandos(formandos);
-            setAvailableModules(allModules);
+
+            // Handle pagination response format for modules
+            const modulesList = Array.isArray(allModules) ? allModules : (allModules.data || []);
+            setAvailableModules(modulesList);
+
             setAvailableRooms(rooms);
 
             const trainersData = await trainersRes.json();

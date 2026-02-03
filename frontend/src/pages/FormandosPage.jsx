@@ -58,9 +58,12 @@ function FormandosPage() {
         try {
             const response = await fetch(`${API_URL}/api/turmas`, { headers: getAuthHeader() });
             const data = await response.json();
-            setTurmas(data || []);
+            // Handle pagination response format
+            const turmasList = Array.isArray(data) ? data : (data.data || []);
+            setTurmas(turmasList);
         } catch (error) {
             console.error('Erro ao carregar turmas:', error);
+            toast('Erro ao carregar turmas', 'error');
         }
     };
 
