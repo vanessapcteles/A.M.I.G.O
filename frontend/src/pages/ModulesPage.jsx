@@ -15,11 +15,16 @@ import {
 import { useToast } from '../context/ToastContext';
 import ConfirmDialog from '../components/common/ConfirmDialog';
 
+import Pagination from '../components/common/Pagination';
+
 function ModulesPage() {
     const { toast } = useToast();
     const [modules, setModules] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+
     const [showModal, setShowModal] = useState(false);
     const [editingModule, setEditingModule] = useState(null);
 
@@ -34,12 +39,20 @@ function ModulesPage() {
 
     useEffect(() => {
         loadModules();
-    }, []);
+    }, [currentPage, searchTerm]);
 
     const loadModules = async () => {
+        setLoading(true);
         try {
-            const data = await moduleService.getAllModules();
-            setModules(data);
+            const data = await moduleService.getAllModules({
+                page: currentPage,
+                limit: 12, // Um pouco mais, pois são cards pequenos
+                search: searchTerm
+            });
+            // Fallback para backward compatibility caso o backend ainda não tenha atualizado
+            const modulesList = Array.isArray(data) ? data : (data.data || []);
+            setModules(modulesList);
+            setTotalPages(data.pages || 1);
         } catch (error) {
             console.error(error);
             toast('Erro ao carregar módulos', 'error');
@@ -92,10 +105,6 @@ function ModulesPage() {
         setShowModal(true);
     };
 
-    const filteredModules = modules.filter(m =>
-        m.nome_modulo.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-
     return (
         <>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
@@ -107,7 +116,7 @@ function ModulesPage() {
                         className="input-field"
                         style={{ paddingLeft: '3rem' }}
                         value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
+                        onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
                     />
                 </div>
                 <button className="btn-primary" onClick={() => { setEditingModule(null); setFormData({ nome_modulo: '', carga_horaria: 25 }); setShowModal(true); }}>
@@ -118,52 +127,60 @@ function ModulesPage() {
             {loading ? (
                 <div style={{ textAlign: 'center', padding: '3rem' }}>Carregando módulos...</div>
             ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1.5rem' }}>
-                    {filteredModules.map((modulo) => (
-                        <motion.div
-                            key={modulo.id}
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className="glass-card"
-                            style={{ position: 'relative' }}
-                        >
-                            <div style={{ position: 'absolute', top: '1rem', right: '1rem', display: 'flex', gap: '0.5rem' }}>
-                                <button onClick={() => openEdit(modulo)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
-                                    <Edit2 size={16} />
-                                </button>
-                                <button onClick={() => handleDelete(modulo.id)} style={{ background: 'none', border: 'none', color: '#f87171', cursor: 'pointer' }}>
-                                    <Trash2 size={16} />
-                                </button>
-                            </div>
-
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
-                                <div style={{
-                                    width: '40px',
-                                    height: '40px',
-                                    borderRadius: '10px',
-                                    background: 'rgba(255,255,255,0.05)',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    color: 'var(--primary)'
-                                }}>
-                                    <Book size={20} />
+                <>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1.5rem' }}>
+                        {modules.map((modulo) => (
+                            <motion.div
+                                key={modulo.id}
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="glass-card"
+                                style={{ position: 'relative' }}
+                            >
+                                <div style={{ position: 'absolute', top: '1rem', right: '1rem', display: 'flex', gap: '0.5rem' }}>
+                                    <button onClick={() => openEdit(modulo)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
+                                        <Edit2 size={16} />
+                                    </button>
+                                    <button onClick={() => handleDelete(modulo.id)} style={{ background: 'none', border: 'none', color: '#f87171', cursor: 'pointer' }}>
+                                        <Trash2 size={16} />
+                                    </button>
                                 </div>
-                                <div>
-                                    <h3 style={{ fontSize: '1.15rem', fontWeight: '600' }}>{modulo.nome_modulo}</h3>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                                        <Clock size={12} /> {modulo.carga_horaria} Horas
+
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
+                                    <div style={{
+                                        width: '40px',
+                                        height: '40px',
+                                        borderRadius: '10px',
+                                        background: 'rgba(255,255,255,0.05)',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        color: 'var(--primary)'
+                                    }}>
+                                        <Book size={20} />
+                                    </div>
+                                    <div>
+                                        <h3 style={{ fontSize: '1.15rem', fontWeight: '600' }}>{modulo.nome_modulo}</h3>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                                            <Clock size={12} /> {modulo.carga_horaria} Horas
+                                        </div>
                                     </div>
                                 </div>
+                            </motion.div>
+                        ))}
+                        {modules.length === 0 && (
+                            <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
+                                Nenhum módulo encontrado.
                             </div>
-                        </motion.div>
-                    ))}
-                    {filteredModules.length === 0 && (
-                        <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
-                            Nenhum módulo encontrado.
-                        </div>
-                    )}
-                </div>
+                        )}
+                    </div>
+
+                    <Pagination
+                        currentPage={currentPage}
+                        totalPages={totalPages}
+                        onPageChange={setCurrentPage}
+                    />
+                </>
             )}
 
             {showModal && (

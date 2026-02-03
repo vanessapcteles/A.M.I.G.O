@@ -1,15 +1,62 @@
 import { db } from '../config/db.js';
 
 // Listar todas as turmas (com join para o curso)
+// Listar todas as turmas com paginação
 export const getTurmas = async (req, res) => {
     try {
-        const [turmas] = await db.query(`
+        const { page = 1, limit = 10, search, courseId } = req.query;
+        const offset = (page - 1) * limit;
+
+        let query = `
             SELECT t.*, c.nome_curso 
             FROM turmas t 
             JOIN cursos c ON t.id_curso = c.id 
-            ORDER BY t.data_inicio DESC
-        `);
-        return res.status(200).json(turmas);
+            WHERE 1=1
+        `;
+        const params = [];
+
+        if (search) {
+            query += ' AND (t.codigo_turma LIKE ? OR c.nome_curso LIKE ?)';
+            params.push(`%${search}%`, `%${search}%`);
+        }
+
+        if (courseId) {
+            query += ' AND t.id_curso = ?';
+            params.push(courseId);
+        }
+
+        query += ' ORDER BY t.data_inicio DESC LIMIT ? OFFSET ?';
+        params.push(parseInt(limit), parseInt(offset));
+
+        const [turmas] = await db.query(query, params);
+
+        // Count for pagination
+        let countQuery = `
+            SELECT COUNT(*) as total 
+            FROM turmas t 
+            JOIN cursos c ON t.id_curso = c.id
+            WHERE 1=1
+        `;
+        const countParams = [];
+
+        if (search) {
+            countQuery += ' AND (t.codigo_turma LIKE ? OR c.nome_curso LIKE ?)';
+            countParams.push(`%${search}%`, `%${search}%`);
+        }
+
+        if (courseId) {
+            countQuery += ' AND t.id_curso = ?';
+            countParams.push(courseId);
+        }
+
+        const [totalCount] = await db.query(countQuery, countParams);
+
+        return res.status(200).json({
+            data: turmas,
+            total: totalCount[0].total,
+            pages: Math.ceil(totalCount[0].total / limit),
+            currentPage: parseInt(page)
+        });
     } catch (error) {
         console.error('Erro ao listar turmas:', error);
         return res.status(500).json({ message: 'Erro ao listar turmas' });

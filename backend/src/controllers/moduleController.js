@@ -1,10 +1,42 @@
 import { db } from '../config/db.js';
 
 // Listar todos os modulos
+// Listar todos os modulos com paginação
 export const getModules = async (req, res) => {
     try {
-        const [modules] = await db.query('SELECT * FROM modulos ORDER BY nome_modulo ASC');
-        return res.status(200).json(modules);
+        const { page = 1, limit = 10, search } = req.query;
+        const offset = (page - 1) * limit;
+
+        let query = 'SELECT * FROM modulos';
+        const params = [];
+
+        if (search) {
+            query += ' WHERE nome_modulo LIKE ?';
+            params.push(`%${search}%`);
+        }
+
+        query += ' ORDER BY nome_modulo ASC LIMIT ? OFFSET ?';
+        params.push(parseInt(limit), parseInt(offset));
+
+        const [modules] = await db.query(query, params);
+
+        // Count for pagination
+        let countQuery = 'SELECT COUNT(*) as total FROM modulos';
+        const countParams = [];
+
+        if (search) {
+            countQuery += ' WHERE nome_modulo LIKE ?';
+            countParams.push(`%${search}%`);
+        }
+
+        const [totalCount] = await db.query(countQuery, countParams);
+
+        return res.status(200).json({
+            data: modules,
+            total: totalCount[0].total,
+            pages: Math.ceil(totalCount[0].total / limit),
+            currentPage: parseInt(page)
+        });
     } catch (error) {
         console.error('Erro ao listar modulos:', error);
         return res.status(500).json({ message: 'Erro ao listar modulos' });

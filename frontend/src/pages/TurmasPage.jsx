@@ -20,6 +20,8 @@ import {
 import { useToast } from '../context/ToastContext';
 import ConfirmDialog from '../components/common/ConfirmDialog';
 
+import Pagination from '../components/common/Pagination';
+
 function TurmasPage() {
     const navigate = useNavigate();
     const { toast } = useToast();
@@ -27,6 +29,10 @@ function TurmasPage() {
     const [cursos, setCursos] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
+    const [filterCourse, setFilterCourse] = useState('');
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+
     const [showModal, setShowModal] = useState(false);
     const [editingTurma, setEditingTurma] = useState(null);
 
@@ -49,20 +55,33 @@ function TurmasPage() {
 
     useEffect(() => {
         loadData();
-    }, []);
+    }, [currentPage, searchTerm, filterCourse]);
 
     const loadData = async () => {
+        setLoading(true);
         try {
-            const [turmasData, cursosData] = await Promise.all([
-                turmaService.getAllTurmas(),
-                turmaService.getCursos()
-            ]);
+            // Primeiro carregar cursos para ter a lista de filtros disponível mesmo se a query de turmas falhar ou depender dela
+            // Mas idealmente carregamos tudo em paralelo. Se courses variar muito, maybe separar.
+            // Para simplificar e garantir que temos cursos para o filtro, chamamos getCursos sempre ou apenas uma vez?
+            // getCursos retorna apenas cursos ativos para criar turma, mas para filtro queremos todos? 
+            // O endpoint getCursosParaTurma (usado aqui) filtra por estado != terminado. 
+            // Para filtro de pesquisa, talvez quiséssemos todos. Mas por agora usamos o mesmo.
 
-            // Se for formador, filtrar turmas (assumindo que turmasData tem id_formador ou link similar)
-            // Por agora, mostramos todas mas escondemos ações de escrita.
-            // Para filtrar realmente precisaríamos de endpoint específico ou campo na DB.
-            setTurmas(turmasData);
+            const cursosData = await turmaService.getCursos();
             setCursos(cursosData);
+
+            const turmasData = await turmaService.getAllTurmas({
+                page: currentPage,
+                limit: 8,
+                search: searchTerm,
+                courseId: filterCourse
+            });
+
+            // Fallback para backward compatibility
+            const turmasList = Array.isArray(turmasData) ? turmasData : (turmasData.data || []);
+            setTurmas(turmasList);
+            setTotalPages(turmasData.pages || 1);
+
         } catch (error) {
             console.error(error);
             toast('Erro ao carregar dados', 'error');
@@ -129,24 +148,32 @@ function TurmasPage() {
         }
     };
 
-    const filteredTurmas = turmas.filter(turma =>
-        turma.codigo_turma.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        turma.nome_curso.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-
     return (
         <>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-                <div style={{ position: 'relative', width: '300px' }}>
-                    <Search style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} size={18} />
-                    <input
-                        type="text"
-                        placeholder="Pesquisar turma ou curso..."
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
+                <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center', flex: 1 }}>
+                    <div style={{ position: 'relative', minWidth: '300px' }}>
+                        <Search style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} size={18} />
+                        <input
+                            type="text"
+                            placeholder="Pesquisar turma..."
+                            className="input-field"
+                            style={{ paddingLeft: '3rem' }}
+                            value={searchTerm}
+                            onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+                        />
+                    </div>
+                    <select
                         className="input-field"
-                        style={{ paddingLeft: '3rem' }}
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                    />
+                        style={{ width: 'auto', minWidth: '200px' }}
+                        value={filterCourse}
+                        onChange={(e) => { setFilterCourse(e.target.value); setCurrentPage(1); }}
+                    >
+                        <option value="">Todos os Cursos</option>
+                        {cursos.map(curso => (
+                            <option key={curso.id} value={curso.id}>{curso.nome_curso}</option>
+                        ))}
+                    </select>
                 </div>
                 {isAdmin && (
                     <button className="btn-primary" onClick={() => { setEditingTurma(null); setFormData({ id_curso: '', codigo_turma: '', data_inicio: '', data_fim: '', estado: 'planeado' }); setShowModal(true); }}>
@@ -158,71 +185,77 @@ function TurmasPage() {
             {loading ? (
                 <div style={{ textAlign: 'center', padding: '3rem' }}>Carregando turmas...</div>
             ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1.5rem' }}>
-                    {filteredTurmas.map((turma) => (
-                        <motion.div
-                            key={turma.id}
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className="glass-card"
-                            style={{ position: 'relative' }}
-                        >
-                            <div style={{
-                                position: 'absolute',
-                                top: '1rem',
-                                right: '1rem',
-                                display: 'flex',
-                                gap: '0.5rem'
-                            }}>
-                                <button onClick={() => navigate(`/turmas/${turma.id}/schedule`)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }} title="Horário">
-                                    <CalendarIcon size={16} />
-                                </button>
-                                <button onClick={() => navigate(`/turmas/${turma.id}`)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }} title="Gerir Módulos">
-                                    <BookOpen size={16} />
-                                </button>
-                                {isAdmin && (
-                                    <>
-                                        <button onClick={() => openEdit(turma)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
-                                            <Edit2 size={16} />
-                                        </button>
-                                        <button onClick={() => handleDelete(turma.id)} style={{ background: 'none', border: 'none', color: '#f87171', cursor: 'pointer' }}>
-                                            <Trash2 size={16} />
-                                        </button>
-                                    </>
-                                )}
-                            </div>
-
-                            <div style={{ marginBottom: '1.5rem' }}>
-                                <span style={{
-                                    fontSize: '0.7rem',
-                                    textTransform: 'uppercase',
-                                    letterSpacing: '1px',
-                                    color: getStatusColor(turma.estado),
-                                    fontWeight: 'bold',
-                                    display: 'block',
-                                    marginBottom: '0.5rem'
+                <>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1.5rem' }}>
+                        {turmas.map((turma) => (
+                            <motion.div
+                                key={turma.id}
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="glass-card"
+                                style={{ position: 'relative' }}
+                            >
+                                <div style={{
+                                    position: 'absolute',
+                                    top: '1rem',
+                                    right: '1rem',
+                                    display: 'flex',
+                                    gap: '0.5rem'
                                 }}>
-                                    {turma.estado}
-                                </span>
-                                <h3 style={{ fontSize: '1.4rem', fontWeight: '700' }}>{turma.codigo_turma}</h3>
-                                <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: '0.25rem' }}>{turma.nome_curso}</p>
-                            </div>
-
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-                                    <CalendarIcon size={16} />
-                                    <span>{new Date(turma.data_inicio).toLocaleDateString()} - {new Date(turma.data_fim).toLocaleDateString()}</span>
+                                    <button onClick={() => navigate(`/turmas/${turma.id}/schedule`)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }} title="Horário">
+                                        <CalendarIcon size={16} />
+                                    </button>
+                                    <button onClick={() => navigate(`/turmas/${turma.id}`)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }} title="Gerir Módulos">
+                                        <BookOpen size={16} />
+                                    </button>
+                                    {isAdmin && (
+                                        <>
+                                            <button onClick={() => openEdit(turma)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
+                                                <Edit2 size={16} />
+                                            </button>
+                                            <button onClick={() => handleDelete(turma.id)} style={{ background: 'none', border: 'none', color: '#f87171', cursor: 'pointer' }}>
+                                                <Trash2 size={16} />
+                                            </button>
+                                        </>
+                                    )}
                                 </div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-                                    <Users size={16} />
-                                    <span>Gestão de Formandos</span>
+
+                                <div style={{ marginBottom: '1.5rem' }}>
+                                    <span style={{
+                                        fontSize: '0.7rem',
+                                        textTransform: 'uppercase',
+                                        letterSpacing: '1px',
+                                        color: getStatusColor(turma.estado),
+                                        fontWeight: 'bold',
+                                        display: 'block',
+                                        marginBottom: '0.5rem'
+                                    }}>
+                                        {turma.estado}
+                                    </span>
+                                    <h3 style={{ fontSize: '1.4rem', fontWeight: '700' }}>{turma.codigo_turma}</h3>
+                                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: '0.25rem' }}>{turma.nome_curso}</p>
                                 </div>
-                            </div>
 
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                                        <CalendarIcon size={16} />
+                                        <span>{new Date(turma.data_inicio).toLocaleDateString()} - {new Date(turma.data_fim).toLocaleDateString()}</span>
+                                    </div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                                        <Users size={16} />
+                                        <span>Gestão de Formandos</span>
+                                    </div>
+                                </div>
+                            </motion.div>
+                        ))}
+                    </div>
 
-                        </motion.div>
-                    ))}
-                </div>
+                    <Pagination
+                        currentPage={currentPage}
+                        totalPages={totalPages}
+                        onPageChange={setCurrentPage}
+                    />
+                </>
             )}
 
             {showModal && (

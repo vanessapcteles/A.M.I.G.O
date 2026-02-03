@@ -9,8 +9,9 @@ const getAuthHeader = () => {
 };
 
 export const moduleService = {
-    getAllModules: async () => {
-        const response = await fetch(`${API_URL}/api/modules`, {
+    getAllModules: async (params = {}) => {
+        const query = new URLSearchParams(params).toString();
+        const response = await fetch(`${API_URL}/api/modules?${query}`, {
             headers: getAuthHeader()
         });
         if (!response.ok) throw new Error('Erro ao carregar módulos');

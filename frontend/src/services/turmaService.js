@@ -9,8 +9,9 @@ const getAuthHeader = () => {
 };
 
 export const turmaService = {
-    getAllTurmas: async () => {
-        const response = await fetch(`${API_URL}/api/turmas`, {
+    getAllTurmas: async (params = {}) => {
+        const query = new URLSearchParams(params).toString();
+        const response = await fetch(`${API_URL}/api/turmas?${query}`, {
             headers: getAuthHeader()
         });
         if (!response.ok) throw new Error('Erro ao carregar turmas');

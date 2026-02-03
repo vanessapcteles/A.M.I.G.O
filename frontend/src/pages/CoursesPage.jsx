@@ -18,10 +18,9 @@ import {
     Monitor,
     Zap,
     MoreHorizontal,
-    ChevronLeft,
-    ChevronRight,
     AlertCircle
 } from 'lucide-react';
+import Pagination from '../components/common/Pagination';
 
 function CoursesPage() {
     const navigate = useNavigate();
@@ -275,46 +274,11 @@ function CoursesPage() {
                     )}
 
                     {/* Pagination */}
-                    {totalPages > 1 && (
-                        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '1rem', marginTop: '3rem' }}>
-                            <button
-                                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                                disabled={currentPage === 1}
-                                className="btn-glass"
-                                style={{ padding: '0.5rem', borderRadius: '50%', opacity: currentPage === 1 ? 0.3 : 1 }}
-                            >
-                                <ChevronLeft size={20} />
-                            </button>
-
-                            <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                {[...Array(totalPages)].map((_, i) => (
-                                    <button
-                                        key={i}
-                                        onClick={() => setCurrentPage(i + 1)}
-                                        style={{
-                                            width: '35px', height: '35px', borderRadius: '10px',
-                                            border: 'none', cursor: 'pointer',
-                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                            background: currentPage === i + 1 ? 'var(--primary)' : 'var(--card-hover-bg)',
-                                            color: currentPage === i + 1 ? 'white' : 'var(--text-secondary)',
-                                            fontWeight: '600', transition: 'all 0.2s'
-                                        }}
-                                    >
-                                        {i + 1}
-                                    </button>
-                                ))}
-                            </div>
-
-                            <button
-                                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                                disabled={currentPage === totalPages}
-                                className="btn-glass"
-                                style={{ padding: '0.5rem', borderRadius: '50%', opacity: currentPage === totalPages ? 0.3 : 1 }}
-                            >
-                                <ChevronRight size={20} />
-                            </button>
-                        </div>
-                    )}
+                    <Pagination
+                        currentPage={currentPage}
+                        totalPages={totalPages}
+                        onPageChange={setCurrentPage}
+                    />
                 </>
             )}
 
