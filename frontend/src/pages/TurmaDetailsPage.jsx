@@ -49,7 +49,7 @@ function TurmaDetailsPage() {
             const [modules, formandos, allModules, rooms, trainersRes] = await Promise.all([
                 turmaService.getTurmaModules(id),
                 turmaService.getTurmaFormandos(id),
-                moduleService.getAllModules(),
+                moduleService.getAllModules({ limit: 1000 }),
                 roomService.getAllRooms(),
                 fetch(`${API_URL}/api/formadores`, { headers: getAuthHeader() }) // Fetch manual pq nao temos service especifico exportado ainda
             ]);
