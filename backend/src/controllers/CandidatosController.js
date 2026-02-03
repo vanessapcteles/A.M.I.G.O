@@ -70,6 +70,27 @@ export const getMyCandidacy = async (req, res) => {
             candidacy.dados_candidatura = JSON.parse(candidacy.dados_candidatura);
         }
 
+        // Fetch Turma Dates (Active or Latest)
+        // Correct Link: formandos -> inscricoes (with id_turma) -> turmas
+        const [turmaRes] = await db.query(
+            `SELECT t.data_inicio, t.data_fim 
+             FROM turmas t 
+             JOIN inscricoes i ON t.id = i.id_turma
+             JOIN formandos f ON i.id_formando = f.id
+             WHERE f.utilizador_id = ? AND t.id_curso = ?
+             ORDER BY FIELD(t.estado, 'a decorrer', 'planeado', 'terminado'), t.data_inicio DESC 
+             LIMIT 1`,
+            [user_id, candidacy.id_curso]
+        );
+
+        if (turmaRes.length > 0) {
+            candidacy.data_inicio = turmaRes[0].data_inicio;
+            candidacy.data_fim = turmaRes[0].data_fim;
+        }
+
+        // --- Progress Calculation (Restored/Preserved but using new data if needed, currently disabled by user request for bar) ---
+        // User asked to remove bar, so we just send dates.
+
         res.json(candidacy);
     } catch (error) {
         console.error('Erro ao buscar minha candidatura:', error);

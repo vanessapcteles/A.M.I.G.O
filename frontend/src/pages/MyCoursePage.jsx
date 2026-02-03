@@ -48,17 +48,23 @@ function MyCoursePage() {
                     </div>
                     <div>
                         <h1 style={{ fontSize: '2rem', fontWeight: 'bold' }}>{inscricao.nome_curso}</h1>
-                        <p style={{ color: 'var(--text-secondary)' }}>Status da Matrícula: <span style={{ color: '#10b981', fontWeight: 'bold' }}>ATtVA</span></p>
+                        <p style={{ color: 'var(--text-secondary)' }}>Status da Matrícula: <span style={{ color: '#10b981', fontWeight: 'bold' }}>ATIVA</span></p>
                     </div>
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
                     <div className="glass-card" style={{ background: 'rgba(255,255,255,0.02)' }}>
-                        <h4 style={{ marginBottom: '1rem' }}>Progresso</h4>
-                        <div style={{ height: '8px', background: 'rgba(255,255,255,0.05)', borderRadius: '4px', overflow: 'hidden' }}>
-                            <div style={{ width: '45%', height: '100%', background: 'var(--primary)' }}></div>
+                        <h4 style={{ marginBottom: '1rem' }}>Duração da Turma</h4>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Data de Início:</span>
+                                <span style={{ fontWeight: '500' }}>{inscricao.data_inicio ? new Date(inscricao.data_inicio).toLocaleDateString() : 'A definir'}</span>
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Data de Fim:</span>
+                                <span style={{ fontWeight: '500' }}>{inscricao.data_fim ? new Date(inscricao.data_fim).toLocaleDateString() : 'A definir'}</span>
+                            </div>
                         </div>
-                        <p style={{ fontSize: '0.8rem', marginTop: '0.5rem', textAlign: 'right', color: 'var(--text-secondary)' }}>45% Completo</p>
                     </div>
                     <div className="glass-card" style={{ background: 'rgba(255,255,255,0.02)' }}>
                         <h4 style={{ marginBottom: '1rem' }}>Módulos Concluídos</h4>
