@@ -20,9 +20,9 @@ export const getTurmaModules = async (req, res) => {
                  WHERE h.id_turma_detalhe = td.id) as horas_agendadas
             FROM turma_detalhes td
             JOIN modulos m ON td.id_modulo = m.id
-            JOIN formadores f ON td.id_formador = f.id
-            JOIN utilizadores u ON f.utilizador_id = u.id
-            JOIN salas s ON td.id_sala = s.id
+            LEFT JOIN formadores f ON td.id_formador = f.id
+            LEFT JOIN utilizadores u ON f.utilizador_id = u.id
+            LEFT JOIN salas s ON td.id_sala = s.id
             WHERE td.id_turma = ?
             ORDER BY td.sequencia ASC
         `, [turmaId]);
@@ -115,5 +115,24 @@ export const removeModuleFromTurma = async (req, res) => {
         return res.json({ message: 'Módulo removido da turma' });
     } catch (error) {
         return res.status(500).json({ message: 'Erro ao remover módulo' });
+    }
+};
+
+// Atualizar atribuição de módulo (Formador, Sala, Horas)
+export const updateTurmaModule = async (req, res) => {
+    try {
+        const { detalheId } = req.params;
+        const { id_formador, id_sala, horas_planeadas } = req.body;
+
+        // Allow un-assigning by sending null
+        await db.query(
+            'UPDATE turma_detalhes SET id_formador = ?, id_sala = ?, horas_planeadas = ? WHERE id = ?',
+            [id_formador || null, id_sala || null, horas_planeadas, detalheId]
+        );
+
+        return res.json({ message: 'Atribuição atualizada com sucesso' });
+    } catch (error) {
+        console.error('Erro ao atualizar atribuição:', error);
+        return res.status(500).json({ message: 'Erro ao atualizar atribuição do módulo' });
     }
 };

@@ -106,8 +106,32 @@ export const createTurma = async (req, res) => {
             [id_curso, codigo_turma, data_inicio, data_fim, estado || 'planeado']
         );
 
+        const turmaId = result.insertId;
+
+        // Auto-inherit modules from Course Curriculum
+        // Fetch course modules
+        const [courseModules] = await db.query('SELECT * FROM curso_modulos WHERE id_curso = ?', [id_curso]);
+
+        if (courseModules.length > 0) {
+            for (const cm of courseModules) {
+                // Get default hours from module if horas_padrao is null
+                let horas = cm.horas_padrao;
+                if (!horas) {
+                    const [mod] = await db.query('SELECT carga_horaria FROM modulos WHERE id = ?', [cm.id_modulo]);
+                    horas = mod[0]?.carga_horaria || 0;
+                }
+
+                // Insert into turma_detalhes
+                // NOTE: id_formador and id_sala MUST be nullable in DB for this to work.
+                await db.query(`
+                    INSERT INTO turma_detalhes (id_turma, id_modulo, id_formador, id_sala, horas_planeadas, sequencia)
+                    VALUES (?, ?, NULL, NULL, ?, ?)
+                `, [turmaId, cm.id_modulo, horas, cm.sequencia]);
+            }
+        }
+
         return res.status(201).json({
-            id: result.insertId,
+            id: turmaId,
             message: 'Turma criada com sucesso!'
         });
     } catch (error) {

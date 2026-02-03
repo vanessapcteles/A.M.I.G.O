@@ -21,6 +21,7 @@ function TurmaDetailsPage() {
     // Confirmation State
     const [confirmOpen, setConfirmOpen] = useState(false);
     const [moduleToRemove, setModuleToRemove] = useState(null);
+    const [editingModule, setEditingModule] = useState(null);
 
     // Listas para os Dropdowns
     const [availableModules, setAvailableModules] = useState([]);
@@ -74,19 +75,53 @@ function TurmaDetailsPage() {
         }
     };
 
-    const handleAddModule = async (e) => {
+    const handleSubmitModule = async (e) => {
         e.preventDefault();
         try {
-            await turmaService.addModuleToTurma(id, formData);
+            if (editingModule) {
+                // Update existing assignment
+                await turmaService.updateTurmaModule(editingModule.id, formData);
+                toast('Atribuição atualizada!', 'success');
+            } else {
+                // Add new module (extra)
+                await turmaService.addModuleToTurma(id, formData);
+                toast('Módulo adicionado com sucesso!', 'success');
+            }
+
             // Refresh
             const updatedModules = await turmaService.getTurmaModules(id);
             setTurmaModules(updatedModules);
-            toast('Módulo adicionado com sucesso!', 'success');
-            // Limpar form
-            setFormData({ ...formData, id_modulo: '', horas_planeadas: '', sequencia: String(updatedModules.length + 2) });
+
+            // Reset form
+            setEditingModule(null);
+            setFormData({
+                id_modulo: '', id_formador: '', id_sala: '', horas_planeadas: '',
+                sequencia: String(updatedModules.length + 2)
+            });
         } catch (error) {
             toast(error.message, 'error');
         }
+    };
+
+    const startEdit = (module) => {
+        setEditingModule(module);
+        setFormData({
+            id_modulo: module.id_modulo,
+            id_formador: module.id_formador || '',
+            id_sala: module.id_sala || '',
+            horas_planeadas: module.horas_planeadas,
+            sequencia: module.sequencia
+        });
+        // Scroll to form (optional)
+        document.getElementById('module-form')?.scrollIntoView({ behavior: 'smooth' });
+    };
+
+    const cancelEdit = () => {
+        setEditingModule(null);
+        setFormData({
+            id_modulo: '', id_formador: '', id_sala: '', horas_planeadas: '',
+            sequencia: String(turmaModules.length + 1)
+        });
     };
 
     const confirmRemoveModule = (detalheId) => {
@@ -105,9 +140,20 @@ function TurmaDetailsPage() {
         }
     };
 
-    // Auto-fill hours when module is selected
+    // Auto-fill hours when module is selected OR check if already exists
     const handleModuleChange = (moduleId) => {
-        const mod = availableModules.find(m => m.id === parseInt(moduleId));
+        const idInt = parseInt(moduleId);
+
+        // Check if module is already assigned to this class
+        const existing = turmaModules.find(tm => tm.id_modulo === idInt);
+        if (existing) {
+            startEdit(existing);
+            toast("Módulo já existente. Modo de edição ativado.", 'info');
+            return;
+        }
+
+        // New module logic
+        const mod = availableModules.find(m => m.id === idInt);
         setFormData(prev => ({
             ...prev,
             id_modulo: moduleId,
@@ -153,14 +199,47 @@ function TurmaDetailsPage() {
                             </thead>
                             <tbody>
                                 {turmaModules.map(tm => (
-                                    <tr key={tm.id} style={{ borderBottom: '1px solid var(--border-glass)' }}>
+                                    <tr key={tm.id} style={{ borderBottom: '1px solid var(--border-glass)', background: editingModule?.id === tm.id ? 'rgba(255,255,255,0.05)' : 'transparent' }}>
                                         <td style={{ padding: '0.75rem' }}>{tm.sequencia}</td>
                                         <td style={{ padding: '0.75rem', fontWeight: '500' }}>{tm.nome_modulo}</td>
-                                        <td style={{ padding: '0.75rem' }}>{tm.nome_formador}</td>
-                                        <td style={{ padding: '0.75rem' }}>{tm.nome_sala}</td>
-                                        <td style={{ padding: '0.75rem' }}>{tm.horas_planeadas}h</td>
                                         <td style={{ padding: '0.75rem' }}>
-                                            <button onClick={() => confirmRemoveModule(tm.id)} style={{ background: 'none', border: 'none', color: '#f87171', cursor: 'pointer' }}>
+                                            {tm.nome_formador ? (
+                                                tm.nome_formador
+                                            ) : (
+                                                <button
+                                                    onClick={() => startEdit(tm)}
+                                                    style={{
+                                                        background: 'none', border: '1px solid #f87171', color: '#f87171',
+                                                        fontSize: '0.8rem', padding: '2px 6px', borderRadius: '4px', cursor: 'pointer'
+                                                    }}
+                                                    title="Clique para atribuir formador"
+                                                >
+                                                    Por atribuir
+                                                </button>
+                                            )}
+                                        </td>
+                                        <td style={{ padding: '0.75rem' }}>
+                                            {tm.nome_sala ? (
+                                                tm.nome_sala
+                                            ) : (
+                                                <button
+                                                    onClick={() => startEdit(tm)}
+                                                    style={{
+                                                        background: 'none', border: '1px solid #f87171', color: '#f87171',
+                                                        fontSize: '0.8rem', padding: '2px 6px', borderRadius: '4px', cursor: 'pointer'
+                                                    }}
+                                                    title="Clique para atribuir sala"
+                                                >
+                                                    Por atribuir
+                                                </button>
+                                            )}
+                                        </td>
+                                        <td style={{ padding: '0.75rem' }}>{tm.horas_planeadas}h</td>
+                                        <td style={{ padding: '0.75rem', display: 'flex', gap: '0.5rem' }}>
+                                            <button onClick={() => startEdit(tm)} style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer' }} title="Editar Atribuição">
+                                                <Users size={16} />
+                                            </button>
+                                            <button onClick={() => confirmRemoveModule(tm.id)} style={{ background: 'none', border: 'none', color: '#f87171', cursor: 'pointer' }} title="Remover Módulo">
                                                 <Trash2 size={16} />
                                             </button>
                                         </td>
@@ -203,19 +282,28 @@ function TurmaDetailsPage() {
                     )}
                 </div>
 
-                {/* FORMULÁRIO DE ADIÇÃO */}
-                <div className="glass-card" style={{ height: 'fit-content' }}>
-                    <h3 style={{ marginBottom: '1.5rem', fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <Plus size={18} color="var(--primary)" /> Adicionar Módulo
+                {/* FORMULÁRIO DE ADIÇÃO / EDIÇÃO */}
+                <div id="module-form" className="glass-card" style={{ height: 'fit-content', border: editingModule ? '1px solid var(--primary)' : 'none' }}>
+                    <h3 style={{ marginBottom: '1.5rem', fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'space-between' }}>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            {editingModule ? <Users size={18} color="var(--primary)" /> : <Plus size={18} color="var(--primary)" />}
+                            {editingModule ? 'Editar Atribuição' : 'Adicionar Módulo'}
+                        </span>
+                        {editingModule && (
+                            <button onClick={cancelEdit} style={{ fontSize: '0.8rem', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
+                                Cancelar
+                            </button>
+                        )}
                     </h3>
 
-                    <form onSubmit={handleAddModule} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    <form onSubmit={handleSubmitModule} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                         <div>
                             <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.4rem' }}>Módulo</label>
                             <select
                                 className="input-field"
                                 required
                                 value={formData.id_modulo}
+                                disabled={!!editingModule}
                                 onChange={e => handleModuleChange(e.target.value)}
                             >
                                 <option value="">Selecione Módulo...</option>
@@ -291,7 +379,7 @@ function TurmaDetailsPage() {
 
 
                         <button type="submit" className="btn-primary" style={{ marginTop: '1rem' }}>
-                            Gravar Associação
+                            {editingModule ? 'Atualizar Atribuição' : 'Gravar Associação'}
                         </button>
                     </form>
                 </div>

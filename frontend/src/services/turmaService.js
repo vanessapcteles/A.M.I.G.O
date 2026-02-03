@@ -83,6 +83,19 @@ export const turmaService = {
         if (!response.ok) throw new Error('Erro ao remover módulo');
         return response.json();
     },
+
+    updateTurmaModule: async (detalheId, data) => {
+        const response = await fetch(`${API_URL}/api/turma-details/${detalheId}`, {
+            method: 'PUT',
+            headers: getAuthHeader(),
+            body: JSON.stringify(data)
+        });
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.message || 'Erro ao atualizar atribuição');
+        }
+        return response.json();
+    },
     // Listar Formandos
     getTurmaFormandos: async (turmaId) => {
         const response = await fetch(`${API_URL}/api/turma-details/${turmaId}/formandos`, {

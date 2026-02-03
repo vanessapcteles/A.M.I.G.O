@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { courseService } from '../services/courseService';
+import { moduleService } from '../services/moduleService';
 import { authService } from '../services/authService';
 import { useToast } from '../context/ToastContext';
 
@@ -40,6 +41,13 @@ function CoursesPage() {
         area: 'Informática',
         estado: 'planeado'
     });
+
+    // Module Management State
+    const [showModuleModal, setShowModuleModal] = useState(false);
+    const [currentCourse, setCurrentCourse] = useState(null);
+    const [courseModules, setCourseModules] = useState([]);
+    const [availableModules, setAvailableModules] = useState([]);
+    const [moduleForm, setModuleForm] = useState({ id_modulo: '', horas_padrao: '', sequencia: '' });
 
     const user = authService.getCurrentUser();
     const role = user?.tipo_utilizador?.toUpperCase();
@@ -122,6 +130,51 @@ function CoursesPage() {
             estado: course.estado
         });
         setShowModal(true);
+    };
+
+
+
+    const openModuleModal = async (course) => {
+        setCurrentCourse(course);
+        setShowModuleModal(true);
+        // Load course modules
+        try {
+            const cModules = await courseService.getCourseModules(course.id);
+            setCourseModules(cModules);
+            // Load all modules for dropdown
+            const allMods = await moduleService.getAllModules({ limit: 1000 });
+            setAvailableModules(Array.isArray(allMods) ? allMods : (allMods.data || []));
+        } catch (error) {
+            toast('Erro ao carregar detalhes do curso', 'error');
+        }
+    };
+
+    const handleAddModule = async (e) => {
+        e.preventDefault();
+        try {
+            await courseService.addModuleToCourse(currentCourse.id, moduleForm);
+
+            // Refresh list
+            const updated = await courseService.getCourseModules(currentCourse.id);
+            setCourseModules(updated);
+
+            toast('Módulo adicionado ao currículo', 'success');
+            // Suggest next sequence
+            const lastSeq = updated.length > 0 ? Math.max(...updated.map(m => m.sequencia)) : 0;
+            setModuleForm({ id_modulo: '', horas_padrao: '', sequencia: String(lastSeq + 1) });
+        } catch (error) {
+            toast(error.message, 'error');
+        }
+    };
+
+    const handleRemoveModule = async (moduleId) => {
+        try {
+            await courseService.removeModuleFromCourse(moduleId);
+            setCourseModules(prev => prev.filter(m => m.id !== moduleId));
+            toast('Módulo removido', 'success');
+        } catch (error) {
+            toast('Erro ao remover módulo', 'error');
+        }
     };
 
     const getAreaIcon = (area) => {
@@ -228,6 +281,9 @@ function CoursesPage() {
                                                 <button onClick={() => handleDelete(course.id)} className="btn-glass" style={{ padding: '0.4rem', borderRadius: '8px', color: '#f87171' }}>
                                                     <Trash2 size={14} />
                                                 </button>
+                                                <button onClick={() => openModuleModal(course)} className="btn-glass" title="Gerir Currículo" style={{ padding: '0.4rem', borderRadius: '8px', color: 'var(--primary)' }}>
+                                                    <BookOpen size={14} />
+                                                </button>
                                             </div>
                                         )}
                                     </div>
@@ -280,6 +336,120 @@ function CoursesPage() {
                         onPageChange={setCurrentPage}
                     />
                 </>
+            )}
+
+            {showModuleModal && currentCourse && (
+                <div style={{
+                    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+                    background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
+                }}>
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="glass-card"
+                        style={{ maxWidth: '800px', width: '90%', maxHeight: '90vh', overflowY: 'auto', padding: '2rem' }}
+                    >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem', alignItems: 'center' }}>
+                            <div>
+                                <h2 style={{ fontSize: '1.4rem', fontWeight: '700' }}>Currículo do Curso</h2>
+                                <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>{currentCourse.nome_curso}</p>
+                            </div>
+                            <button onClick={() => setShowModuleModal(false)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+                                <X size={24} />
+                            </button>
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: '2rem' }}>
+                            {/* Left: Add Form */}
+                            <div>
+                                <h4 style={{ marginBottom: '1rem', color: 'var(--primary)', fontSize: '1rem' }}>Adicionar Módulo</h4>
+                                <form onSubmit={handleAddModule} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                    <div>
+                                        <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Módulo</label>
+                                        <select
+                                            className="input-field"
+                                            required
+                                            value={moduleForm.id_modulo}
+                                            onChange={e => {
+                                                const mod = availableModules.find(m => m.id == e.target.value);
+                                                setModuleForm({
+                                                    ...moduleForm,
+                                                    id_modulo: e.target.value,
+                                                    horas_padrao: mod ? mod.carga_horaria : ''
+                                                });
+                                            }}
+                                        >
+                                            <option value="">Selecione...</option>
+                                            {availableModules.map(m => (
+                                                <option key={m.id} value={m.id}>{m.nome_modulo} ({m.carga_horaria}h)</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div style={{ display: 'flex', gap: '1rem' }}>
+                                        <div style={{ flex: 1 }}>
+                                            <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Horas</label>
+                                            <input
+                                                type="number" className="input-field"
+                                                value={moduleForm.horas_padrao}
+                                                onChange={e => setModuleForm({ ...moduleForm, horas_padrao: e.target.value })}
+                                            />
+                                        </div>
+                                        <div style={{ flex: 1 }}>
+                                            <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Sequência</label>
+                                            <input
+                                                type="number" className="input-field"
+                                                value={moduleForm.sequencia}
+                                                placeholder="Auto"
+                                                onChange={e => setModuleForm({ ...moduleForm, sequencia: e.target.value })}
+                                            />
+                                        </div>
+                                    </div>
+                                    <button type="submit" className="btn-primary" style={{ marginTop: '0.5rem' }}>
+                                        <Plus size={16} /> Adicionar
+                                    </button>
+                                </form>
+                            </div>
+
+                            {/* Right: List */}
+                            <div>
+                                <h4 style={{ marginBottom: '1rem', color: 'var(--text-primary)', fontSize: '1rem' }}>Módulos Associados ({courseModules.length})</h4>
+                                <div style={{ maxHeight: '400px', overflowY: 'auto', paddingRight: '0.5rem' }}>
+                                    {courseModules.length === 0 ? (
+                                        <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)', border: '1px dashed var(--border-glass)', borderRadius: '8px' }}>
+                                            Sem módulos associados.
+                                        </div>
+                                    ) : (
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                            {courseModules.map((cm, idx) => (
+                                                <div key={cm.id} className="glass-card" style={{ padding: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(255,255,255,0.03)' }}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                                        <span style={{
+                                                            width: '24px', height: '24px', borderRadius: '50%', background: 'var(--primary-glow)',
+                                                            color: 'var(--primary)', fontSize: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold'
+                                                        }}>
+                                                            {cm.sequencia || idx + 1}
+                                                        </span>
+                                                        <div>
+                                                            <div style={{ fontWeight: '600', fontSize: '0.9rem' }}>{cm.nome_modulo}</div>
+                                                            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{cm.horas_padrao} horas</div>
+                                                        </div>
+                                                    </div>
+                                                    <button
+                                                        onClick={() => handleRemoveModule(cm.id)}
+                                                        style={{ background: 'none', border: 'none', color: '#f87171', cursor: 'pointer', padding: '0.25rem' }}
+                                                    >
+                                                        <Trash2 size={16} />
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    </motion.div>
+                </div>
             )}
 
             {showModal && (

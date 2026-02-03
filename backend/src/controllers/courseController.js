@@ -132,3 +132,79 @@ export const deleteCourse = async (req, res) => {
         return res.status(500).json({ message: 'Erro ao eliminar curso' });
     }
 };
+
+// Obter módulos de um curso
+export const getCourseModules = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const [modules] = await db.query(`
+            SELECT 
+                cm.id, 
+                cm.id_modulo, 
+                cm.sequencia, 
+                cm.horas_padrao,
+                m.nome_modulo, 
+                m.carga_horaria 
+            FROM curso_modulos cm
+            JOIN modulos m ON cm.id_modulo = m.id
+            WHERE cm.id_curso = ?
+            ORDER BY cm.sequencia ASC
+        `, [id]);
+        return res.json(modules);
+    } catch (error) {
+        console.error('Erro ao listar módulos do curso:', error);
+        return res.status(500).json({ message: 'Erro ao listar módulos do curso' });
+    }
+};
+
+// Adicionar módulo ao curso
+export const addModuleToCourse = async (req, res) => {
+    try {
+        const { id } = req.params; // course id
+        const { id_modulo, sequencia, horas_padrao } = req.body;
+
+        if (!id_modulo) {
+            return res.status(400).json({ message: 'ID do módulo é obrigatório' });
+        }
+
+        // Check if exists
+        const [existing] = await db.query(
+            'SELECT id FROM curso_modulos WHERE id_curso = ? AND id_modulo = ?',
+            [id, id_modulo]
+        );
+        if (existing.length > 0) {
+            return res.status(400).json({ message: 'Este módulo já está associado ao curso' });
+        }
+
+        // Auto-sequence
+        let nextSeq = sequencia;
+        if (!nextSeq) {
+            const [rows] = await db.query('SELECT MAX(sequencia) as maxSeq FROM curso_modulos WHERE id_curso = ?', [id]);
+            nextSeq = (rows[0].maxSeq || 0) + 1;
+        }
+
+        await db.query(
+            'INSERT INTO curso_modulos (id_curso, id_modulo, sequencia, horas_padrao) VALUES (?, ?, ?, ?)',
+            [id, id_modulo, nextSeq, horas_padrao || null]
+        );
+
+        return res.status(201).json({ message: 'Módulo associado ao curso com sucesso' });
+    } catch (error) {
+        console.error('Erro ao associar módulo:', error);
+        return res.status(500).json({ message: 'Erro ao associar módulo' });
+    }
+};
+
+// Remover módulo do curso
+export const removeModuleFromCourse = async (req, res) => {
+    try {
+        const { moduleId } = req.params; // Here moduleId refers to curso_modulos.id
+
+        await db.query('DELETE FROM curso_modulos WHERE id = ?', [moduleId]);
+
+        return res.json({ message: 'Módulo removido do curso' });
+    } catch (error) {
+        console.error('Erro ao remover módulo do curso:', error);
+        return res.status(500).json({ message: 'Erro ao remover módulo' });
+    }
+};

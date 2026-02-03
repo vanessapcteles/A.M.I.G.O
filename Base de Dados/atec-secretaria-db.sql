@@ -146,8 +146,20 @@ CREATE TABLE modulos (
 CREATE TABLE cursos (
     id INT AUTO_INCREMENT PRIMARY KEY,
     nome_curso VARCHAR(150) NOT NULL,
-    area ENUM('Informática', 'Robótica', 'Electrónica', 'Outra') NOT NULL,
+    area VARCHAR(100) NOT NULL,
     estado ENUM('planeado', 'a decorrer', 'terminado') DEFAULT 'planeado'
+);
+
+CREATE TABLE curso_modulos (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    id_curso INT NOT NULL,
+    id_modulo INT NOT NULL,
+    sequencia INT DEFAULT 0,
+    horas_padrao INT,
+    
+    FOREIGN KEY (id_curso) REFERENCES cursos(id) ON DELETE CASCADE,
+    FOREIGN KEY (id_modulo) REFERENCES modulos(id) ON DELETE CASCADE,
+    UNIQUE KEY unique_curso_modulo (id_curso, id_modulo)
 );
 
 CREATE TABLE turmas (
@@ -173,8 +185,8 @@ CREATE TABLE turma_detalhes (
 
     id_turma INT NOT NULL,
     id_modulo INT NOT NULL,
-    id_formador INT NOT NULL,
-    id_sala INT NOT NULL,
+    id_formador INT, -- Nullable to allow creating module list first
+    id_sala INT, -- Nullable
 
     sequencia INT NOT NULL,          -- ordem do módulo dentro da turma
     horas_planeadas INT NOT NULL,    -- ajuda a controlar máximo de horas do módulo
@@ -184,8 +196,8 @@ CREATE TABLE turma_detalhes (
 
     FOREIGN KEY (id_turma) REFERENCES turmas(id) ON DELETE CASCADE,
     FOREIGN KEY (id_modulo) REFERENCES modulos(id) ON DELETE RESTRICT,
-    FOREIGN KEY (id_formador) REFERENCES formadores(id) ON DELETE RESTRICT,
-    FOREIGN KEY (id_sala) REFERENCES salas(id) ON DELETE RESTRICT
+    FOREIGN KEY (id_formador) REFERENCES formadores(id) ON DELETE SET NULL,
+    FOREIGN KEY (id_sala) REFERENCES salas(id) ON DELETE SET NULL
 );
 
 -- ---------------------------------------------------------------------------------------------------
