@@ -34,6 +34,32 @@ export const getTurmaModules = async (req, res) => {
     }
 };
 
+// Listar formandos inscritos na turma
+export const getTurmaFormandos = async (req, res) => {
+    try {
+        const { turmaId } = req.params;
+        const [formandos] = await db.query(`
+            SELECT 
+                f.id,
+                u.nome_completo,
+                u.email,
+                f.telemovel,
+                i.data_inscricao,
+                i.estado
+            FROM inscricoes i
+            JOIN formandos f ON i.id_formando = f.id
+            JOIN utilizadores u ON f.utilizador_id = u.id
+            WHERE i.id_turma = ?
+            ORDER BY u.nome_completo ASC
+        `, [turmaId]);
+
+        return res.json(formandos);
+    } catch (error) {
+        console.error('Erro ao listar formandos da turma:', error);
+        return res.status(500).json({ message: 'Erro ao listar formandos da turma' });
+    }
+};
+
 // Adicionar módulo à turma
 export const addModuleToTurma = async (req, res) => {
     try {

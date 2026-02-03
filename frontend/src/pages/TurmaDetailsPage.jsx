@@ -5,7 +5,7 @@ import { turmaService } from '../services/turmaService';
 import { moduleService } from '../services/moduleService';
 import { roomService } from '../services/roomService';
 import { API_URL } from '../services/authService';
-import { ArrowLeft, Save, Trash2, Plus, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Save, Trash2, Plus, AlertCircle, Users } from 'lucide-react';
 
 function TurmaDetailsPage() {
     const { id } = useParams(); // Turma ID
@@ -13,6 +13,7 @@ function TurmaDetailsPage() {
 
     const [loading, setLoading] = useState(true);
     const [turmaModules, setTurmaModules] = useState([]);
+    const [turmaFormandos, setTurmaFormandos] = useState([]);
 
     // Listas para os Dropdowns
     const [availableModules, setAvailableModules] = useState([]);
@@ -38,14 +39,16 @@ function TurmaDetailsPage() {
 
     const loadData = async () => {
         try {
-            const [modules, allModules, rooms, trainersRes] = await Promise.all([
+            const [modules, formandos, allModules, rooms, trainersRes] = await Promise.all([
                 turmaService.getTurmaModules(id),
+                turmaService.getTurmaFormandos(id),
                 moduleService.getAllModules(),
                 roomService.getAllRooms(),
                 fetch(`${API_URL}/api/formadores`, { headers: getAuthHeader() }) // Fetch manual pq nao temos service especifico exportado ainda
             ]);
 
             setTurmaModules(modules);
+            setTurmaFormandos(formandos);
             setAvailableModules(allModules);
             setAvailableRooms(rooms);
 
@@ -142,6 +145,38 @@ function TurmaDetailsPage() {
                                                 <Trash2 size={16} />
                                             </button>
                                         </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    )}
+                </div>
+
+                {/* LISTA DE FORMANDOS */}
+                <div className="glass-card">
+                    <h3 style={{ marginBottom: '1.5rem', fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <Users size={18} color="var(--primary)" /> Formandos Inscritos ({turmaFormandos.length})
+                    </h3>
+
+                    {turmaFormandos.length === 0 ? (
+                        <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+                            <p>Sem formandos inscritos nesta turma.</p>
+                        </div>
+                    ) : (
+                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
+                            <thead>
+                                <tr style={{ borderBottom: '1px solid var(--border-glass)', textAlign: 'left', color: 'var(--text-secondary)' }}>
+                                    <th style={{ padding: '0.75rem' }}>Nome</th>
+                                    <th style={{ padding: '0.75rem' }}>Email</th>
+                                    <th style={{ padding: '0.75rem' }}>Contacto</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {turmaFormandos.map(f => (
+                                    <tr key={f.id} style={{ borderBottom: '1px solid var(--border-glass)' }}>
+                                        <td style={{ padding: '0.75rem', fontWeight: '500' }}>{f.nome_completo}</td>
+                                        <td style={{ padding: '0.75rem', color: 'var(--text-secondary)' }}>{f.email}</td>
+                                        <td style={{ padding: '0.75rem' }}>{f.telemovel || '-'}</td>
                                     </tr>
                                 ))}
                             </tbody>

@@ -81,5 +81,13 @@ export const turmaService = {
         });
         if (!response.ok) throw new Error('Erro ao remover módulo');
         return response.json();
+    },
+    // Listar Formandos
+    getTurmaFormandos: async (turmaId) => {
+        const response = await fetch(`${API_URL}/api/turma-details/${turmaId}/formandos`, {
+            headers: getAuthHeader()
+        });
+        if (!response.ok) throw new Error('Erro ao obter formandos da turma');
+        return response.json();
     }
 };
