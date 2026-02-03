@@ -2,8 +2,9 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { courseService } from '../services/courseService';
 import { authService } from '../services/authService';
+import { useToast } from '../context/ToastContext';
 
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
     BookOpen,
     Plus,
@@ -18,11 +19,13 @@ import {
     Zap,
     MoreHorizontal,
     ChevronLeft,
-    ChevronRight
+    ChevronRight,
+    AlertCircle
 } from 'lucide-react';
 
 function CoursesPage() {
     const navigate = useNavigate();
+    const { toast } = useToast();
     const [courses, setCourses] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -31,6 +34,8 @@ function CoursesPage() {
     const [totalPages, setTotalPages] = useState(1);
     const [showModal, setShowModal] = useState(false);
     const [editingCourse, setEditingCourse] = useState(null);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [courseToDelete, setCourseToDelete] = useState(null);
     const [formData, setFormData] = useState({
         nome_curso: '',
         area: 'Informática',
@@ -60,7 +65,7 @@ function CoursesPage() {
             setTotalPages(data.pages || 1);
         } catch (error) {
             console.error(error);
-            alert("Erro ao carregar cursos: " + error.message);
+            toast(error.message, 'error');
         } finally {
             setLoading(false);
         }
@@ -71,31 +76,42 @@ function CoursesPage() {
         try {
             if (editingCourse) {
                 await courseService.updateCourse(editingCourse.id, formData);
+                toast('Curso atualizado com sucesso!', 'success');
             } else {
                 await courseService.createCourse(formData);
+                toast('Curso criado com sucesso!', 'success');
             }
             setShowModal(false);
             setEditingCourse(null);
             setFormData({ nome_curso: '', area: 'Informática', estado: 'planeado' });
             loadCourses();
         } catch (error) {
-            alert(error.message);
+            toast(error.message, 'error');
         }
     };
 
     const handleDelete = async (id) => {
-        const courseToDelete = courses.find(c => c.id === id);
-        if (courseToDelete?.estado === 'terminado' && !isAdmin) {
-            alert("Apenas a administração pode excluir cursos terminados.");
+        const course = courses.find(c => c.id === id);
+        if (course?.estado === 'terminado' && !isAdmin) {
+            toast("Apenas a administração pode excluir cursos terminados.", 'error');
             return;
         }
 
-        if (!window.confirm('Tem a certeza que deseja eliminar este curso?')) return;
+        setCourseToDelete(id);
+        setShowDeleteConfirm(true);
+    };
+
+    const confirmDelete = async () => {
+        if (!courseToDelete) return;
         try {
-            await courseService.deleteCourse(id);
+            await courseService.deleteCourse(courseToDelete);
+            toast('Curso eliminado com sucesso!', 'success');
             loadCourses();
+            setShowDeleteConfirm(false);
+            setCourseToDelete(null);
         } catch (error) {
-            alert(error.message);
+            toast(error.message, 'error');
+            setShowDeleteConfirm(false); // Close even if error to prevent stuck state
         }
     };
 
@@ -367,6 +383,58 @@ function CoursesPage() {
                     </motion.div>
                 </div>
             )}
+
+            {/* Delete Confirmation Dialog - Bottom Center */}
+            <AnimatePresence>
+                {showDeleteConfirm && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 50, x: '-50%' }}
+                        animate={{ opacity: 1, y: 0, x: '-50%' }}
+                        exit={{ opacity: 0, y: 50, x: '-50%' }}
+                        style={{
+                            position: 'fixed',
+                            bottom: '2rem',
+                            left: '50%',
+                            transform: 'translateX(-50%)',
+                            background: '#1e293b',
+                            border: '1px solid var(--border-glass)',
+                            borderRadius: '16px',
+                            padding: '1.5rem 2rem',
+                            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5)',
+                            zIndex: 10001,
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            gap: '1rem',
+                            minWidth: '350px'
+                        }}
+                    >
+                        <AlertCircle size={32} color="#f87171" />
+                        <div style={{ textAlign: 'center' }}>
+                            <h3 style={{ fontSize: '1.1rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>Eliminar Curso?</h3>
+                            <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                                Esta ação não pode ser desfeita.
+                            </p>
+                        </div>
+                        <div style={{ display: 'flex', gap: '1rem', width: '100%', marginTop: '0.5rem' }}>
+                            <button
+                                onClick={() => setShowDeleteConfirm(false)}
+                                className="btn-glass"
+                                style={{ flex: 1, justifyContent: 'center' }}
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={confirmDelete}
+                                className="btn-primary"
+                                style={{ flex: 1, justifyContent: 'center', background: '#dc2626', borderColor: '#dc2626' }}
+                            >
+                                Eliminar
+                            </button>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }

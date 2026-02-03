@@ -122,7 +122,7 @@ export const deleteCourse = async (req, res) => {
         // Verificar se existem turmas associadas
         const [turmas] = await db.query('SELECT id FROM turmas WHERE id_curso = ? LIMIT 1', [id]);
         if (turmas.length > 0) {
-            return res.status(400).json({ message: 'Não é possível eliminar um curso que tenha turmas associadas.' });
+            return res.status(400).json({ message: 'Erro: Não é possível eliminar cursos com turmas atribuídas.' });
         }
 
         await db.query('DELETE FROM cursos WHERE id = ?', [id]);

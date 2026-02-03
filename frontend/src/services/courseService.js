@@ -24,7 +24,10 @@ export const courseService = {
             headers: getAuthHeader(),
             body: JSON.stringify(data)
         });
-        if (!response.ok) throw new Error('Erro ao criar curso');
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.message || 'Erro ao criar curso');
+        }
         return response.json();
     },
 
@@ -34,7 +37,10 @@ export const courseService = {
             headers: getAuthHeader(),
             body: JSON.stringify(data)
         });
-        if (!response.ok) throw new Error('Erro ao atualizar curso');
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.message || 'Erro ao atualizar curso');
+        }
         return response.json();
     },
 
@@ -43,7 +49,10 @@ export const courseService = {
             method: 'DELETE',
             headers: getAuthHeader()
         });
-        if (!response.ok) throw new Error('Erro ao eliminar curso');
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.message || 'Erro ao eliminar curso');
+        }
         return response.json();
     }
 };
