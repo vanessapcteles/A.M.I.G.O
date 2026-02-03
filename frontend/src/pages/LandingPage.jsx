@@ -29,6 +29,13 @@ const LandingPage = () => {
     useEffect(() => {
         setUser(authService.getCurrentUser());
         loadCourses();
+
+        if (window.location.hash === '#cursos') {
+            setTimeout(() => {
+                const element = document.getElementById('cursos');
+                if (element) element.scrollIntoView({ behavior: 'smooth' });
+            }, 500); // Small delay to allow rendering
+        }
     }, []);
 
     const loadCourses = async () => {
@@ -193,7 +200,7 @@ const LandingPage = () => {
                 </div>
 
                 {/* Course List Section */}
-                <div style={{ id: 'cursos' }}>
+                <div id="cursos">
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '3rem' }}>
                         <div>
                             <h2 style={{ fontSize: '2.5rem', fontWeight: '800' }}>Cursos <span style={{ color: 'var(--primary)' }}>Disponíveis</span></h2>

@@ -25,9 +25,13 @@ function FormandosPage() {
         telemovel: '',
         data_nascimento: ''
     });
+    const [turmas, setTurmas] = useState([]);
+    const [selectedTurma, setSelectedTurma] = useState('');
+    const [assignmentStatus, setAssignmentStatus] = useState(null);
 
     useEffect(() => {
         fetchFormandos();
+        fetchTurmas();
     }, []);
 
     const getAuthHeader = () => ({
@@ -43,6 +47,47 @@ function FormandosPage() {
             console.error('Erro ao carregar formandos:', error);
         } finally {
             setLoading(false);
+        }
+    };
+
+
+
+    const fetchTurmas = async () => {
+        try {
+            const response = await fetch(`${API_URL}/api/turmas`, { headers: getAuthHeader() });
+            const data = await response.json();
+            setTurmas(data || []);
+        } catch (error) {
+            console.error('Erro ao carregar turmas:', error);
+        }
+    };
+
+    const handleAssignTurma = async () => {
+        if (!selectedTurma) return;
+        setAssignmentStatus(null);
+
+        try {
+            const response = await fetch(`${API_URL}/api/formandos/${selectedFormando.id}/enroll`, {
+                method: 'POST',
+                headers: {
+                    ...getAuthHeader(),
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ turmaId: selectedTurma })
+            });
+
+            if (response.ok) {
+                setAssignmentStatus({ type: 'success', message: 'Turma atribuída com sucesso!' });
+                // Recarregar dados do formando para atualizar curso atual
+                handleSelectFormando(selectedFormando.id);
+                setSelectedTurma('');
+            } else {
+                const err = await response.json();
+                setAssignmentStatus({ type: 'error', message: err.message || 'Erro ao atribuir turma' });
+            }
+        } catch (error) {
+            console.error('Erro ao atribuir turma:', error);
+            setAssignmentStatus({ type: 'error', message: 'Erro de conexão.' });
         }
     };
 
@@ -415,6 +460,7 @@ function FormandosPage() {
                                             <input type="file" onChange={(e) => handleFileUpload(e, 'foto')} style={{ display: 'none' }} />
                                         </label>
                                     </div>
+
                                     <div style={{ flex: 1 }}>
                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
                                             <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{selectedFormando.nome_completo}</h2>
@@ -427,6 +473,49 @@ function FormandosPage() {
                                             </button>
                                         </div>
                                         <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>{selectedFormando.email}</p>
+                                        <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '0.25rem' }}>
+                                            <span style={{ fontWeight: 'bold' }}>Curso Associado:</span> {selectedFormando.curso_atual || 'Nenhum'}
+                                        </p>
+                                        <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '0.25rem' }}>
+                                            <span style={{ fontWeight: 'bold' }}>Turma Associada:</span> {selectedFormando.turma_atual || 'Nenhuma'}
+                                        </p>
+
+                                        <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                                                <select
+                                                    value={selectedTurma}
+                                                    onChange={(e) => setSelectedTurma(e.target.value)}
+                                                    className="input-field"
+                                                    style={{ padding: '0.4rem', fontSize: '0.9rem', width: 'auto', maxWidth: '200px' }}
+                                                >
+                                                    <option value="">Atribuir Turma...</option>
+                                                    {turmas
+                                                        .filter(t => !selectedFormando.id_curso || t.id_curso === selectedFormando.id_curso)
+                                                        .map(t => (
+                                                            <option key={t.id} value={t.id}>
+                                                                {t.codigo_turma} - {t.nome_curso}
+                                                            </option>
+                                                        ))}
+                                                </select>
+                                                <button
+                                                    onClick={handleAssignTurma}
+                                                    className="btn-primary"
+                                                    disabled={!selectedTurma}
+                                                    style={{ padding: '0.4rem 0.8rem', fontSize: '0.9rem' }}
+                                                >
+                                                    Atribuir
+                                                </button>
+                                            </div>
+                                            {assignmentStatus && (
+                                                <div style={{
+                                                    fontSize: '0.85rem',
+                                                    color: assignmentStatus.type === 'success' ? '#10b981' : '#f87171',
+                                                    marginTop: '0.2rem'
+                                                }}>
+                                                    {assignmentStatus.message}
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
 
@@ -519,7 +608,7 @@ function FormandosPage() {
                         </motion.div>
                     )}
                 </AnimatePresence>
-            </div>
+            </div >
 
             <Modal
                 {...modalConfig}

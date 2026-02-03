@@ -6,12 +6,19 @@ export const getFormandoProfile = async (req, res) => {
     try {
         const { userId } = req.params;
         const [profiles] = await db.query(
-            `SELECT f.*, u.nome_completo, u.email, c.nome_curso as curso_atual
+            `SELECT f.*, u.nome_completo, u.email, 
+                    COALESCE(c.nome_curso, c_turma.nome_curso) as curso_atual, 
+                    COALESCE(c.id, c_turma.id) as id_curso,
+                    t.codigo_turma as turma_atual
              FROM formandos f 
              JOIN utilizadores u ON f.utilizador_id = u.id 
-             LEFT JOIN inscricoes i ON i.id_formando = f.id AND i.estado = 'APROVADO'
+             LEFT JOIN inscricoes i ON i.id_formando = f.id
              LEFT JOIN cursos c ON i.id_curso = c.id
-             WHERE u.id = ?`,
+             LEFT JOIN turmas t ON i.id_turma = t.id
+             LEFT JOIN cursos c_turma ON t.id_curso = c_turma.id
+             WHERE u.id = ?
+             ORDER BY i.id DESC
+             LIMIT 1`,
             [userId]
         );
 
@@ -75,5 +82,48 @@ export const getFormandoAcademicRecord = async (req, res) => {
         return res.json(records);
     } catch (error) {
         return res.status(500).json({ message: 'Erro ao obter registo académico' });
+    }
+};
+
+// Atribuir Turma a Formando
+export const assignTurma = async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const { turmaId } = req.body;
+
+        if (!turmaId) return res.status(400).json({ message: 'ID da turma é obrigatório' });
+
+        // 1. Obter ID do Formando
+        const [formando] = await db.query('SELECT id FROM formandos WHERE utilizador_id = ?', [userId]);
+        if (formando.length === 0) return res.status(404).json({ message: 'Formando não encontrado' });
+
+        const idFormando = formando[0].id;
+
+        // 2. Verificar se já existe inscrição nessa turma
+        const [existing] = await db.query(
+            'SELECT * FROM inscricoes WHERE id_formando = ? AND id_turma = ?',
+            [idFormando, turmaId]
+        );
+
+        if (existing.length > 0) {
+            return res.status(400).json({ message: 'Formando já está inscrito nesta turma' });
+        }
+
+        // 2.5 Obter o curso da turma para manter consistência
+        const [turmaInfo] = await db.query('SELECT id_curso FROM turmas WHERE id = ?', [turmaId]);
+        if (turmaInfo.length === 0) return res.status(404).json({ message: 'Turma não encontrada' });
+
+        const idCurso = turmaInfo[0].id_curso;
+
+        // 3. Criar inscrição
+        await db.query(
+            'INSERT INTO inscricoes (id_formando, id_turma, id_curso, data_inscricao, estado) VALUES (?, ?, ?, NOW(), "APROVADO")',
+            [idFormando, turmaId, idCurso]
+        );
+
+        return res.json({ message: 'Turma atribuída com sucesso' });
+    } catch (error) {
+        console.error('Erro ao atribuir turma:', error);
+        return res.status(500).json({ message: 'Erro ao atribuir turma' });
     }
 };

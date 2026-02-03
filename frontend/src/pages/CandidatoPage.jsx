@@ -282,7 +282,7 @@ const CandidacyPage = () => {
                 <div className="glass-card" style={{ padding: '3rem', textAlign: 'center' }}>
                     <h2>Bem-vindo à Área de Candidato</h2>
                     <p style={{ margin: '1rem 0' }}>Para formalizar uma candidatura, por favor consulte os nossos cursos.</p>
-                    <a href="/courses" className="btn-primary" style={{ textDecoration: 'none' }}>Ver Cursos</a>
+                    <a href="/#cursos" className="btn-primary" style={{ textDecoration: 'none' }}>Ver Cursos</a>
                 </div>
             ) : (
                 <div className="glass-card" style={{ width: '100%', maxWidth: '900px', margin: '2rem', padding: '0', display: 'grid', gridTemplateColumns: '300px 1fr', overflow: 'hidden', minHeight: '500px' }}>
