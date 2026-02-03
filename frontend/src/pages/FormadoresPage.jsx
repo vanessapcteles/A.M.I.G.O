@@ -36,6 +36,15 @@ function FormadoresPage() {
     const [modalConfig, setModalConfig] = useState({ isOpen: false });
     const [currentDate, setCurrentDate] = useState(new Date());
     const [currentView, setCurrentView] = useState('week');
+    const [filterStart, setFilterStart] = useState('');
+    const [filterEnd, setFilterEnd] = useState('');
+
+    // Reload schedule when filters change while viewing
+    useEffect(() => {
+        if (viewingSchedule && selectedFormador) {
+            handleViewSchedule();
+        }
+    }, [filterStart, filterEnd]);
 
     // Form States
     const [editData, setEditData] = useState({
@@ -102,7 +111,7 @@ function FormadoresPage() {
     const handleViewSchedule = async () => {
         if (!selectedFormador) return;
         try {
-            const data = await horarioService.getFormadorSchedule(selectedFormador.id);
+            const data = await horarioService.getFormadorSchedule(selectedFormador.id, filterStart, filterEnd);
             const formatted = data.map(ev => ({
                 id: ev.id,
                 title: `${ev.nome_modulo} (${ev.codigo_turma}) - ${ev.nome_sala}`,
@@ -534,40 +543,100 @@ function FormadoresPage() {
                                     </div>
                                 </>
                             ) : (
-                                <div style={{ height: '500px' }}>
-                                    <Calendar
-                                        localizer={localizer}
-                                        events={formadorEvents}
-                                        startAccessor="start"
-                                        endAccessor="end"
-                                        culture='pt'
-                                        date={currentDate}
-                                        view={currentView}
-                                        onNavigate={date => setCurrentDate(date)}
-                                        onView={view => setCurrentView(view)}
-                                        components={{
-                                            toolbar: CalendarToolbar
-                                        }}
-                                        messages={{
-                                            next: "Seg.", previous: "Ant.", today: "Hoje",
-                                            month: "Mês", week: "Sem.", day: "Dia"
-                                        }}
-                                        eventPropGetter={() => ({
-                                            style: {
-                                                backgroundColor: 'var(--secondary)',
-                                                borderRadius: '8px',
-                                                opacity: 0.9,
-                                                color: 'var(--text-primary)',
-                                                border: 'none',
-                                                display: 'block',
-                                                padding: '2px 8px',
-                                                fontSize: '0.75rem',
-                                                fontWeight: '600',
-                                                boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                                            }
-                                        })}
-                                    />
-                                </div>
+                                <>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                                        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                                                <label style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>Desde</label>
+                                                <input
+                                                    type="date"
+                                                    className="input-field"
+                                                    style={{ padding: '0.3rem 0.5rem', fontSize: '0.8rem' }}
+                                                    value={filterStart}
+                                                    onChange={(e) => {
+                                                        setFilterStart(e.target.value);
+                                                        if (e.target.value) setCurrentDate(new Date(e.target.value));
+                                                    }}
+                                                />
+                                            </div>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                                                <label style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>Até</label>
+                                                <input
+                                                    type="date"
+                                                    className="input-field"
+                                                    style={{ padding: '0.3rem 0.5rem', fontSize: '0.8rem' }}
+                                                    value={filterEnd}
+                                                    onChange={(e) => setFilterEnd(e.target.value)}
+                                                />
+                                            </div>
+                                            {(filterStart || filterEnd) && (
+                                                <button
+                                                    onClick={() => {
+                                                        setFilterStart('');
+                                                        setFilterEnd('');
+                                                        setCurrentDate(new Date());
+                                                    }}
+                                                    className="btn-glass"
+                                                    style={{
+                                                        padding: '0.3rem 0.6rem',
+                                                        fontSize: '0.8rem',
+                                                        height: 'fit-content',
+                                                        alignSelf: 'flex-end',
+                                                        background: 'rgba(239, 68, 68, 0.1)',
+                                                        color: '#ef4444',
+                                                        border: '1px solid rgba(239, 68, 68, 0.2)'
+                                                    }}
+                                                >
+                                                    Limpar
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <div style={{ height: '500px' }}>
+                                        <Calendar
+                                            localizer={localizer}
+                                            events={formadorEvents}
+                                            startAccessor="start"
+                                            endAccessor="end"
+                                            culture='pt'
+                                            date={currentDate}
+                                            view={currentView}
+                                            onNavigate={date => {
+                                                if (filterStart && filterEnd) {
+                                                    const start = new Date(filterStart);
+                                                    const end = new Date(filterEnd);
+                                                    if (date < start) setCurrentDate(start);
+                                                    else if (date > end) setCurrentDate(end);
+                                                    else setCurrentDate(date);
+                                                } else {
+                                                    setCurrentDate(date);
+                                                }
+                                            }}
+                                            onView={view => setCurrentView(view)}
+                                            components={{
+                                                toolbar: CalendarToolbar
+                                            }}
+                                            messages={{
+                                                next: "Seg.", previous: "Ant.", today: "Hoje",
+                                                month: "Mês", week: "Sem.", day: "Dia"
+                                            }}
+                                            eventPropGetter={() => ({
+                                                style: {
+                                                    backgroundColor: 'var(--secondary)',
+                                                    borderRadius: '8px',
+                                                    opacity: 0.9,
+                                                    color: 'var(--text-primary)',
+                                                    border: 'none',
+                                                    display: 'block',
+                                                    padding: '2px 8px',
+                                                    fontSize: '0.75rem',
+                                                    fontWeight: '600',
+                                                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                                                }
+                                            })}
+                                        />
+                                    </div>
+                                </>
                             )}
                         </motion.div>
                     )}
