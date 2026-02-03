@@ -229,7 +229,9 @@ export const getRoomSchedule = async (req, res) => {
 // Listar TODOS os horários (Global)
 export const listAllLessons = async (req, res) => {
     try {
-        const [aulas] = await db.query(`
+        const { start, end } = req.query;
+
+        let query = `
             SELECT 
                 h.id, 
                 h.inicio, 
@@ -245,8 +247,19 @@ export const listAllLessons = async (req, res) => {
             JOIN formadores f ON td.id_formador = f.id
             JOIN utilizadores u ON f.utilizador_id = u.id
             JOIN salas s ON td.id_sala = s.id
-            ORDER BY h.inicio ASC
-        `);
+            WHERE 1=1
+        `;
+
+        const params = [];
+
+        if (start && end) {
+            query += ` AND h.inicio >= ? AND h.inicio <= ?`;
+            params.push(start, end);
+        }
+
+        query += ` ORDER BY h.inicio ASC`;
+
+        const [aulas] = await db.query(query, params);
         return res.json(aulas);
     } catch (error) {
         console.error(error);

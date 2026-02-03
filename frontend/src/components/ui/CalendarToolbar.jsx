@@ -1,7 +1,7 @@
 import React from 'react';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, List, LayoutGrid, Clock } from 'lucide-react';
 
-const CalendarToolbar = ({ label, onNavigate, onView, view, views }) => {
+const CalendarToolbar = ({ label, onNavigate, onView, view, views, locked }) => {
     return (
         <div style={{
             display: 'flex',

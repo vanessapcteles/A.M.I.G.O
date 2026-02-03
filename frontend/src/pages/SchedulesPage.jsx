@@ -95,7 +95,10 @@ function SchedulesPage() {
                             className="input-field"
                             style={{ padding: '0.4rem 0.75rem', fontSize: '0.85rem' }}
                             value={startDate}
-                            onChange={(e) => setStartDate(e.target.value)}
+                            onChange={(e) => {
+                                setStartDate(e.target.value);
+                                if (e.target.value) setCurrentDate(new Date(e.target.value));
+                            }}
                         />
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
@@ -105,9 +108,34 @@ function SchedulesPage() {
                             className="input-field"
                             style={{ padding: '0.4rem 0.75rem', fontSize: '0.85rem' }}
                             value={endDate}
-                            onChange={(e) => setEndDate(e.target.value)}
+                            onChange={(e) => {
+                                setEndDate(e.target.value);
+                                // Opcional: ajustar currentDate se necessário
+                            }}
                         />
                     </div>
+
+                    {(startDate || endDate) && (
+                        <button
+                            onClick={() => {
+                                setStartDate('');
+                                setEndDate('');
+                                setCurrentDate(new Date()); // Voltar a hoje
+                            }}
+                            className="btn-glass"
+                            style={{
+                                padding: '0.4rem 0.8rem',
+                                fontSize: '0.85rem',
+                                height: 'fit-content',
+                                alignSelf: 'flex-end',
+                                background: 'rgba(239, 68, 68, 0.1)',
+                                color: '#ef4444',
+                                border: '1px solid rgba(239, 68, 68, 0.2)'
+                            }}
+                        >
+                            Limpar
+                        </button>
+                    )}
                 </div>
             </div>
 
@@ -157,11 +185,25 @@ function SchedulesPage() {
                         eventPropGetter={eventStyleGetter}
                         date={currentDate}
                         view={currentView}
-                        onNavigate={date => setCurrentDate(date)}
+                        onNavigate={date => {
+                            // Se houver filtros, impedir navegação para fora do intervalo (simples)
+                            if (startDate && endDate) {
+                                const start = new Date(startDate);
+                                const end = new Date(endDate);
+                                // Permitir pequena margem ou verificar se a data está "muito" fora?
+                                // Simples: Se a nova data for menor que start, volta ao start. Se maior que end, mantem end.
+                                // Mas o Calendar retorna a data de início da view.
+                                if (date < start) setCurrentDate(start);
+                                else if (date > end) setCurrentDate(end);
+                                else setCurrentDate(date);
+                            } else {
+                                setCurrentDate(date);
+                            }
+                        }}
                         onView={view => setCurrentView(view)}
                         culture='pt'
                         components={{
-                            toolbar: CalendarToolbar
+                            toolbar: (props) => <CalendarToolbar {...props} locked={startDate && endDate} />
                         }}
                     />
                 )}
