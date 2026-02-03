@@ -120,7 +120,7 @@ const CandidaciesListPage = () => {
             a.click();
             a.remove();
         } catch (error) {
-            alert('Erro ao abrir PDF. Talvez não exista.');
+            toast('Erro ao abrir PDF. Talvez não exista.', 'error');
         }
     };
 

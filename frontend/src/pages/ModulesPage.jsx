@@ -12,13 +12,21 @@ import {
     Save,
     Clock
 } from 'lucide-react';
+import { useToast } from '../context/ToastContext';
+import ConfirmDialog from '../components/common/ConfirmDialog';
 
 function ModulesPage() {
+    const { toast } = useToast();
     const [modules, setModules] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [showModal, setShowModal] = useState(false);
     const [editingModule, setEditingModule] = useState(null);
+
+    // Confirm Dialog State
+    const [confirmOpen, setConfirmOpen] = useState(false);
+    const [moduleToDelete, setModuleToDelete] = useState(null);
+
     const [formData, setFormData] = useState({
         nome_modulo: '',
         carga_horaria: 25
@@ -34,6 +42,7 @@ function ModulesPage() {
             setModules(data);
         } catch (error) {
             console.error(error);
+            toast('Erro ao carregar módulos', 'error');
         } finally {
             setLoading(false);
         }
@@ -44,25 +53,33 @@ function ModulesPage() {
         try {
             if (editingModule) {
                 await moduleService.updateModule(editingModule.id, formData);
+                toast('Módulo atualizado com sucesso!', 'success');
             } else {
                 await moduleService.createModule(formData);
+                toast('Módulo criado com sucesso!', 'success');
             }
             setShowModal(false);
             setEditingModule(null);
             setFormData({ nome_modulo: '', carga_horaria: 25 });
             loadModules();
         } catch (error) {
-            alert(error.message || 'Erro ao guardar módulo');
+            toast(error.message || 'Erro ao guardar módulo', 'error');
         }
     };
 
-    const handleDelete = async (id) => {
-        if (!window.confirm('Tem a certeza que deseja eliminar este módulo?')) return;
+    const handleDelete = (id) => {
+        setModuleToDelete(id);
+        setConfirmOpen(true);
+    };
+
+    const confirmDelete = async () => {
+        if (!moduleToDelete) return;
         try {
-            await moduleService.deleteModule(id);
+            await moduleService.deleteModule(moduleToDelete);
+            toast('Módulo eliminado com sucesso!', 'success');
             loadModules();
         } catch (error) {
-            alert(error.response?.data?.message || error.message);
+            toast(error.response?.data?.message || error.message, 'error');
         }
     };
 
@@ -200,6 +217,15 @@ function ModulesPage() {
                     </motion.div>
                 </div>
             )}
+
+            <ConfirmDialog
+                isOpen={confirmOpen}
+                onClose={() => setConfirmOpen(false)}
+                onConfirm={confirmDelete}
+                title="Eliminar Módulo"
+                message="Tem a certeza que deseja eliminar este módulo? Esta ação não pode ser desfeita."
+                isDestructive={true}
+            />
         </>
     );
 }

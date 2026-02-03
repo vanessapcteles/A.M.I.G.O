@@ -6,8 +6,10 @@ import { API_URL } from '../services/authService';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import Modal from '../components/ui/Modal';
+import { useToast } from '../context/ToastContext';
 
 function FormandosPage() {
+    const { toast } = useToast();
     const [formandos, setFormandos] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -223,7 +225,7 @@ function FormandosPage() {
             doc.save(`Ficha_${selectedFormando.nome_completo.replace(/\s+/g, '_')}.pdf`);
         } catch (error) {
             console.error('Erro ao exportar PDF:', error);
-            alert('Erro ao gerar PDF');
+            toast('Erro ao gerar PDF', 'error');
         } finally {
             setExporting(false);
         }

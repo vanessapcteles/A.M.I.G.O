@@ -6,14 +6,21 @@ import { moduleService } from '../services/moduleService';
 import { roomService } from '../services/roomService';
 import { API_URL } from '../services/authService';
 import { ArrowLeft, Save, Trash2, Plus, AlertCircle, Users } from 'lucide-react';
+import { useToast } from '../context/ToastContext';
+import ConfirmDialog from '../components/common/ConfirmDialog';
 
 function TurmaDetailsPage() {
     const { id } = useParams(); // Turma ID
     const navigate = useNavigate();
+    const { toast } = useToast();
 
     const [loading, setLoading] = useState(true);
     const [turmaModules, setTurmaModules] = useState([]);
     const [turmaFormandos, setTurmaFormandos] = useState([]);
+
+    // Confirmation State
+    const [confirmOpen, setConfirmOpen] = useState(false);
+    const [moduleToRemove, setModuleToRemove] = useState(null);
 
     // Listas para os Dropdowns
     const [availableModules, setAvailableModules] = useState([]);
@@ -57,6 +64,7 @@ function TurmaDetailsPage() {
 
         } catch (error) {
             console.error(error);
+            toast(error.message, 'error');
         } finally {
             setLoading(false);
         }
@@ -69,20 +77,27 @@ function TurmaDetailsPage() {
             // Refresh
             const updatedModules = await turmaService.getTurmaModules(id);
             setTurmaModules(updatedModules);
+            toast('Módulo adicionado com sucesso!', 'success');
             // Limpar form
             setFormData({ ...formData, id_modulo: '', horas_planeadas: '', sequencia: String(updatedModules.length + 2) });
         } catch (error) {
-            alert(error.message);
+            toast(error.message, 'error');
         }
     };
 
-    const handleRemoveModule = async (detalheId) => {
-        if (!window.confirm('Remover este módulo desta turma?')) return;
+    const confirmRemoveModule = (detalheId) => {
+        setModuleToRemove(detalheId);
+        setConfirmOpen(true);
+    };
+
+    const handleRemoveModule = async () => {
+        if (!moduleToRemove) return;
         try {
-            await turmaService.removeModuleFromTurma(detalheId);
-            setTurmaModules(prev => prev.filter(m => m.id !== detalheId));
+            await turmaService.removeModuleFromTurma(moduleToRemove);
+            setTurmaModules(prev => prev.filter(m => m.id !== moduleToRemove));
+            toast('Módulo removido com sucesso!', 'success');
         } catch (error) {
-            alert(error.message);
+            toast(error.message, 'error');
         }
     };
 
@@ -141,7 +156,7 @@ function TurmaDetailsPage() {
                                         <td style={{ padding: '0.75rem' }}>{tm.nome_sala}</td>
                                         <td style={{ padding: '0.75rem' }}>{tm.horas_planeadas}h</td>
                                         <td style={{ padding: '0.75rem' }}>
-                                            <button onClick={() => handleRemoveModule(tm.id)} style={{ background: 'none', border: 'none', color: '#f87171', cursor: 'pointer' }}>
+                                            <button onClick={() => confirmRemoveModule(tm.id)} style={{ background: 'none', border: 'none', color: '#f87171', cursor: 'pointer' }}>
                                                 <Trash2 size={16} />
                                             </button>
                                         </td>
@@ -270,12 +285,22 @@ function TurmaDetailsPage() {
                             </div>
                         </div>
 
+
                         <button type="submit" className="btn-primary" style={{ marginTop: '1rem' }}>
                             Gravar Associação
                         </button>
                     </form>
                 </div>
             </div>
+
+            <ConfirmDialog
+                isOpen={confirmOpen}
+                onClose={() => setConfirmOpen(false)}
+                onConfirm={handleRemoveModule}
+                title="Remover Módulo"
+                message="Tem a certeza que deseja remover este módulo desta turma?"
+                isDestructive={true}
+            />
         </>
     );
 }

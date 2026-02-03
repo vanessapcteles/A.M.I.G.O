@@ -13,6 +13,7 @@ import getDay from 'date-fns/getDay';
 import pt from 'date-fns/locale/pt';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import { horarioService } from '../services/horarioService';
+import { useToast } from '../context/ToastContext';
 import Modal from '../components/ui/Modal';
 import CalendarToolbar from '../components/ui/CalendarToolbar';
 
@@ -20,6 +21,7 @@ const locales = { 'pt': pt };
 const localizer = dateFnsLocalizer({ format, parse, startOfWeek, getDay, locales });
 
 function FormadoresPage() {
+    const { toast } = useToast();
     const [formadores, setFormadores] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -110,7 +112,7 @@ function FormadoresPage() {
             setFormadorEvents(formatted);
             setViewingSchedule(true);
         } catch (error) {
-            alert('Erro ao carregar horário');
+            toast('Erro ao carregar horário', 'error');
         }
     };
 
@@ -206,7 +208,7 @@ function FormadoresPage() {
             doc.save(`Ficha_Formador_${selectedFormador.nome_completo.replace(/\s+/g, '_')}.pdf`);
         } catch (error) {
             console.error('Erro PDF:', error);
-            alert('Erro ao gerar ficha');
+            toast('Erro ao gerar ficha', 'error');
         } finally {
             setExporting(false);
         }

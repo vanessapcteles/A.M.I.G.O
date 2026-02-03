@@ -17,15 +17,23 @@ import {
     Clock,
     CheckCircle2
 } from 'lucide-react';
+import { useToast } from '../context/ToastContext';
+import ConfirmDialog from '../components/common/ConfirmDialog';
 
 function TurmasPage() {
     const navigate = useNavigate();
+    const { toast } = useToast();
     const [turmas, setTurmas] = useState([]);
     const [cursos, setCursos] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [showModal, setShowModal] = useState(false);
     const [editingTurma, setEditingTurma] = useState(null);
+
+    // Confirm Dialog State
+    const [confirmOpen, setConfirmOpen] = useState(false);
+    const [turmaToDelete, setTurmaToDelete] = useState(null);
+
     const [formData, setFormData] = useState({
         id_curso: '',
         codigo_turma: '',
@@ -57,6 +65,7 @@ function TurmasPage() {
             setCursos(cursosData);
         } catch (error) {
             console.error(error);
+            toast('Erro ao carregar dados', 'error');
         } finally {
             setLoading(false);
         }
@@ -68,26 +77,34 @@ function TurmasPage() {
         try {
             if (editingTurma) {
                 await turmaService.updateTurma(editingTurma.id, formData);
+                toast('Turma atualizada com sucesso!', 'success');
             } else {
                 await turmaService.createTurma(formData);
+                toast('Turma criada com sucesso!', 'success');
             }
             setShowModal(false);
             setEditingTurma(null);
             setFormData({ id_curso: '', codigo_turma: '', data_inicio: '', data_fim: '', estado: 'planeado' });
             loadData();
         } catch (error) {
-            alert(error.message);
+            toast(error.message, 'error');
         }
     };
 
-    const handleDelete = async (id) => {
+    const handleDelete = (id) => {
         if (!isAdmin) return;
-        if (!window.confirm('Tem a certeza que deseja eliminar esta turma?')) return;
+        setTurmaToDelete(id);
+        setConfirmOpen(true);
+    };
+
+    const confirmDelete = async () => {
+        if (!turmaToDelete) return;
         try {
-            await turmaService.deleteTurma(id);
+            await turmaService.deleteTurma(turmaToDelete);
+            toast('Turma eliminada com sucesso!', 'success');
             loadData();
         } catch (error) {
-            alert(error.message);
+            toast(error.message, 'error');
         }
     };
 
@@ -298,6 +315,15 @@ function TurmasPage() {
                     </motion.div>
                 </div>
             )}
+
+            <ConfirmDialog
+                isOpen={confirmOpen}
+                onClose={() => setConfirmOpen(false)}
+                onConfirm={confirmDelete}
+                title="Eliminar Turma"
+                message="Tem a certeza que deseja eliminar esta turma? Esta ação não pode ser desfeita."
+                isDestructive={true}
+            />
         </>
     );
 }

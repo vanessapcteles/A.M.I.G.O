@@ -19,17 +19,23 @@ import {
     Briefcase,
     UserCircle
 } from 'lucide-react';
+import { useToast } from '../context/ToastContext';
+import ConfirmDialog from '../components/common/ConfirmDialog';
 
 function UsersPage() {
+    const { toast } = useToast();
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
-    const [message, setMessage] = useState({ text: '', type: '' });
 
     // Edição
     const [editingUserId, setEditingUserId] = useState(null);
     const [editName, setEditName] = useState('');
+
+    // Confirm Dialog State
+    const [confirmOpen, setConfirmOpen] = useState(false);
+    const [userToDelete, setUserToDelete] = useState(null);
 
     const navigate = useNavigate();
 
@@ -54,30 +60,33 @@ function UsersPage() {
     const handleRoleChange = async (id, newRole) => {
         try {
             await userService.updateUser(id, { tipo_utilizador: newRole });
-            setMessage({ text: 'Função atualizada!', type: 'success' });
+            toast('Função atualizada!', 'success');
 
             // Se for o próprio utilizador, recarregar para atualizar a Sidebar/Header
             const currentUser = authService.getCurrentUser();
             if (currentUser && currentUser.id === id) {
                 setTimeout(() => window.location.reload(), 1000);
             } else {
-                setTimeout(() => setMessage({ text: '', type: '' }), 3000);
                 loadUsers();
             }
         } catch (err) {
-            setMessage({ text: 'Erro ao atualizar: ' + err.message, type: 'error' });
+            toast('Erro ao atualizar: ' + err.message, 'error');
         }
     };
 
-    const handleDelete = async (id) => {
-        if (!window.confirm('Tem a certeza que deseja eliminar este utilizador?')) return;
+    const handleDelete = (id) => {
+        setUserToDelete(id);
+        setConfirmOpen(true);
+    };
+
+    const confirmDelete = async () => {
+        if (!userToDelete) return;
         try {
-            await userService.deleteUser(id);
-            setMessage({ text: 'Utilizador removido.', type: 'success' });
-            setTimeout(() => setMessage({ text: '', type: '' }), 3000);
-            setUsers(users.filter(u => u.id !== id));
+            await userService.deleteUser(userToDelete);
+            toast('Utilizador removido.', 'success');
+            setUsers(users.filter(u => u.id !== userToDelete));
         } catch (err) {
-            setMessage({ text: 'Erro ao eliminar: ' + err.message, type: 'error' });
+            toast('Erro ao eliminar: ' + err.message, 'error');
         }
     };
 
@@ -94,7 +103,7 @@ function UsersPage() {
     const saveUser = async (id) => {
         try {
             await userService.updateUser(id, { nome_completo: editName });
-            setMessage({ text: 'Nome atualizado!', type: 'success' });
+            toast('Nome atualizado!', 'success');
             setEditingUserId(null);
 
             // Se for o próprio utilizador, recarregar para atualizar a Sidebar/Header
@@ -102,11 +111,10 @@ function UsersPage() {
             if (currentUser && currentUser.id === id) {
                 setTimeout(() => window.location.reload(), 1000);
             } else {
-                setTimeout(() => setMessage({ text: '', type: '' }), 3000);
                 loadUsers();
             }
         } catch (err) {
-            setMessage({ text: 'Erro ao atualizar: ' + err.message, type: 'error' });
+            toast('Erro ao atualizar: ' + err.message, 'error');
         }
     };
 
@@ -291,32 +299,14 @@ function UsersPage() {
             </div>
 
             {/* Feedback Toast */}
-            <AnimatePresence>
-                {message.text && (
-                    <motion.div
-                        initial={{ opacity: 0, y: 50 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: 50 }}
-                        style={{
-                            position: 'fixed',
-                            bottom: '2rem',
-                            right: '2rem',
-                            padding: '1rem 2rem',
-                            borderRadius: '12px',
-                            background: message.type === 'success' ? 'var(--primary)' : '#ef4444',
-                            color: 'white',
-                            boxShadow: '0 10px 25px rgba(0,0,0,0.2)',
-                            zIndex: 1000,
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.75rem'
-                        }}
-                    >
-                        {message.type === 'success' ? <Check size={20} /> : <X size={20} />}
-                        {message.text}
-                    </motion.div>
-                )}
-            </AnimatePresence>
+            <ConfirmDialog
+                isOpen={confirmOpen}
+                onClose={() => setConfirmOpen(false)}
+                onConfirm={confirmDelete}
+                title="Eliminar Utilizador"
+                message="Tem a certeza que deseja eliminar este utilizador? Esta ação não pode ser desfeita."
+                isDestructive={true}
+            />
         </div>
     );
 }

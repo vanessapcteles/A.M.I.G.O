@@ -13,6 +13,7 @@ import { turmaService } from '../services/turmaService'; // Para obter lista de 
 import { ArrowLeft, Plus, Trash2, X, Calendar as CalendarIcon } from 'lucide-react';
 import CalendarToolbar from '../components/ui/CalendarToolbar';
 import { useToast } from '../context/ToastContext';
+import ConfirmDialog from '../components/common/ConfirmDialog';
 
 const locales = {
     'pt': pt,
@@ -29,10 +30,16 @@ const localizer = dateFnsLocalizer({
 function TurmaSchedulePage() {
     const { id } = useParams();
     const navigate = useNavigate();
+    const { toast } = useToast();
 
     const [events, setEvents] = useState([]);
     const [turmaModules, setTurmaModules] = useState([]);
     const [showModal, setShowModal] = useState(false);
+
+    // Confirmation State
+    const [confirmOpen, setConfirmOpen] = useState(false);
+    const [eventToDelete, setEventToDelete] = useState(null);
+
     const [currentDate, setCurrentDate] = useState(new Date());
     const [currentView, setCurrentView] = useState('week');
 
@@ -67,6 +74,7 @@ function TurmaSchedulePage() {
             setTurmaModules(modules);
         } catch (error) {
             console.error(error);
+            toast(error.message, 'error');
         }
     };
 
@@ -90,14 +98,19 @@ function TurmaSchedulePage() {
         setShowModal(true);
     };
 
-    const handleSelectEvent = async (event) => {
-        if (window.confirm(`Deseja remover a aula de ${event.title}?`)) {
-            try {
-                await horarioService.deleteLesson(event.id);
-                loadData();
-            } catch (error) {
-                alert(error.message);
-            }
+    const handleSelectEvent = (event) => {
+        setEventToDelete(event);
+        setConfirmOpen(true);
+    };
+
+    const confirmDeleteEvent = async () => {
+        if (!eventToDelete) return;
+        try {
+            await horarioService.deleteLesson(eventToDelete.id);
+            toast('Aula removida com sucesso!', 'success');
+            loadData();
+        } catch (error) {
+            toast(error.message, 'error');
         }
     };
 
@@ -114,10 +127,11 @@ function TurmaSchedulePage() {
                 fim: endDateTime.toISOString()
             });
 
+            toast('Aula agendada com sucesso!', 'success');
             setShowModal(false);
             loadData();
         } catch (error) {
-            alert(error.message);
+            toast(error.message, 'error');
         }
     };
 
@@ -319,6 +333,14 @@ function TurmaSchedulePage() {
                 </div>
             )}
 
+            <ConfirmDialog
+                isOpen={confirmOpen}
+                onClose={() => setConfirmOpen(false)}
+                onConfirm={confirmDeleteEvent}
+                title="Remover Aula"
+                message={`Tem a certeza que deseja remover a aula de ${eventToDelete?.title}?`}
+                isDestructive={true}
+            />
         </>
     );
 }
