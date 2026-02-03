@@ -54,15 +54,43 @@ export const updateFormandoProfile = async (req, res) => {
 // Listar todos os formandos (para a tabela)
 export const listFormandos = async (req, res) => {
     try {
-        const [formandos] = await db.query(`
-            SELECT u.id, u.nome_completo, u.email, u.is_active, f.telemovel, f.morada 
+        const { courseId, search } = req.query;
+
+        let query = `
+            SELECT u.id, u.nome_completo, u.email, u.is_active, f.telemovel, f.morada,
+            curr_course.nome_curso as curso_atual,
+            curr_course.id_curso as id_curso
             FROM utilizadores u
             JOIN roles r ON u.role_id = r.id
             LEFT JOIN formandos f ON u.id = f.utilizador_id
+            -- Join with latest enrollment to get current course
+            LEFT JOIN (
+                SELECT i.id_formando, c.nome_curso, c.id as id_curso
+                FROM inscricoes i 
+                JOIN cursos c ON i.id_curso = c.id
+                WHERE i.id IN (
+                    SELECT MAX(id) FROM inscricoes GROUP BY id_formando
+                )
+            ) as curr_course ON curr_course.id_formando = f.id
             WHERE r.nome = 'FORMANDO'
-        `);
+        `;
+
+        const params = [];
+
+        if (courseId) {
+            query += ' AND curr_course.id_curso = ?';
+            params.push(courseId);
+        }
+
+        if (search) {
+            query += ' AND (u.nome_completo LIKE ? OR u.email LIKE ?)';
+            params.push(`%${search}%`, `%${search}%`);
+        }
+
+        const [formandos] = await db.query(query, params);
         return res.json(formandos);
     } catch (error) {
+        console.error('Erro ao listar formandos:', error);
         return res.status(500).json({ message: 'Erro ao listar formandos' });
     }
 };

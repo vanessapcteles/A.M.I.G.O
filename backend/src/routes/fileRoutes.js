@@ -14,7 +14,23 @@ router.get('/user/:id/photo', getLatestUserPhoto);
 
 // Upload (id do user na URL)
 // 'file' corresponde ao name="file" no form data do frontend
-router.post('/user/:id', upload.single('file'), uploadFile);
+const uploadMiddleware = (req, res, next) => {
+    upload.single('file')(req, res, (err) => {
+        if (err) {
+            if (err.code === 'LIMIT_FILE_SIZE') {
+                return res.status(400).json({ message: 'O ficheiro é demasiado grande. O limite máximo é 20MB.' });
+            }
+            if (err.code === 'LIMIT_UNEXPECTED_FILE') {
+                return res.status(400).json({ message: 'Erro no upload: campo incorreto ou tipo de ficheiro inválido.' });
+            }
+            // Multer generic error
+            return res.status(500).json({ message: `Erro ao processar o upload: ${err.message}` });
+        }
+        next();
+    });
+};
+
+router.post('/user/:id', uploadMiddleware, uploadFile);
 
 // Obter ficheiro especifico (pelo ID do ficheiro)
 // A URL será /api/files/:fileId

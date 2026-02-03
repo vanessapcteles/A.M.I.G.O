@@ -31,18 +31,42 @@ function FormandosPage() {
     const [selectedTurma, setSelectedTurma] = useState('');
     const [assignmentStatus, setAssignmentStatus] = useState(null);
 
+    const [filterCourse, setFilterCourse] = useState('');
+    const [courses, setCourses] = useState([]);
+
     useEffect(() => {
-        fetchFormandos();
         fetchTurmas();
+        fetchCourses();
     }, []);
+
+    useEffect(() => {
+        const delayDebounceFn = setTimeout(() => {
+            fetchFormandos();
+        }, 300);
+        return () => clearTimeout(delayDebounceFn);
+    }, [searchTerm, filterCourse]);
 
     const getAuthHeader = () => ({
         'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
     });
 
+    const fetchCourses = async () => {
+        try {
+            const response = await fetch(`${API_URL}/api/turmas/cursos`, { headers: getAuthHeader() });
+            const data = await response.json();
+            setCourses(data);
+        } catch (error) {
+            console.error('Erro ao carregar cursos:', error);
+        }
+    };
+
     const fetchFormandos = async () => {
         try {
-            const response = await fetch(`${API_URL}/api/formandos`, { headers: getAuthHeader() });
+            setLoading(true);
+            let url = `${API_URL}/api/formandos?search=${searchTerm}`;
+            if (filterCourse) url += `&courseId=${filterCourse}`;
+
+            const response = await fetch(url, { headers: getAuthHeader() });
             const data = await response.json();
             setFormandos(data);
         } catch (error) {
@@ -51,8 +75,6 @@ function FormandosPage() {
             setLoading(false);
         }
     };
-
-
 
     const fetchTurmas = async () => {
         try {
@@ -337,10 +359,7 @@ function FormandosPage() {
         }
     };
 
-    const filteredFormandos = formandos.filter(f =>
-        f.nome_completo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        f.email.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+
 
     return (
         <>
@@ -355,15 +374,28 @@ function FormandosPage() {
                     </div>
                 </div>
 
-                <div className="search-bar" style={{ width: '300px' }}>
-                    <Search size={20} style={{ color: 'var(--text-secondary)' }} />
-                    <input
-                        type="text"
-                        placeholder="Pesquisar formando..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', outline: 'none', width: '100%' }}
-                    />
+                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                    <select
+                        className="input-field"
+                        style={{ width: 'auto', minWidth: '200px' }}
+                        value={filterCourse}
+                        onChange={(e) => setFilterCourse(e.target.value)}
+                    >
+                        <option value="">Todos os Cursos</option>
+                        {courses.map(c => (
+                            <option key={c.id} value={c.id}>{c.nome_curso}</option>
+                        ))}
+                    </select>
+                    <div className="search-bar" style={{ width: '300px' }}>
+                        <Search size={20} style={{ color: 'var(--text-secondary)' }} />
+                        <input
+                            type="text"
+                            placeholder="Pesquisar formando..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', outline: 'none', width: '100%' }}
+                        />
+                    </div>
                 </div>
             </div>
 
@@ -376,12 +408,13 @@ function FormandosPage() {
                             <thead>
                                 <tr style={{ borderBottom: '1px solid var(--border-glass)', textAlign: 'left' }}>
                                     <th style={{ padding: '1rem', color: 'var(--text-secondary)' }}>Nome</th>
+                                    <th style={{ padding: '1rem', color: 'var(--text-secondary)' }}>Curso</th>
                                     <th style={{ padding: '1rem', color: 'var(--text-secondary)' }}>Contacto</th>
                                     <th style={{ padding: '1rem', color: 'var(--text-secondary)' }}>Ações</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {filteredFormandos.map(formando => (
+                                {formandos.map(formando => (
                                     <tr key={formando.id}
                                         style={{
                                             borderBottom: '1px solid var(--border-glass)',
@@ -391,6 +424,13 @@ function FormandosPage() {
                                         <td style={{ padding: '1rem' }}>
                                             <div style={{ fontWeight: '500' }}>{formando.nome_completo}</div>
                                             <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{formando.email}</div>
+                                        </td>
+                                        <td style={{ padding: '1rem' }}>
+                                            {formando.curso_atual ? (
+                                                <span style={{ fontSize: '0.85rem', padding: '2px 8px', borderRadius: '12px', background: 'rgba(59, 130, 246, 0.1)', color: '#60a5fa' }}>
+                                                    {formando.curso_atual}
+                                                </span>
+                                            ) : '-'}
                                         </td>
                                         <td style={{ padding: '1rem' }}>
                                             {formando.telemovel || '-'}

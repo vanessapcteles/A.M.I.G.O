@@ -7,6 +7,25 @@ export const getTurmas = async (req, res) => {
         const { page = 1, limit = 10, search, courseId } = req.query;
         const offset = (page - 1) * limit;
 
+        // --- Automated Status Update ---
+        // 1. Planeado -> A Decorrer: if start date reached and still running
+        await db.query(`
+            UPDATE turmas 
+            SET estado = 'a decorrer' 
+            WHERE estado = 'planeado' 
+            AND DATE(data_inicio) <= CURDATE() 
+            AND DATE(data_fim) >= CURDATE()
+        `);
+
+        // 2. Mark as Terminado: if end date passed
+        await db.query(`
+            UPDATE turmas 
+            SET estado = 'terminado' 
+            WHERE estado != 'terminado' 
+            AND DATE(data_fim) < CURDATE()
+        `);
+        // -------------------------------
+
         let query = `
             SELECT t.*, c.nome_curso 
             FROM turmas t 

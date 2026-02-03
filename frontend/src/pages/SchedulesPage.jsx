@@ -47,7 +47,7 @@ function SchedulesPage() {
 
             const formattedEvents = data.map(lesson => ({
                 id: lesson.id,
-                title: `${lesson.nome_modulo} (${lesson.codigo_turma})`,
+                title: `${lesson.nome_modulo} (${lesson.codigo_turma}) - ${lesson.nome_sala}`,
                 start: new Date(lesson.inicio),
                 end: new Date(lesson.fim),
                 resource: lesson
