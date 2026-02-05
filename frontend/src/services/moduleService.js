@@ -56,5 +56,24 @@ export const moduleService = {
         });
         if (!response.ok) throw new Error('Erro ao carregar áreas');
         return response.json();
+    },
+
+    updateArea: async (currentName, newName) => {
+        const response = await fetch(`${API_URL}/api/modules/areas/${encodeURIComponent(currentName)}`, {
+            method: 'PUT',
+            headers: getAuthHeader(),
+            body: JSON.stringify({ newName })
+        });
+        if (!response.ok) throw new Error('Erro ao atualizar área');
+        return response.json();
+    },
+
+    deleteArea: async (areaName) => {
+        const response = await fetch(`${API_URL}/api/modules/areas/${encodeURIComponent(areaName)}`, {
+            method: 'DELETE',
+            headers: getAuthHeader()
+        });
+        if (!response.ok) throw new Error('Erro ao eliminar área');
+        return response.json();
     }
 };

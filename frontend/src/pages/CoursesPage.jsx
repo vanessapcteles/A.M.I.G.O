@@ -42,7 +42,15 @@ function CoursesPage() {
         estado: 'planeado'
     });
     const [isNewArea, setIsNewArea] = useState(false);
+
     const [areas, setAreas] = useState([]);
+
+
+    // Area Management State
+    const [showAreaManager, setShowAreaManager] = useState(false);
+    const [editingArea, setEditingArea] = useState(null); // The area being renamed { original: 'A', current: 'A' }
+    const [deletingArea, setDeletingArea] = useState(null); // The area being deleted 'A'
+    // removed mergeTargetArea as it is no longer used
 
     // Module Management State
     const [showModuleModal, setShowModuleModal] = useState(false);
@@ -104,7 +112,7 @@ function CoursesPage() {
             }
             setShowModal(false);
             setEditingCourse(null);
-            setEditingCourse(null);
+
             setFormData({ nome_curso: '', area: '', estado: 'planeado' });
             setIsNewArea(false);
             loadCourses();
@@ -216,6 +224,34 @@ function CoursesPage() {
         }
     };
 
+
+    // Area Management Handlers
+    const handleUpdateArea = async (originalName, newName) => {
+        try {
+            await moduleService.updateArea(originalName, newName);
+            toast('Área atualizada com sucesso', 'success');
+            setEditingArea(null);
+            loadAreas();
+            loadCourses();
+        } catch (error) {
+            toast('Erro ao atualizar área', 'error');
+            console.error(error);
+        }
+    };
+
+    const handleDeleteArea = async (areaName) => {
+        try {
+            await moduleService.deleteArea(areaName);
+            toast('Área eliminada e cursos associados removidos', 'success');
+            setDeletingArea(null);
+            loadAreas();
+            loadCourses();
+        } catch (error) {
+            toast('Erro ao eliminar área', 'error');
+            console.error(error);
+        }
+    };
+
     const getStatusColor = (estado) => {
         switch (estado) {
             case 'a decorrer': return '#38bdf8';
@@ -267,9 +303,27 @@ function CoursesPage() {
                 </div>
 
                 {isAdmin && (
-                    <button className="btn-primary" onClick={() => { setEditingCourse(null); setFormData({ nome_curso: '', area: '', estado: 'planeado' }); setIsNewArea(false); setShowModal(true); }}>
-                        <Plus size={20} /> Novo Curso
-                    </button>
+                    <>
+                        <button
+                            className="btn-glass"
+                            onClick={() => setShowAreaManager(true)}
+                            style={{
+                                marginRight: '1rem',
+                                border: '1px solid var(--primary)',
+                                color: 'var(--primary)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.5rem',
+                                padding: '0.6rem 1.2rem',
+                                fontWeight: '600'
+                            }}
+                        >
+                            <BookOpen size={18} /> Gerir Áreas
+                        </button>
+                        <button className="btn-primary" onClick={() => { setEditingCourse(null); setFormData({ nome_curso: '', area: '', estado: 'planeado' }); setIsNewArea(false); setShowModal(true); }}>
+                            <Plus size={20} /> Novo Curso
+                        </button>
+                    </>
                 )}
             </div>
 
@@ -599,6 +653,95 @@ function CoursesPage() {
                 </div>
             )
             }
+
+            {/* Area Manager Modal */}
+            {showAreaManager && (
+                <div style={{
+                    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+                    background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
+                }}>
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="glass-card"
+                        style={{ maxWidth: '500px', width: '90%', padding: '2rem', maxHeight: '80vh', overflowY: 'auto' }}
+                    >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem', alignItems: 'center' }}>
+                            <h2 style={{ fontSize: '1.4rem', fontWeight: '700' }}>Gerir Áreas Técnicas</h2>
+                            <button onClick={() => setShowAreaManager(false)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+                                <X size={24} />
+                            </button>
+                        </div>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                            {areas.map(area => (
+                                <div key={area} className="glass-card" style={{ padding: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(255,255,255,0.03)' }}>
+
+                                    {/* Edit Mode */}
+                                    {editingArea?.original === area ? (
+                                        <div style={{ display: 'flex', gap: '0.5rem', flex: 1, marginRight: '0.5rem' }}>
+                                            <input
+                                                className="input-field"
+                                                value={editingArea.current}
+                                                onChange={e => setEditingArea({ ...editingArea, current: e.target.value })}
+                                                autoFocus
+                                            />
+                                            <button onClick={() => handleUpdateArea(area, editingArea.current)} className="btn-primary" style={{ padding: '0.4rem' }}><Save size={16} /></button>
+                                            <button onClick={() => setEditingArea(null)} className="btn-secondary" style={{ padding: '0.4rem' }}><X size={16} /></button>
+                                        </div>
+                                    ) : (
+                                        /* Delete/Cascade Mode */
+                                        deletingArea === area ? (
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', flex: 1, background: 'rgba(220, 38, 38, 0.1)', padding: '0.5rem', borderRadius: '8px' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#f87171', fontWeight: 'bold', fontSize: '0.9rem' }}>
+                                                    <AlertCircle size={18} />
+                                                    Atenção: Eliminar Área
+                                                </div>
+                                                <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                                                    Isto irá <b>eliminar todos os cursos</b> desta área. <br />
+                                                    Os módulos associados ficarão sem área definida.
+                                                </div>
+                                                <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
+                                                    <button
+                                                        onClick={() => handleDeleteArea(area)}
+                                                        className="btn-primary"
+                                                        style={{ background: '#dc2626', borderColor: '#dc2626', padding: '0.4rem 0.8rem', flex: 1 }}
+                                                    >
+                                                        Confirmar Eliminação
+                                                    </button>
+                                                    <button onClick={() => setDeletingArea(null)} className="btn-glass" style={{ padding: '0.4rem 0.8rem', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--text-secondary)' }}>Cancelar</button>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            /* Display Mode */
+                                            <>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                                    <div style={{
+                                                        width: '30px', height: '30px', borderRadius: '8px', background: 'rgba(255,255,255,0.05)',
+                                                        display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)'
+                                                    }}>
+                                                        {getAreaIcon(area)}
+                                                    </div>
+                                                    <span style={{ fontWeight: '500' }}>{area}</span>
+                                                </div>
+                                                <div style={{ display: 'flex', gap: '0.25rem' }}>
+                                                    <button onClick={() => setEditingArea({ original: area, current: area })} className="btn-glass" style={{ padding: '0.4rem', color: 'var(--text-secondary)' }}>
+                                                        <Edit2 size={16} />
+                                                    </button>
+                                                    <button onClick={() => setDeletingArea(area)} className="btn-glass" style={{ padding: '0.4rem', color: '#f87171' }}>
+                                                        <Trash2 size={16} />
+                                                    </button>
+                                                </div>
+                                            </>
+                                        )
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    </motion.div>
+                </div>
+            )}
 
             {/* Delete Confirmation Dialog - Bottom Center */}
             <AnimatePresence>

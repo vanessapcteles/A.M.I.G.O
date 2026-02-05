@@ -168,3 +168,47 @@ export const getModulesAreas = async (req, res) => {
         return res.status(500).json({ message: 'Erro ao buscar áreas' });
     }
 };
+
+// Renomear ou Fundir Área
+export const updateArea = async (req, res) => {
+    try {
+        const { currentName } = req.params;
+        const { newName } = req.body;
+
+        if (!currentName || !newName) {
+            return res.status(400).json({ message: 'Nomes da área inválidos' });
+        }
+
+        // Update Modules
+        await db.query('UPDATE modulos SET area = ? WHERE area = ?', [newName, currentName]);
+        // Update Courses
+        await db.query('UPDATE cursos SET area = ? WHERE area = ?', [newName, currentName]);
+
+        return res.status(200).json({ message: 'Área atualizada com sucesso' });
+    } catch (error) {
+        console.error('Erro ao atualizar área:', error);
+        return res.status(500).json({ message: 'Erro ao atualizar área' });
+    }
+};
+
+// Eliminar Área (Cascade Delete Cursos, Nullify Modulos)
+export const deleteArea = async (req, res) => {
+    try {
+        const { areaName } = req.params;
+
+        if (!areaName) {
+            return res.status(400).json({ message: 'Nome da área inválido' });
+        }
+
+        // 1. Set modules area to NULL (preserve modules)
+        await db.query('UPDATE modulos SET area = NULL WHERE area = ?', [areaName]);
+
+        // 2. Delete courses associated with this area
+        await db.query('DELETE FROM cursos WHERE area = ?', [areaName]);
+
+        return res.status(200).json({ message: 'Área eliminada com sucesso' });
+    } catch (error) {
+        console.error('Erro ao eliminar área:', error);
+        return res.status(500).json({ message: 'Erro ao eliminar área' });
+    }
+};
