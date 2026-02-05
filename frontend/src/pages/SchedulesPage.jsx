@@ -8,7 +8,9 @@ import pt from 'date-fns/locale/pt';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 
 import { horarioService } from '../services/horarioService';
-import { Calendar as CalendarIcon, Info } from 'lucide-react';
+import { formadorService } from '../services/formadorService';
+import { turmaService } from '../services/turmaService';
+import { Calendar as CalendarIcon, Info, Users, GraduationCap } from 'lucide-react';
 import CalendarToolbar from '../components/ui/CalendarToolbar';
 
 const locales = {
@@ -31,19 +33,52 @@ function SchedulesPage() {
     const [currentDate, setCurrentDate] = useState(new Date());
     const [currentView, setCurrentView] = useState('week');
 
+    // Filter States
+    const [filterFormador, setFilterFormador] = useState('');
+    const [filterTurma, setFilterTurma] = useState('');
+
+    // Data Lists
+    const [formadores, setFormadores] = useState([]);
+    const [turmas, setTurmas] = useState([]);
+
+    useEffect(() => {
+        loadFiltersData();
+    }, []);
+
     useEffect(() => {
         loadAllSchedules();
-    }, [startDate, endDate]);
+    }, [startDate, endDate, filterFormador, filterTurma]);
+
+    const loadFiltersData = async () => {
+        try {
+            // Use allSettled to prevent one failure from blocking everything
+            const results = await Promise.allSettled([
+                formadorService.getAll(),
+                turmaService.getAllTurmas({ limit: 100 }) // Fetch more to fill dropdown
+            ]);
+
+            if (results[0].status === 'fulfilled') setFormadores(results[0].value || []);
+            else console.error('Falha ao carregar formadores', results[0].reason);
+
+            if (results[1].status === 'fulfilled') setTurmas(results[1].value || []);
+            else console.error('Falha ao carregar turmas', results[1].reason);
+
+        } catch (error) {
+            console.error('Erro crítico ao carregar filtros:', error);
+        }
+    };
 
     const loadAllSchedules = async () => {
         setLoading(true);
         try {
             let data;
-            if (startDate && endDate) {
-                data = await horarioService.getAllSchedules(startDate, endDate);
-            } else {
-                data = await horarioService.getAllSchedules();
-            }
+            // Pass filters as object
+            data = await horarioService.getAllSchedules({
+                start: startDate,
+                end: endDate,
+                formadorId: filterFormador,
+                turmaId: filterTurma
+            });
 
             const formattedEvents = data.map(lesson => ({
                 id: lesson.id,
@@ -121,11 +156,50 @@ function SchedulesPage() {
                         />
                     </div>
 
-                    {(startDate || endDate) && (
+                    {/* Filter Dropdowns */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                        <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Formador</label>
+                        <div style={{ position: 'relative' }}>
+                            <Users size={14} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                            <select
+                                className="input-field"
+                                style={{ padding: '0.4rem 0.75rem 0.4rem 2rem', fontSize: '0.85rem', minWidth: '150px' }}
+                                value={filterFormador}
+                                onChange={(e) => setFilterFormador(e.target.value)}
+                            >
+                                <option value="">Todos</option>
+                                {formadores.map(f => (
+                                    <option key={f.id} value={f.id_formador_perfil}>{f.nome_completo}</option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                        <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Turma</label>
+                        <div style={{ position: 'relative' }}>
+                            <GraduationCap size={14} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                            <select
+                                className="input-field"
+                                style={{ padding: '0.4rem 0.75rem 0.4rem 2rem', fontSize: '0.85rem', minWidth: '150px' }}
+                                value={filterTurma}
+                                onChange={(e) => setFilterTurma(e.target.value)}
+                            >
+                                <option value="">Todas</option>
+                                {turmas.map(t => (
+                                    <option key={t.id} value={t.id}>{t.codigo_turma}</option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
+
+                    {(startDate || endDate || filterFormador || filterTurma) && (
                         <button
                             onClick={() => {
                                 setStartDate('');
                                 setEndDate('');
+                                setFilterFormador('');
+                                setFilterTurma('');
                                 setCurrentDate(new Date()); // Voltar a hoje
                             }}
                             className="btn-glass"

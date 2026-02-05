@@ -63,11 +63,25 @@ export const horarioService = {
         return response.json();
     },
 
-    getAllSchedules: async (start, end) => {
+    getAllSchedules: async (filters = {}) => {
         let url = `${API_URL}/api/schedules/all`;
         const params = new URLSearchParams();
-        if (start) params.append('start', start);
-        if (end) params.append('end', end);
+
+        // Support legacy (start, end) arguments or object
+        if (typeof filters === 'string') {
+            // arguments were (start, end)
+            // eslint-disable-next-line
+            const [start, end] = arguments;
+            if (start) params.append('start', start);
+            if (end) params.append('end', end);
+        } else {
+            const { start, end, formadorId, turmaId } = filters;
+            if (start) params.append('start', start);
+            if (end) params.append('end', end);
+            if (formadorId) params.append('formadorId', formadorId);
+            if (turmaId) params.append('turmaId', turmaId);
+        }
+
         if (params.toString()) url += `?${params.toString()}`;
 
         const response = await fetch(url, { headers: getAuthHeader() });

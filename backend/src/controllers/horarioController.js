@@ -264,6 +264,18 @@ export const listAllLessons = async (req, res) => {
             query += ` WHERE 1=1`;
         }
 
+        const { formadorId, turmaId } = req.query;
+
+        if (formadorId) {
+            query += ` AND f.id = ?`;
+            params.push(formadorId);
+        }
+
+        if (turmaId) {
+            query += ` AND t.id = ?`;
+            params.push(turmaId);
+        }
+
         if (start && end) {
             query += ` AND h.inicio >= ? AND h.inicio <= ?`;
             params.push(start, end);
