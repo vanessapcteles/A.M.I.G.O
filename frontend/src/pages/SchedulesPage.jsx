@@ -4,6 +4,7 @@ import format from 'date-fns/format';
 import parse from 'date-fns/parse';
 import startOfWeek from 'date-fns/startOfWeek';
 import getDay from 'date-fns/getDay';
+import differenceInDays from 'date-fns/differenceInDays';
 import pt from 'date-fns/locale/pt';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 
@@ -96,20 +97,47 @@ function SchedulesPage() {
         }
     };
 
-    const eventStyleGetter = (event) => ({
-        style: {
-            backgroundColor: 'var(--primary)',
-            borderRadius: '10px',
-            opacity: 0.9,
-            color: 'var(--text-primary)',
-            border: 'none',
-            display: 'block',
-            padding: '5px 10px',
-            fontSize: '0.8rem',
-            fontWeight: '500',
-            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
+    const eventStyleGetter = (event) => {
+        // Different style for Agenda view to avoid "cut" look
+        if (currentView === 'agenda') {
+            return {
+                style: {
+                    backgroundColor: 'transparent',
+                    color: 'var(--text-primary)',
+                    borderBottom: '1px solid var(--border-glass)',
+                    borderRadius: '0',
+                    boxShadow: 'none',
+                    padding: '5px 0'
+                }
+            };
         }
-    });
+
+        return {
+            style: {
+                backgroundColor: 'var(--primary)',
+                borderRadius: '10px',
+                opacity: 0.9,
+                color: 'var(--text-primary)',
+                border: 'none',
+                display: 'block',
+                padding: '5px 10px',
+                fontSize: '0.8rem',
+                fontWeight: '500',
+                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
+            }
+        };
+    };
+
+    // Calculate length for Agenda view based on filters
+    const getAgendaLength = () => {
+        if (startDate && endDate) {
+            const start = new Date(startDate);
+            const end = new Date(endDate);
+            const diff = differenceInDays(end, start) + 1;
+            return diff > 0 ? diff : 30;
+        }
+        return 30; // Default
+    };
 
     const [selectedEvent, setSelectedEvent] = useState(null);
 
@@ -237,10 +265,16 @@ function SchedulesPage() {
                     .rbc-time-gutter { color: var(--text-muted); font-size: 0.75rem; font-weight: 500; }
                     .rbc-timeslot-group { border-bottom: 1px solid var(--border-glass) !important; min-height: 50px !important; }
                     .rbc-day-slot .rbc-time-slot { border-top: 1px solid var(--border-glass) !important; }
-                    .rbc-month-view, .rbc-time-view, .rbc-agenda-view { 
+                    .rbc-month-view, .rbc-time-view { 
                         border: 1px solid var(--border-glass) !important; 
                         border-radius: 12px;
                         overflow: hidden;
+                        background: var(--card-hover-bg);
+                    }
+                    .rbc-agenda-view {
+                        border: 1px solid var(--border-glass) !important; 
+                        border-radius: 12px;
+                        overflow-y: auto !important; /* Enable scroll */
                         background: var(--card-hover-bg);
                     }
                     .rbc-day-bg + .rbc-day-bg { border-left: 1px solid var(--border-glass) !important; }
@@ -261,6 +295,7 @@ function SchedulesPage() {
                         events={events}
                         startAccessor="start"
                         endAccessor="end"
+                        length={getAgendaLength()}
                         style={{ height: '700px' }}
                         eventPropGetter={eventStyleGetter}
                         date={currentDate}
