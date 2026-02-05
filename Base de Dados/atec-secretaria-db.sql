@@ -136,6 +136,7 @@ CREATE TABLE salas (
 CREATE TABLE modulos (
     id INT AUTO_INCREMENT PRIMARY KEY,
     nome_modulo VARCHAR(150) NOT NULL,
+    area VARCHAR(100),
     carga_horaria INT NOT NULL
 );
 

@@ -36,6 +36,7 @@ function ModulesPage() {
     const [formData, setFormData] = useState({
         nome_modulo: '',
         carga_horaria: 25,
+        area: '', // No default area
         courseId: '' // Adicionar courseId ao state do form
     });
 
@@ -50,7 +51,7 @@ function ModulesPage() {
     useEffect(() => {
         loadCourses();
         loadModules();
-    }, [currentPage, searchTerm, filterCourseId]); // Adicionar filterCourseId como dependência
+    }, [currentPage, searchTerm, filterCourseId, filterArea]); // Adicionar filterArea e filterCourseId como dependência
 
     const loadCourses = async () => {
         try {
@@ -79,7 +80,8 @@ function ModulesPage() {
                 page: currentPage,
                 limit: 12, // Um pouco mais, pois são cards pequenos
                 search: searchTerm,
-                courseId: filterCourseId // Passar filtro de curso
+                courseId: filterCourseId, // Passar filtro de curso
+                area: filterArea // Passar filtro de área
             });
             // Fallback para backward compatibility caso o backend ainda não tenha atualizado
             const modulesList = Array.isArray(data) ? data : (data.data || []);
@@ -105,7 +107,8 @@ function ModulesPage() {
             }
             setShowModal(false);
             setEditingModule(null);
-            setFormData({ nome_modulo: '', carga_horaria: 25, courseId: '' });
+            setEditingModule(null);
+            setFormData({ nome_modulo: '', carga_horaria: 25, area: '', courseId: '' });
             setFormArea(''); // Reset form area
             loadModules();
         } catch (error) {
@@ -134,8 +137,8 @@ function ModulesPage() {
         setFormData({
             nome_modulo: modulo.nome_modulo,
             carga_horaria: modulo.carga_horaria,
+            area: modulo.area,
             courseId: '' // Na edição não vamos permitir mudar a associação por enquanto, ou teria de carregar
-
         });
         setShowModal(true);
     };
@@ -190,7 +193,7 @@ function ModulesPage() {
                     </select>
                 </div>
 
-                <button className="btn-primary" onClick={() => { setEditingModule(null); setFormData({ nome_modulo: '', carga_horaria: 25, courseId: '' }); setFormArea(''); setShowModal(true); }}>
+                <button className="btn-primary" onClick={() => { setEditingModule(null); setFormData({ nome_modulo: '', carga_horaria: 25, area: '', courseId: '' }); setFormArea(''); setShowModal(true); }}>
                     <Plus size={20} /> Novo Módulo
                 </button>
             </div>
@@ -284,6 +287,22 @@ function ModulesPage() {
                                     onChange={(e) => setFormData({ ...formData, nome_modulo: e.target.value })}
                                     placeholder="Ex: Programação C++"
                                 />
+                            </div>
+
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Área Técnica</label>
+                                <select
+                                    className="input-field"
+                                    required
+                                    value={formData.area}
+                                    onChange={(e) => setFormData({ ...formData, area: e.target.value })}
+                                >
+                                    <option value="">A selecionar...</option>
+                                    <option value="Informática">Informática</option>
+                                    <option value="Robótica">Robótica</option>
+                                    <option value="Electrónica">Electrónica</option>
+                                    <option value="Outra">Outra</option>
+                                </select>
                             </div>
 
                             <div>

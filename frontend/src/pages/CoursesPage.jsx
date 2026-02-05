@@ -47,7 +47,9 @@ function CoursesPage() {
     const [currentCourse, setCurrentCourse] = useState(null);
     const [courseModules, setCourseModules] = useState([]);
     const [availableModules, setAvailableModules] = useState([]);
+
     const [moduleForm, setModuleForm] = useState({ id_modulo: '', horas_padrao: '', sequencia: '' });
+    const [modalFilterArea, setModalFilterArea] = useState(''); // New state for modal area filter
 
     const user = authService.getCurrentUser();
     const role = user?.tipo_utilizador?.toUpperCase();
@@ -137,15 +139,28 @@ function CoursesPage() {
     const openModuleModal = async (course) => {
         setCurrentCourse(course);
         setShowModuleModal(true);
+        setModalFilterArea(''); // Reset area filter
         // Load course modules
         try {
             const cModules = await courseService.getCourseModules(course.id);
             setCourseModules(cModules);
-            // Load all modules for dropdown
-            const allMods = await moduleService.getAllModules({ limit: 1000 });
-            setAvailableModules(Array.isArray(allMods) ? allMods : (allMods.data || []));
+            // Load all modules for dropdown initially
+            loadAvailableModules('');
         } catch (error) {
             toast('Erro ao carregar detalhes do curso', 'error');
+        }
+    };
+
+    const loadAvailableModules = async (area) => {
+        try {
+            // Apply area filter if present, otherwise fetch large list
+            const params = { limit: 1000 };
+            if (area) params.area = area;
+
+            const allMods = await moduleService.getAllModules(params);
+            setAvailableModules(Array.isArray(allMods) ? allMods : (allMods.data || []));
+        } catch (error) {
+            console.error("Error loading modules", error);
         }
     };
 
@@ -365,6 +380,26 @@ function CoursesPage() {
                             <div>
                                 <h4 style={{ marginBottom: '1rem', color: 'var(--primary)', fontSize: '1rem' }}>Adicionar Módulo</h4>
                                 <form onSubmit={handleAddModule} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                    {/* Area Filter */}
+                                    <div>
+                                        <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Filtrar por Área</label>
+                                        <select
+                                            className="input-field"
+                                            value={modalFilterArea}
+                                            onChange={(e) => {
+                                                const area = e.target.value;
+                                                setModalFilterArea(area);
+                                                loadAvailableModules(area);
+                                            }}
+                                        >
+                                            <option value="">Todas as Áreas</option>
+                                            <option value="Informática">Informática</option>
+                                            <option value="Robótica">Robótica</option>
+                                            <option value="Electrónica">Electrónica</option>
+                                            <option value="Outra">Outra</option>
+                                        </select>
+                                    </div>
+
                                     <div>
                                         <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Módulo</label>
                                         <select

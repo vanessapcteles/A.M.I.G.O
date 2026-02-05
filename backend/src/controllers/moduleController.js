@@ -5,11 +5,11 @@ import { db } from '../config/db.js';
 // Listar todos os modulos com paginação
 export const getModules = async (req, res) => {
     try {
-        const { page = 1, limit = 10, search, courseId } = req.query;
+        const { page = 1, limit = 10, search, courseId, area } = req.query;
         const offset = (page - 1) * limit;
 
         // Base query
-        let query = 'SELECT m.* FROM modulos m';
+        let query = 'SELECT DISTINCT m.* FROM modulos m';
         const params = [];
 
         // Join if filtering by course
@@ -22,6 +22,11 @@ export const getModules = async (req, res) => {
         if (courseId) {
             whereClauses.push('cm.id_curso = ?');
             params.push(courseId);
+        }
+
+        if (area) {
+            whereClauses.push('m.area = ?'); // Filter by explicit module area
+            params.push(area);
         }
 
         if (search) {
@@ -40,17 +45,15 @@ export const getModules = async (req, res) => {
 
         // Count for pagination
         let countQuery = 'SELECT COUNT(DISTINCT m.id) as total FROM modulos m';
-        const countParams = [];
 
         if (courseId) {
             countQuery += ' JOIN curso_modulos cm ON m.id = cm.id_modulo';
         }
 
-        // Reuse calculated where clauses, but need to reconstruct params for count
-        // Note: params currently has limits at the end, we need only the where params
-        // We can just rebuild params logic for clarity
+        // Reuse calculated where clauses, but reconstruct params for count
         const countWhereParams = [];
         if (courseId) countWhereParams.push(courseId);
+        if (area) countWhereParams.push(area);
         if (search) countWhereParams.push(`%${search}%`);
 
         if (whereClauses.length > 0) {
@@ -74,17 +77,16 @@ export const getModules = async (req, res) => {
 // Criar novo modulo
 export const createModule = async (req, res) => {
     try {
-        const { nome_modulo, carga_horaria, courseId } = req.body;
+        const { nome_modulo, carga_horaria, courseId, area } = req.body;
 
         if (!nome_modulo || !carga_horaria) {
             return res.status(400).json({ message: 'Nome do módulo e carga horária são obrigatórios' });
         }
 
         const [result] = await db.query(
-            'INSERT INTO modulos (nome_modulo, carga_horaria) VALUES (?, ?)',
-            [nome_modulo, carga_horaria]
+            'INSERT INTO modulos (nome_modulo, carga_horaria, area) VALUES (?, ?, ?)',
+            [nome_modulo, carga_horaria, area]
         );
-
         const newModuleId = result.insertId;
 
         // Se veio courseId, associar de imediato
