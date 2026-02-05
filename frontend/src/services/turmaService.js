@@ -56,6 +56,21 @@ export const turmaService = {
         return response.json();
     },
 
+    getTurma: async (id) => {
+        const response = await fetch(`${API_URL}/api/turmas/${id}`, { headers: getAuthHeader() });
+        if (!response.ok) throw new Error('Erro ao carregar detalhes da turma');
+        return response.json();
+    },
+
+    importCurriculum: async (id) => {
+        const response = await fetch(`${API_URL}/api/turmas/${id}/import-curriculum`, {
+            method: 'POST',
+            headers: getAuthHeader()
+        });
+        if (!response.ok) throw new Error('Erro ao importar currículo');
+        return response.json();
+    },
+
     // Detalhes (Módulos da Turma)
     getTurmaModules: async (turmaId) => {
         const response = await fetch(`${API_URL}/api/turma-details/${turmaId}`, { headers: getAuthHeader() });

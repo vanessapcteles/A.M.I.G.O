@@ -13,6 +13,7 @@ function LoginPage() {
     const [message, setMessage] = useState({ text: '', type: '' })
     const [show2FA, setShow2FA] = useState(false)
     const [twoFACode, setTwoFACode] = useState('')
+    const [showResend, setShowResend] = useState(false)
 
     useEffect(() => {
         const token = searchParams.get('token')
@@ -70,6 +71,9 @@ function LoginPage() {
         } catch (error) {
             setMessage({ text: error.message, type: 'error' })
             setLoading(false)
+            if (error.message && error.message.toLowerCase().includes('ativada')) {
+                setShowResend(true)
+            }
         }
     }
 
@@ -95,6 +99,22 @@ function LoginPage() {
             setMessage({ text: 'Se a conta tiver 2FA, enviámos instruções para o email.', type: 'success' });
         } catch (error) {
             setMessage({ text: 'Erro ao pedir recuperação de 2FA.', type: 'error' });
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    const handleResendActivation = async () => {
+        if (!email) {
+            setMessage({ text: 'Por favor, insira o seu email no campo acima primeiro.', type: 'info' });
+            return;
+        }
+        try {
+            setLoading(true);
+            const res = await authService.resendActivation(email);
+            setMessage({ text: res.message, type: 'success' });
+        } catch (error) {
+            setMessage({ text: error.message, type: 'error' });
         } finally {
             setLoading(false);
         }
@@ -193,6 +213,37 @@ function LoginPage() {
                     <button type="submit" className="btn-primary" disabled={loading} style={{ justifyContent: 'center', padding: '1rem' }}>
                         {loading ? 'A processar...' : <><LogIn size={20} /> Entrar na Conta</>}
                     </button>
+
+                    {showResend && (
+                        <div style={{ textAlign: 'center', marginTop: '0.5rem' }}>
+                            <button
+                                type="button"
+                                onClick={handleResendActivation}
+                                style={{
+                                    background: 'rgba(59, 130, 246, 0.1)',
+                                    border: '1px solid rgba(59, 130, 246, 0.2)',
+                                    borderRadius: '8px',
+                                    color: 'var(--primary)',
+                                    fontSize: '0.85rem',
+                                    cursor: 'pointer',
+                                    padding: '0.5rem 1rem',
+                                    fontWeight: '500',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '0.5rem',
+                                    transition: 'all 0.2s'
+                                }}
+                                disabled={loading}
+                            >
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                    <polyline points="17 8 12 3 7 8" />
+                                    <line x1="12" y1="3" x2="12" y2="15" />
+                                </svg>
+                                Reenviar Email de Ativação
+                            </button>
+                        </div>
+                    )}
 
                     {show2FA && (
                         <div style={{ textAlign: 'center', marginTop: '1rem' }}>

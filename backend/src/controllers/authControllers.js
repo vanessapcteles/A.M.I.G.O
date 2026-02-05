@@ -128,6 +128,40 @@ export const activateAccount = async (req, res) => {
   }
 };
 
+// Reenviar email de ativação
+export const resendActivation = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    // Verificar se user existe
+    const [users] = await db.query('SELECT id, is_active, activation_token FROM utilizadores WHERE email = ?', [email]);
+
+    if (users.length === 0) {
+      // Segurança: não revelar se email existe ou não
+      return res.status(200).json({ message: 'Se a conta existir e não estiver ativa, um novo email foi enviado.' });
+    }
+
+    const user = users[0];
+
+    if (user.is_active) {
+      return res.status(400).json({ message: 'Esta conta já se encontra ativa. Podes fazer login.' });
+    }
+
+    let token = user.activation_token;
+    if (!token) {
+      token = uuidv4();
+      await db.query('UPDATE utilizadores SET activation_token = ? WHERE id = ?', [token, user.id]);
+    }
+
+    await sendActivationEmail(email, token);
+
+    return res.status(200).json({ message: 'Email de ativação reenviado com sucesso!' });
+  } catch (error) {
+    console.error('Erro ao reenviar ativação:', error);
+    return res.status(500).json({ message: 'Erro ao processar o pedido' });
+  }
+};
+
 // Pedir recuperação de password
 export const forgotPassword = async (req, res) => {
   try {

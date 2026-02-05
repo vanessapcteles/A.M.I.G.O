@@ -3,7 +3,7 @@ import passport from 'passport';
 import {
     register, login,
     setup2FA, verify2FA, validate2FA, recover2FA, disable2FA,
-    activateAccount, forgotPassword, resetPassword
+    activateAccount, forgotPassword, resetPassword, resendActivation
 } from '../controllers/authControllers.js';
 import { generateToken } from '../utils/token.js';
 import { authenticateToken, authorizeRole } from '../middleware/authMiddleware.js';
@@ -15,6 +15,7 @@ const router = express.Router();
 router.post('/register', register);
 router.post('/login', login);
 router.get('/activate', activateAccount); // GET para o link do email
+router.post('/resend-activation', resendActivation); // POST para reenviar email
 router.post('/forgot-password', forgotPassword);
 router.post('/reset-password', resetPassword);
 

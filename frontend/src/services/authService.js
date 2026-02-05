@@ -62,6 +62,28 @@ export const authService = {
         }
     },
 
+    resendActivation: async (email) => {
+        const response = await fetch(`${API_URL}/api/auth/resend-activation`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email })
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || 'Erro ao reenviar email');
+        return data;
+    },
+
+    resendActivation: async (email) => {
+        const response = await fetch(`${API_URL}/api/auth/resend-activation`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email })
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || 'Erro ao reenviar email');
+        return data;
+    },
+
     logout: () => {
         localStorage.removeItem('auth_token');
         localStorage.removeItem('user');

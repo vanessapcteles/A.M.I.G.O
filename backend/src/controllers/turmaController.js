@@ -174,3 +174,77 @@ export const deleteTurma = async (req, res) => {
         return res.status(500).json({ message: 'Erro ao eliminar turma' });
     }
 };
+// Obter turma por ID (com detalhes do curso)
+export const getTurmaById = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const [turmas] = await db.query(`
+            SELECT t.*, c.nome_curso 
+            FROM turmas t 
+            JOIN cursos c ON t.id_curso = c.id 
+            WHERE t.id = ?
+        `, [id]);
+
+        if (turmas.length === 0) return res.status(404).json({ message: 'Turma não encontrada' });
+
+        return res.status(200).json(turmas[0]);
+    } catch (error) {
+        console.error('Erro ao obter turma:', error);
+        return res.status(500).json({ message: 'Erro ao obter turma' });
+    }
+};
+
+// Importar currículo do curso para a turma
+export const importCurriculum = async (req, res) => {
+    try {
+        const { id } = req.params; // Turma ID
+
+        // 1. Obter o id_curso da turma
+        const [turmas] = await db.query('SELECT id_curso FROM turmas WHERE id = ?', [id]);
+        if (turmas.length === 0) return res.status(404).json({ message: 'Turma não encontrada' });
+
+        const id_curso = turmas[0].id_curso;
+
+        // 2. Obter os módulos do curso
+        const [courseModules] = await db.query('SELECT * FROM curso_modulos WHERE id_curso = ?', [id_curso]);
+
+        if (courseModules.length === 0) {
+            return res.status(400).json({ message: 'Este curso não tem módulos definidos no currículo.' });
+        }
+
+        let addedCount = 0;
+
+        // 3. Inserir na turma (verificar duplicados)
+        for (const cm of courseModules) {
+            // Verificar se já existe na turma
+            const [exists] = await db.query(
+                'SELECT id FROM turma_detalhes WHERE id_turma = ? AND id_modulo = ?',
+                [id, cm.id_modulo]
+            );
+
+            if (exists.length === 0) {
+                // Obter carga horária padrão se não definida no curso_modulos
+                let horas = cm.horas_padrao;
+                if (!horas) {
+                    const [mod] = await db.query('SELECT carga_horaria FROM modulos WHERE id = ?', [cm.id_modulo]);
+                    horas = mod[0]?.carga_horaria || 0;
+                }
+
+                await db.query(`
+                    INSERT INTO turma_detalhes (id_turma, id_modulo, id_formador, id_sala, horas_planeadas, sequencia)
+                    VALUES (?, ?, NULL, NULL, ?, ?)
+                `, [id, cm.id_modulo, horas, cm.sequencia]);
+                addedCount++;
+            }
+        }
+
+        return res.status(200).json({
+            message: `Importação concluída. ${addedCount} novos módulos adicionados.`,
+            added: addedCount
+        });
+
+    } catch (error) {
+        console.error('Erro ao importar currículo:', error);
+        return res.status(500).json({ message: 'Erro ao importar currículo' });
+    }
+};

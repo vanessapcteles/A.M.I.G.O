@@ -1,10 +1,12 @@
 import express from 'express';
-import { getTurmas, getCursosParaTurma, createTurma, updateTurma, deleteTurma } from '../controllers/turmaController.js';
+import { getTurmas, getCursosParaTurma, createTurma, updateTurma, deleteTurma, getTurmaById, importCurriculum } from '../controllers/turmaController.js';
 
 const router = express.Router();
 
 router.get('/', getTurmas);
 router.get('/cursos', getCursosParaTurma);
+router.get('/:id', getTurmaById); // Validar ID
+router.post('/:id/import-curriculum', importCurriculum);
 router.post('/', createTurma);
 router.put('/:id', updateTurma);
 router.delete('/:id', deleteTurma);

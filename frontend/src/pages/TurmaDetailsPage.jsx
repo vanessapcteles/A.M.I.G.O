@@ -5,7 +5,7 @@ import { turmaService } from '../services/turmaService';
 import { moduleService } from '../services/moduleService';
 import { roomService } from '../services/roomService';
 import { API_URL } from '../services/authService';
-import { ArrowLeft, Save, Trash2, Plus, AlertCircle, Users } from 'lucide-react';
+import { ArrowLeft, Save, Trash2, Plus, AlertCircle, Users, Download, BookOpen } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
 import ConfirmDialog from '../components/common/ConfirmDialog';
 
@@ -15,6 +15,7 @@ function TurmaDetailsPage() {
     const { toast } = useToast();
 
     const [loading, setLoading] = useState(true);
+    const [turmaInfo, setTurmaInfo] = useState(null);
     const [turmaModules, setTurmaModules] = useState([]);
     const [turmaFormandos, setTurmaFormandos] = useState([]);
 
@@ -47,16 +48,18 @@ function TurmaDetailsPage() {
 
     const loadData = async () => {
         try {
-            const [modules, formandos, allModules, rooms, trainersRes] = await Promise.all([
+            const [modules, formandos, allModules, rooms, trainersRes, turmaDetails] = await Promise.all([
                 turmaService.getTurmaModules(id),
                 turmaService.getTurmaFormandos(id),
                 moduleService.getAllModules({ limit: 1000 }),
                 roomService.getAllRooms(),
-                fetch(`${API_URL}/api/formadores`, { headers: getAuthHeader() }) // Fetch manual pq nao temos service especifico exportado ainda
+                fetch(`${API_URL}/api/formadores`, { headers: getAuthHeader() }),
+                turmaService.getTurma(id)
             ]);
 
             setTurmaModules(modules);
             setTurmaFormandos(formandos);
+            setTurmaInfo(turmaDetails);
 
             // Handle pagination response format for modules
             const modulesList = Array.isArray(allModules) ? allModules : (allModules.data || []);
@@ -141,6 +144,7 @@ function TurmaDetailsPage() {
     };
 
     // Auto-fill hours when module is selected OR check if already exists
+    // Auto-fill hours when module is selected OR check if already exists
     const handleModuleChange = (moduleId) => {
         const idInt = parseInt(moduleId);
 
@@ -161,6 +165,26 @@ function TurmaDetailsPage() {
         }));
     };
 
+    const handleImportCurriculum = async () => {
+        try {
+            const res = await turmaService.importCurriculum(id);
+            toast(res.message, 'success');
+            // Refresh modules
+            const updatedModules = await turmaService.getTurmaModules(id);
+            setTurmaModules(updatedModules);
+        } catch (error) {
+            toast(error.message, 'error');
+        }
+    };
+
+    const getFilteredModules = () => {
+        if (!turmaInfo || !availableModules) return availableModules;
+        // Prioritize modules that belong to the course area or aren't assigned yet?
+        // simple: return all attached, but maybe sort match?
+        // for now just returns all as requested, but we could improve later.
+        return availableModules;
+    };
+
     return (
         <>
             <div style={{ marginBottom: '2rem' }}>
@@ -170,8 +194,39 @@ function TurmaDetailsPage() {
                 >
                     <ArrowLeft size={16} /> Voltar às Turmas
                 </button>
-                <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>Distribuição de Módulos da Turma</h1>
-                <p style={{ color: 'var(--text-secondary)' }}>Associe módulos, formadores e salas a esta turma.</p>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <div>
+                        <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                            {turmaInfo ? (
+                                <>
+                                    <span style={{ color: 'var(--primary)' }}>{turmaInfo.codigo_turma}</span>
+                                    <span style={{ opacity: 0.3 }}>|</span>
+                                    <span>{turmaInfo.nome_curso}</span>
+                                </>
+                            ) : 'Carregando...'}
+                        </h1>
+                        <p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem' }}>Distribuição de Módulos e Formadores</p>
+                    </div>
+
+                    <button
+                        onClick={handleImportCurriculum}
+                        className="glass-card full-hover"
+                        style={{
+                            padding: '0.75rem 1.25rem',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.75rem',
+                            fontSize: '0.9rem',
+                            color: 'var(--text-primary)',
+                            cursor: 'pointer'
+                        }}
+                        title="Importar todos os módulos definidos no Curso"
+                    >
+                        <Download size={18} className="text-gradient" />
+                        <span>Importar Módulos</span>
+                    </button>
+                </div>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '2rem' }}>
