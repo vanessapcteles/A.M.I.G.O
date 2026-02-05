@@ -161,7 +161,9 @@ export const getModulesAreas = async (req, res) => {
             SELECT DISTINCT area FROM cursos WHERE area IS NOT NULL AND area != ""
             ORDER BY area ASC
         `);
-        const areas = rows.map(r => r.area);
+        const areasSet = new Set(rows.map(r => r.area));
+        areasSet.add('Outra'); // Ensure default area exists
+        const areas = Array.from(areasSet).sort();
         return res.json(areas);
     } catch (error) {
         console.error('Erro ao buscar áreas:', error);

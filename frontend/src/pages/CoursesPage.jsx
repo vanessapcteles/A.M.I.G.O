@@ -458,10 +458,9 @@ function CoursesPage() {
                                             }}
                                         >
                                             <option value="">Todas as Áreas</option>
-                                            <option value="Informática">Informática</option>
-                                            <option value="Robótica">Robótica</option>
-                                            <option value="Electrónica">Electrónica</option>
-                                            <option value="Outra">Outra</option>
+                                            {areas.map(area => (
+                                                <option key={area} value={area}>{area}</option>
+                                            ))}
                                         </select>
                                     </div>
 

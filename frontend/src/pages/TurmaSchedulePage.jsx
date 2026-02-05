@@ -83,16 +83,13 @@ function TurmaSchedulePage() {
         }
     };
 
-    const handleSelectSlot = ({ start, end }) => {
-        // Pre-fill form on calendar click (Month click gives 00:00, Day/Week gives specific time)
+    const handleSelectSlot = ({ start }) => {
+        // Always default to 3 hours duration on click/select
         const dateStr = format(start, 'yyyy-MM-dd');
         const startStr = format(start, 'HH:mm');
-        // Default duration 1h if not dragged
-        let endStr = format(end, 'HH:mm');
-        if (startStr === endStr) {
-            const endDate = new Date(start.getTime() + 60 * 60 * 1000); // +1h
-            endStr = format(endDate, 'HH:mm');
-        }
+
+        const endDate = new Date(start.getTime() + 3 * 60 * 60 * 1000); // +3h
+        const endStr = format(endDate, 'HH:mm');
 
         setFormData({
             ...formData,
@@ -102,6 +99,36 @@ function TurmaSchedulePage() {
         });
         setShowModal(true);
     };
+
+    const handleStartTimeChange = (e) => {
+        const newStart = e.target.value;
+        if (!newStart) {
+            setFormData({ ...formData, hora_inicio: newStart });
+            return;
+        }
+
+        try {
+            const [hours, minutes] = newStart.split(':').map(Number);
+            const date = new Date();
+            date.setHours(hours);
+            date.setMinutes(minutes);
+
+            // Add 3 hours
+            date.setHours(date.getHours() + 3);
+
+            const newEnd = format(date, 'HH:mm');
+
+            setFormData({
+                ...formData,
+                hora_inicio: newStart,
+                hora_fim: newEnd
+            });
+        } catch (error) {
+            // Fallback if parsing fails
+            setFormData({ ...formData, hora_inicio: newStart });
+        }
+    };
+
 
     const handleSelectEvent = (event) => {
         setEventToDelete(event);
@@ -376,7 +403,7 @@ function TurmaSchedulePage() {
                                         className="input-field"
                                         required
                                         value={formData.hora_inicio}
-                                        onChange={e => setFormData({ ...formData, hora_inicio: e.target.value })}
+                                        onChange={handleStartTimeChange}
                                     />
                                 </div>
                                 <div>
