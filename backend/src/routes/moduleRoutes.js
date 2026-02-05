@@ -3,7 +3,8 @@ import {
     getModules,
     createModule,
     updateModule,
-    deleteModule
+    deleteModule,
+    getModulesAreas
 } from '../controllers/moduleController.js';
 import { authenticateToken, authorizeRole } from '../middleware/authMiddleware.js';
 
@@ -12,6 +13,7 @@ const router = express.Router();
 // Public routes (or protected if needed)
 router.use(authenticateToken); // All routes require login
 
+router.get('/areas', getModulesAreas); // New route for areas
 router.get('/', getModules);
 router.post('/', authorizeRole(['ADMIN', 'SECRETARIA']), createModule);
 router.put('/:id', authorizeRole(['ADMIN', 'SECRETARIA']), updateModule);

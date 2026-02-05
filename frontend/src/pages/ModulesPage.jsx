@@ -39,9 +39,11 @@ function ModulesPage() {
         area: '', // No default area
         courseId: '' // Adicionar courseId ao state do form
     });
+    const [isNewArea, setIsNewArea] = useState(false); // Validar se é nova área (DEPRECATED: Now handled in Courses)
 
     // States para cursos
     const [courses, setCourses] = useState([]);
+    const [areas, setAreas] = useState([]); // Dynamic areas list
     const [filterCourseId, setFilterCourseId] = useState('');
     const [filterArea, setFilterArea] = useState(''); // Estado para filtro de área na lista
 
@@ -50,8 +52,18 @@ function ModulesPage() {
 
     useEffect(() => {
         loadCourses();
+        loadAreas(); // Load dynamic areas
         loadModules();
     }, [currentPage, searchTerm, filterCourseId, filterArea]); // Adicionar filterArea e filterCourseId como dependência
+
+    const loadAreas = async () => {
+        try {
+            const data = await moduleService.getAreas();
+            setAreas(data || []);
+        } catch (error) {
+            console.error('Erro ao carregar áreas', error);
+        }
+    };
 
     const loadCourses = async () => {
         try {
@@ -64,8 +76,8 @@ function ModulesPage() {
         }
     };
 
-    // Extrair áreas únicas
-    const uniqueAreas = [...new Set(courses.map(c => c.area).filter(Boolean))];
+    // Extrair áreas únicas (deprecated logic, now using backend list but keeping this as backup or for course-derived logic if needed)
+    // const uniqueAreas = [...new Set(courses.map(c => c.area).filter(Boolean))];
 
     // Filtrar cursos para o dropdown principal
     const filteredCoursesForList = courses.filter(c => !filterArea || c.area === filterArea);
@@ -109,8 +121,10 @@ function ModulesPage() {
             setEditingModule(null);
             setEditingModule(null);
             setFormData({ nome_modulo: '', carga_horaria: 25, area: '', courseId: '' });
+            setIsNewArea(false);
             setFormArea(''); // Reset form area
             loadModules();
+            loadAreas(); // Reload areas in case a new one was added
         } catch (error) {
             toast(error.message || 'Erro ao guardar módulo', 'error');
         }
@@ -140,6 +154,7 @@ function ModulesPage() {
             area: modulo.area,
             courseId: '' // Na edição não vamos permitir mudar a associação por enquanto, ou teria de carregar
         });
+        setIsNewArea(false);
         setShowModal(true);
     };
 
@@ -172,7 +187,7 @@ function ModulesPage() {
                         }}
                     >
                         <option value="">Todas as Áreas</option>
-                        {uniqueAreas.map(area => (
+                        {areas.map(area => (
                             <option key={area} value={area}>{area}</option>
                         ))}
                     </select>
@@ -193,7 +208,7 @@ function ModulesPage() {
                     </select>
                 </div>
 
-                <button className="btn-primary" onClick={() => { setEditingModule(null); setFormData({ nome_modulo: '', carga_horaria: 25, area: '', courseId: '' }); setFormArea(''); setShowModal(true); }}>
+                <button className="btn-primary" onClick={() => { setEditingModule(null); setFormData({ nome_modulo: '', carga_horaria: 25, area: '', courseId: '' }); setIsNewArea(false); setFormArea(''); setShowModal(true); }}>
                     <Plus size={20} /> Novo Módulo
                 </button>
             </div>
@@ -298,10 +313,9 @@ function ModulesPage() {
                                     onChange={(e) => setFormData({ ...formData, area: e.target.value })}
                                 >
                                     <option value="">A selecionar...</option>
-                                    <option value="Informática">Informática</option>
-                                    <option value="Robótica">Robótica</option>
-                                    <option value="Electrónica">Electrónica</option>
-                                    <option value="Outra">Outra</option>
+                                    {areas.map(area => (
+                                        <option key={area} value={area}>{area}</option>
+                                    ))}
                                 </select>
                             </div>
 
@@ -333,7 +347,7 @@ function ModulesPage() {
                                             }}
                                         >
                                             <option value="">-- Filtrar por Área Técnica --</option>
-                                            {uniqueAreas.map(area => (
+                                            {areas.map(area => (
                                                 <option key={area} value={area}>{area}</option>
                                             ))}
                                         </select>

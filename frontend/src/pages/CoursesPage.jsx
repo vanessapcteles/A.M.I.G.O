@@ -38,9 +38,11 @@ function CoursesPage() {
     const [courseToDelete, setCourseToDelete] = useState(null);
     const [formData, setFormData] = useState({
         nome_curso: '',
-        area: 'Informática',
+        area: '',
         estado: 'planeado'
     });
+    const [isNewArea, setIsNewArea] = useState(false);
+    const [areas, setAreas] = useState([]);
 
     // Module Management State
     const [showModuleModal, setShowModuleModal] = useState(false);
@@ -57,7 +59,17 @@ function CoursesPage() {
 
     useEffect(() => {
         loadCourses();
+        loadAreas();
     }, [currentPage, filter, searchTerm]);
+
+    const loadAreas = async () => {
+        try {
+            const data = await moduleService.getAreas();
+            setAreas(data || []);
+        } catch (error) {
+            console.error('Erro ao carregar áreas', error);
+        }
+    };
 
     const loadCourses = async () => {
         setLoading(true);
@@ -92,8 +104,11 @@ function CoursesPage() {
             }
             setShowModal(false);
             setEditingCourse(null);
-            setFormData({ nome_curso: '', area: 'Informática', estado: 'planeado' });
+            setEditingCourse(null);
+            setFormData({ nome_curso: '', area: '', estado: 'planeado' });
+            setIsNewArea(false);
             loadCourses();
+            loadAreas(); // Reload areas in case new one was created
         } catch (error) {
             toast(error.message, 'error');
         }
@@ -252,7 +267,7 @@ function CoursesPage() {
                 </div>
 
                 {isAdmin && (
-                    <button className="btn-primary" onClick={() => { setEditingCourse(null); setFormData({ nome_curso: '', area: 'Informática', estado: 'planeado' }); setShowModal(true); }}>
+                    <button className="btn-primary" onClick={() => { setEditingCourse(null); setFormData({ nome_curso: '', area: '', estado: 'planeado' }); setIsNewArea(false); setShowModal(true); }}>
                         <Plus size={20} /> Novo Curso
                     </button>
                 )}
@@ -520,16 +535,47 @@ function CoursesPage() {
 
                             <div>
                                 <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Área Técnica</label>
-                                <select
-                                    className="input-field"
-                                    value={formData.area}
-                                    onChange={(e) => setFormData({ ...formData, area: e.target.value })}
-                                >
-                                    <option value="Informática">Informática</option>
-                                    <option value="Robótica">Robótica</option>
-                                    <option value="Electrónica">Electrónica</option>
-                                    <option value="Outra">Outra</option>
-                                </select>
+                                {!isNewArea ? (
+                                    <select
+                                        className="input-field"
+                                        required
+                                        value={formData.area}
+                                        onChange={(e) => {
+                                            if (e.target.value === '__NEW__') {
+                                                setIsNewArea(true);
+                                                setFormData({ ...formData, area: '' });
+                                            } else {
+                                                setFormData({ ...formData, area: e.target.value });
+                                            }
+                                        }}
+                                    >
+                                        <option value="">A selecionar...</option>
+                                        {areas.map(area => (
+                                            <option key={area} value={area}>{area}</option>
+                                        ))}
+                                        <option value="__NEW__" style={{ fontWeight: 'bold', color: 'var(--primary)' }}>+ Nova Área</option>
+                                    </select>
+                                ) : (
+                                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                        <input
+                                            type="text"
+                                            className="input-field"
+                                            required
+                                            value={formData.area}
+                                            onChange={(e) => setFormData({ ...formData, area: e.target.value })}
+                                            placeholder="Nome da nova área"
+                                            autoFocus
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => { setIsNewArea(false); setFormData({ ...formData, area: '' }); }}
+                                            className="btn-secondary"
+                                            title="Cancelar"
+                                        >
+                                            <X size={18} />
+                                        </button>
+                                    </div>
+                                )}
                             </div>
 
                             <div>
@@ -551,7 +597,8 @@ function CoursesPage() {
                         </form>
                     </motion.div>
                 </div>
-            )}
+            )
+            }
 
             {/* Delete Confirmation Dialog - Bottom Center */}
             <AnimatePresence>
@@ -604,7 +651,7 @@ function CoursesPage() {
                     </motion.div>
                 )}
             </AnimatePresence>
-        </div>
+        </div >
     );
 }
 

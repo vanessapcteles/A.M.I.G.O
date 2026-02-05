@@ -152,3 +152,19 @@ export const deleteModule = async (req, res) => {
         return res.status(500).json({ message: 'Erro ao eliminar modulo' });
     }
 };
+// Obter lista de áreas únicas
+export const getModulesAreas = async (req, res) => {
+    try {
+        const [rows] = await db.query(`
+            SELECT DISTINCT area FROM modulos WHERE area IS NOT NULL AND area != ""
+            UNION
+            SELECT DISTINCT area FROM cursos WHERE area IS NOT NULL AND area != ""
+            ORDER BY area ASC
+        `);
+        const areas = rows.map(r => r.area);
+        return res.json(areas);
+    } catch (error) {
+        console.error('Erro ao buscar áreas:', error);
+        return res.status(500).json({ message: 'Erro ao buscar áreas' });
+    }
+};

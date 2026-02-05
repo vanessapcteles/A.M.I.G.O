@@ -48,5 +48,13 @@ export const moduleService = {
             throw new Error(err.message || 'Erro ao eliminar módulo');
         }
         return response.json();
+    },
+
+    getAreas: async () => {
+        const response = await fetch(`${API_URL}/api/modules/areas`, {
+            headers: getAuthHeader()
+        });
+        if (!response.ok) throw new Error('Erro ao carregar áreas');
+        return response.json();
     }
 };
