@@ -215,15 +215,6 @@ function CoursesPage() {
         }
     };
 
-    const getAreaIcon = (area) => {
-        switch (area) {
-            case 'Informática': return <Monitor size={20} />;
-            case 'Robótica': return <Cpu size={20} />;
-            case 'Electrónica': return <Zap size={20} />;
-            default: return <MoreHorizontal size={20} />;
-        }
-    };
-
 
     // Area Management Handlers
     const handleUpdateArea = async (originalName, newName) => {
@@ -349,14 +340,19 @@ function CoursesPage() {
                                 }}
                             >
                                 <div>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
-                                        <div style={{
-                                            width: '45px', height: '45px', borderRadius: '12px',
-                                            background: 'var(--card-hover-bg)', border: '1px solid var(--border-glass)',
-                                            display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)'
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+                                        <span style={{
+                                            fontSize: '0.75rem',
+                                            textTransform: 'uppercase',
+                                            letterSpacing: '0.05em',
+                                            color: 'var(--text-secondary)',
+                                            border: '1px solid rgba(255,255,255,0.1)',
+                                            padding: '0.25rem 0.6rem',
+                                            borderRadius: '20px',
+                                            background: 'rgba(255,255,255,0.03)'
                                         }}>
-                                            {getAreaIcon(course.area)}
-                                        </div>
+                                            {course.area}
+                                        </span>
                                         {isAdmin && (
                                             <div style={{ display: 'flex', gap: '0.25rem' }}>
                                                 <button onClick={() => openEdit(course)} className="btn-glass" style={{ padding: '0.4rem', borderRadius: '8px' }}>
@@ -372,8 +368,8 @@ function CoursesPage() {
                                         )}
                                     </div>
 
-                                    <h3 style={{ fontSize: '1.2rem', fontWeight: '700', marginBottom: '0.5rem' }}>{course.nome_curso}</h3>
-                                    <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>{course.area}</div>
+                                    <h3 style={{ fontSize: '1.4rem', fontWeight: '700', marginBottom: '1.5rem', lineHeight: '1.2' }}>{course.nome_curso}</h3>
+                                    {/* Removed old area display */}
                                 </div>
 
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '1.5rem', borderTop: '1px solid var(--border-glass)' }}>
@@ -717,12 +713,6 @@ function CoursesPage() {
                                             /* Display Mode */
                                             <>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                                    <div style={{
-                                                        width: '30px', height: '30px', borderRadius: '8px', background: 'rgba(255,255,255,0.05)',
-                                                        display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)'
-                                                    }}>
-                                                        {getAreaIcon(area)}
-                                                    </div>
                                                     <span style={{ fontWeight: '500' }}>{area}</span>
                                                 </div>
                                                 <div style={{ display: 'flex', gap: '0.25rem' }}>
