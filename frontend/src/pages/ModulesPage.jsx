@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { moduleService } from '../services/moduleService';
+import { courseService } from '../services/courseService'; // Importar courseService
 
 import { motion } from 'framer-motion';
 import {
@@ -34,12 +35,42 @@ function ModulesPage() {
 
     const [formData, setFormData] = useState({
         nome_modulo: '',
-        carga_horaria: 25
+        carga_horaria: 25,
+        courseId: '' // Adicionar courseId ao state do form
     });
 
+    // States para cursos
+    const [courses, setCourses] = useState([]);
+    const [filterCourseId, setFilterCourseId] = useState('');
+    const [filterArea, setFilterArea] = useState(''); // Estado para filtro de área na lista
+
+    // States para Formulário
+    const [formArea, setFormArea] = useState(''); // Estado para filtro de área no modal
+
     useEffect(() => {
+        loadCourses();
         loadModules();
-    }, [currentPage, searchTerm]);
+    }, [currentPage, searchTerm, filterCourseId]); // Adicionar filterCourseId como dependência
+
+    const loadCourses = async () => {
+        try {
+            // Fetch validation: backend returns { courses: [...], total, ... }
+            // Requesting larger limit to popuplate dropdown
+            const data = await courseService.getAllCourses({ limit: 100 });
+            setCourses(data.courses || (Array.isArray(data) ? data : []));
+        } catch (error) {
+            console.error('Erro ao carregar cursos', error);
+        }
+    };
+
+    // Extrair áreas únicas
+    const uniqueAreas = [...new Set(courses.map(c => c.area).filter(Boolean))];
+
+    // Filtrar cursos para o dropdown principal
+    const filteredCoursesForList = courses.filter(c => !filterArea || c.area === filterArea);
+
+    // Filtrar cursos para o dropdown do formulário
+    const filteredCoursesForForm = courses.filter(c => !formArea || c.area === formArea);
 
     const loadModules = async () => {
         setLoading(true);
@@ -47,7 +78,8 @@ function ModulesPage() {
             const data = await moduleService.getAllModules({
                 page: currentPage,
                 limit: 12, // Um pouco mais, pois são cards pequenos
-                search: searchTerm
+                search: searchTerm,
+                courseId: filterCourseId // Passar filtro de curso
             });
             // Fallback para backward compatibility caso o backend ainda não tenha atualizado
             const modulesList = Array.isArray(data) ? data : (data.data || []);
@@ -73,7 +105,8 @@ function ModulesPage() {
             }
             setShowModal(false);
             setEditingModule(null);
-            setFormData({ nome_modulo: '', carga_horaria: 25 });
+            setFormData({ nome_modulo: '', carga_horaria: 25, courseId: '' });
+            setFormArea(''); // Reset form area
             loadModules();
         } catch (error) {
             toast(error.message || 'Erro ao guardar módulo', 'error');
@@ -100,7 +133,9 @@ function ModulesPage() {
         setEditingModule(modulo);
         setFormData({
             nome_modulo: modulo.nome_modulo,
-            carga_horaria: modulo.carga_horaria
+            carga_horaria: modulo.carga_horaria,
+            courseId: '' // Na edição não vamos permitir mudar a associação por enquanto, ou teria de carregar
+
         });
         setShowModal(true);
     };
@@ -118,8 +153,44 @@ function ModulesPage() {
                         value={searchTerm}
                         onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
                     />
+
                 </div>
-                <button className="btn-primary" onClick={() => { setEditingModule(null); setFormData({ nome_modulo: '', carga_horaria: 25 }); setShowModal(true); }}>
+
+                {/* Filtro de Área (Main) */}
+                <div style={{ marginLeft: '1rem' }}>
+                    <select
+                        className="input-field"
+                        style={{ padding: '0.6rem', minWidth: '150px' }}
+                        value={filterArea}
+                        onChange={(e) => {
+                            setFilterArea(e.target.value);
+                            setFilterCourseId(''); // Reset course selection when area changes
+                            setCurrentPage(1);
+                        }}
+                    >
+                        <option value="">Todas as Áreas</option>
+                        {uniqueAreas.map(area => (
+                            <option key={area} value={area}>{area}</option>
+                        ))}
+                    </select>
+                </div>
+
+                {/* Filtro de Curso */}
+                <div style={{ marginRight: 'auto', marginLeft: '1rem' }}>
+                    <select
+                        className="input-field"
+                        style={{ padding: '0.6rem', minWidth: '200px' }}
+                        value={filterCourseId}
+                        onChange={(e) => { setFilterCourseId(e.target.value); setCurrentPage(1); }}
+                    >
+                        <option value="">{filterArea ? `Cursos de ${filterArea}` : 'Todos os Cursos'}</option>
+                        {filteredCoursesForList.map(course => (
+                            <option key={course.id} value={course.id}>{course.nome_curso}</option>
+                        ))}
+                    </select>
+                </div>
+
+                <button className="btn-primary" onClick={() => { setEditingModule(null); setFormData({ nome_modulo: '', carga_horaria: 25, courseId: '' }); setFormArea(''); setShowModal(true); }}>
                     <Plus size={20} /> Novo Módulo
                 </button>
             </div>
@@ -226,6 +297,46 @@ function ModulesPage() {
                                     onChange={(e) => setFormData({ ...formData, carga_horaria: parseInt(e.target.value) })}
                                 />
                             </div>
+
+                            {!editingModule && ( // Apenas mostrar opção de associar curso na criação
+                                <div>
+                                    <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Associar a Curso (Opcional)</label>
+
+                                    {/* Area Selector in Form */}
+                                    <div style={{ marginBottom: '0.5rem' }}>
+                                        <select
+                                            className="input-field"
+                                            style={{ width: '100%', fontSize: '0.85rem', padding: '0.5rem' }}
+                                            value={formArea}
+                                            onChange={(e) => {
+                                                setFormArea(e.target.value);
+                                                setFormData({ ...formData, courseId: '' }); // Reset course when area changes
+                                            }}
+                                        >
+                                            <option value="">-- Filtrar por Área Técnica --</option>
+                                            {uniqueAreas.map(area => (
+                                                <option key={area} value={area}>{area}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    <select
+                                        className="input-field"
+                                        style={{ width: '100%' }}
+                                        value={formData.courseId}
+                                        onChange={(e) => setFormData({ ...formData, courseId: e.target.value })}
+                                        disabled={formArea && filteredCoursesForForm.length === 0}
+                                    >
+                                        <option value="">-- Selecione o Curso --</option>
+                                        {filteredCoursesForForm.map(course => (
+                                            <option key={course.id} value={course.id}>{course.nome_curso}</option>
+                                        ))}
+                                    </select>
+                                    <p style={{ fontSize: '0.75rem', marginTop: '0.5rem', color: 'var(--text-muted)' }}>
+                                        Se selecionar um curso, o módulo será criado e automaticamente adicionado à lista de módulos desse curso.
+                                    </p>
+                                </div>
+                            )}
 
                             <button type="submit" className="btn-primary" style={{ width: '100%', marginTop: '1rem' }}>
                                 <Save size={20} /> {editingModule ? 'Salvar Alterações' : 'Criar Módulo'}

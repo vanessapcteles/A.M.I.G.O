@@ -2,34 +2,62 @@ import { db } from '../config/db.js';
 
 // Listar todos os modulos
 // Listar todos os modulos com paginação
+// Listar todos os modulos com paginação
 export const getModules = async (req, res) => {
     try {
-        const { page = 1, limit = 10, search } = req.query;
+        const { page = 1, limit = 10, search, courseId } = req.query;
         const offset = (page - 1) * limit;
 
-        let query = 'SELECT * FROM modulos';
+        // Base query
+        let query = 'SELECT m.* FROM modulos m';
         const params = [];
 
+        // Join if filtering by course
+        if (courseId) {
+            query += ' JOIN curso_modulos cm ON m.id = cm.id_modulo';
+        }
+
+        let whereClauses = [];
+
+        if (courseId) {
+            whereClauses.push('cm.id_curso = ?');
+            params.push(courseId);
+        }
+
         if (search) {
-            query += ' WHERE nome_modulo LIKE ?';
+            whereClauses.push('m.nome_modulo LIKE ?');
             params.push(`%${search}%`);
         }
 
-        query += ' ORDER BY nome_modulo ASC LIMIT ? OFFSET ?';
+        if (whereClauses.length > 0) {
+            query += ' WHERE ' + whereClauses.join(' AND ');
+        }
+
+        query += ' ORDER BY m.nome_modulo ASC LIMIT ? OFFSET ?';
         params.push(parseInt(limit), parseInt(offset));
 
         const [modules] = await db.query(query, params);
 
         // Count for pagination
-        let countQuery = 'SELECT COUNT(*) as total FROM modulos';
+        let countQuery = 'SELECT COUNT(DISTINCT m.id) as total FROM modulos m';
         const countParams = [];
 
-        if (search) {
-            countQuery += ' WHERE nome_modulo LIKE ?';
-            countParams.push(`%${search}%`);
+        if (courseId) {
+            countQuery += ' JOIN curso_modulos cm ON m.id = cm.id_modulo';
         }
 
-        const [totalCount] = await db.query(countQuery, countParams);
+        // Reuse calculated where clauses, but need to reconstruct params for count
+        // Note: params currently has limits at the end, we need only the where params
+        // We can just rebuild params logic for clarity
+        const countWhereParams = [];
+        if (courseId) countWhereParams.push(courseId);
+        if (search) countWhereParams.push(`%${search}%`);
+
+        if (whereClauses.length > 0) {
+            countQuery += ' WHERE ' + whereClauses.join(' AND ');
+        }
+
+        const [totalCount] = await db.query(countQuery, countWhereParams);
 
         return res.status(200).json({
             data: modules,
@@ -46,7 +74,7 @@ export const getModules = async (req, res) => {
 // Criar novo modulo
 export const createModule = async (req, res) => {
     try {
-        const { nome_modulo, carga_horaria } = req.body;
+        const { nome_modulo, carga_horaria, courseId } = req.body;
 
         if (!nome_modulo || !carga_horaria) {
             return res.status(400).json({ message: 'Nome do módulo e carga horária são obrigatórios' });
@@ -57,8 +85,21 @@ export const createModule = async (req, res) => {
             [nome_modulo, carga_horaria]
         );
 
+        const newModuleId = result.insertId;
+
+        // Se veio courseId, associar de imediato
+        if (courseId) {
+            // Verificar se o curso existe (opcional, mas bom pra evitar FK error cru)
+            // Aqui vamos direto no try/catch da FK
+
+            await db.query(
+                'INSERT INTO curso_modulos (id_curso, id_modulo, sequencia, horas_padrao) VALUES (?, ?, ?, ?)',
+                [courseId, newModuleId, 0, carga_horaria] // default sequencia 0, horas_padrao = carga_horaria
+            );
+        }
+
         return res.status(201).json({
-            id: result.insertId,
+            id: newModuleId,
             message: 'Módulo criado com sucesso!'
         });
     } catch (error) {
