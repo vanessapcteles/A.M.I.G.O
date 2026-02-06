@@ -76,6 +76,13 @@ export const createLesson = async (req, res) => {
 
         const { id_sala, id_formador, id_turma, horas_planeadas, nome_modulo } = detalhes[0];
 
+        // Validar se tem recursos atribuídos
+        if (!id_formador || !id_sala) {
+            return res.status(400).json({
+                message: 'Não é possível agendar: O módulo deve ter Formador e Sala atribuídos na gestão da turma.'
+            });
+        }
+
         // Formatar datas para MySQL usando objetos Date (mysql2 trata a conversão)
         const dateInicio = new Date(inicio);
         const dateFim = new Date(fim);

@@ -48,18 +48,21 @@ function TurmaDetailsPage() {
 
     const loadData = async () => {
         try {
-            const [modules, formandos, allModules, rooms, trainersRes, turmaDetails] = await Promise.all([
+            // 1. Fetch Turma Details FIRST to get Course ID
+            const turmaDetails = await turmaService.getTurma(id);
+            setTurmaInfo(turmaDetails);
+
+            // 2. Fetch dependencies with Course Context
+            const [modules, formandos, allModules, rooms, trainersRes] = await Promise.all([
                 turmaService.getTurmaModules(id),
                 turmaService.getTurmaFormandos(id),
-                moduleService.getAllModules({ limit: 1000 }),
+                moduleService.getAllModules({ limit: 1000, courseId: turmaDetails.id_curso }), // Filter by Course
                 roomService.getAllRooms(),
-                fetch(`${API_URL}/api/formadores`, { headers: getAuthHeader() }),
-                turmaService.getTurma(id)
+                fetch(`${API_URL}/api/formadores`, { headers: getAuthHeader() })
             ]);
 
             setTurmaModules(modules);
             setTurmaFormandos(formandos);
-            setTurmaInfo(turmaDetails);
 
             // Handle pagination response format for modules
             const modulesList = Array.isArray(allModules) ? allModules : (allModules.data || []);
