@@ -212,6 +212,15 @@ export const importCurriculum = async (req, res) => {
             return res.status(400).json({ message: 'Este curso não tem módulos definidos no currículo.' });
         }
 
+        // 2.5 Obter sequências já usadas na turma
+        const [existingDetails] = await db.query('SELECT sequencia FROM turma_detalhes WHERE id_turma = ?', [id]);
+        const usedSequences = new Set(existingDetails.map(d => d.sequencia));
+
+        let maxSeq = 0;
+        if (usedSequences.size > 0) {
+            maxSeq = Math.max(...Array.from(usedSequences));
+        }
+
         let addedCount = 0;
 
         // 3. Inserir na turma (verificar duplicados)
@@ -230,10 +239,23 @@ export const importCurriculum = async (req, res) => {
                     horas = mod[0]?.carga_horaria || 0;
                 }
 
+                // Determinar sequência segura
+                let targetSeq = cm.sequencia;
+                if (usedSequences.has(targetSeq)) {
+                    // Conflito de sequência: adicionar ao final
+                    maxSeq++;
+                    targetSeq = maxSeq;
+                }
+
+                // Adicionar a nova sequência ao conjunto para evitar conflitos dentro do próprio loop de importação
+                // (embora curso_modulos devesse ter sequências únicas, é uma boa defesa)
+                usedSequences.add(targetSeq);
+                if (targetSeq > maxSeq) maxSeq = targetSeq;
+
                 await db.query(`
                     INSERT INTO turma_detalhes (id_turma, id_modulo, id_formador, id_sala, horas_planeadas, sequencia)
                     VALUES (?, ?, NULL, NULL, ?, ?)
-                `, [id, cm.id_modulo, horas, cm.sequencia]);
+                `, [id, cm.id_modulo, horas, targetSeq]);
                 addedCount++;
             }
         }
@@ -245,6 +267,6 @@ export const importCurriculum = async (req, res) => {
 
     } catch (error) {
         console.error('Erro ao importar currículo:', error);
-        return res.status(500).json({ message: 'Erro ao importar currículo' });
+        return res.status(500).json({ message: 'Erro ao importar currículo: ' + error.message });
     }
 };

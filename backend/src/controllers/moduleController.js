@@ -94,9 +94,13 @@ export const createModule = async (req, res) => {
             // Verificar se o curso existe (opcional, mas bom pra evitar FK error cru)
             // Aqui vamos direto no try/catch da FK
 
+            // Calculate next sequence
+            const [rows] = await db.query('SELECT MAX(sequencia) as maxSeq FROM curso_modulos WHERE id_curso = ?', [courseId]);
+            const nextSeq = (rows[0].maxSeq !== null) ? rows[0].maxSeq + 1 : 0;
+
             await db.query(
                 'INSERT INTO curso_modulos (id_curso, id_modulo, sequencia, horas_padrao) VALUES (?, ?, ?, ?)',
-                [courseId, newModuleId, 0, carga_horaria] // default sequencia 0, horas_padrao = carga_horaria
+                [courseId, newModuleId, nextSeq, carga_horaria] // dynamic sequence, horas_padrao = carga_horaria
             );
         }
 
