@@ -1,0 +1,27 @@
+=== 🎓 Lista de Cursos ATEC ===
+
+Copie o texto abaixo e cole na Knowledge Base ou Aba Txt do Tawk.to:
+------------------------------------------------------------
+
+Na ATEC temos disponíveis os seguintes cursos:
+
+🔹 **Ciber Segurança** (CyberSecurity)
+   Estado: a decorrer
+   Módulos:
+   - Redes de computadores (50h)
+   - Análise de vulnerabilidades – iniciação; (50h)
+
+🔹 **Mecatrónica Automóvel de Veículos Elétricos e Híbridos** (Mecatrónica)
+   Estado: a decorrer
+   Módulos:
+   - Planear e gerir a atividade oficinal (50h)
+   - Dimensionar peças mecânicas (25h)
+
+🔹 **Técnico de Programação** (Programação)
+   Estado: a decorrer
+   Módulos:
+   - C++ (50h)
+   - SQL (25h)
+
+------------------------------------------------------------
+Para se inscrever, visite a página "Cursos" no nosso site.
