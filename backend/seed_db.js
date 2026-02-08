@@ -96,10 +96,27 @@ async function seedDatabase() {
             { nome: 'Angela Costa', email: 'angela.costa@atec.pt' },
             { nome: 'Beatriz Pinho', email: 'beatriz.pinho@atec.pt' },
             { nome: 'Carolina Bastos', email: 'carolina.bastos@atec.pt' },
-            { nome: 'Carlos Franco', email: 'carlos.franco@atec.pt' }
+            { nome: 'Carlos Franco', email: 'carlos.franco@atec.pt' },
+            { nome: 'Diana Santos', email: 'diana.santos@atec.pt' },
+            { nome: 'Emanuel Rocha', email: 'emanuel.rocha@atec.pt' },
+            { nome: 'Fábio Silva', email: 'fabio.silva@atec.pt' },
+            { nome: 'Gonçalo Pereira', email: 'goncalo.pereira@atec.pt' },
+            { nome: 'Helena Matos', email: 'helena.matos@atec.pt' },
+            { nome: 'Inês Ferreira', email: 'ines.ferreira@atec.pt' },
+            { nome: 'João Abreu', email: 'joao.abreu@atec.pt' },
+            { nome: 'Kevin Dias', email: 'kevin.dias@atec.pt' },
+            { nome: 'Laura Gomes', email: 'laura.gomes@atec.pt' },
+            { nome: 'Miguel Antunes', email: 'miguel.antunes@atec.pt' },
+            { nome: 'Nuno Costa', email: 'nuno.costa@atec.pt' },
+            { nome: 'Olívia Sousa', email: 'olivia.sousa@atec.pt' },
+            { nome: 'Paulo Jorge', email: 'paulo.jorge@atec.pt' },
+            { nome: 'Rita Vale', email: 'rita.vale@atec.pt' },
+            { nome: 'Sérgio Ramos', email: 'sergio.ramos@atec.pt' },
+            { nome: 'Tiago Mendes', email: 'tiago.mendes@atec.pt' }
         ];
 
         for (const formando of formandos) {
+            console.log(`🎓 Criando Formando: ${formando.nome}`);
             await db.query(
                 `INSERT INTO utilizadores (nome_completo, email, password_hash, is_active, role_id) 
                  VALUES (?, ?, ?, TRUE, (SELECT id FROM roles WHERE nome = 'FORMANDO'))`,
@@ -108,7 +125,7 @@ async function seedDatabase() {
             // Inserir perfil
             await db.query(
                 `INSERT INTO formandos (utilizador_id, data_nascimento, morada) 
-                 VALUES ((SELECT id FROM utilizadores WHERE email = ?), '2000-01-01', 'Porto, Portugal')`,
+                 VALUES ((SELECT id FROM utilizadores WHERE email = ?), '2000-01-01', 'Portugal')`,
                 [formando.email]
             );
         }

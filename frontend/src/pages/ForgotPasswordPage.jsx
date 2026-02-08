@@ -1,25 +1,30 @@
-
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { authService } from '../services/authService';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Mail, ArrowLeft, Send, CheckCircle2, AlertCircle } from 'lucide-react';
 
 const ForgotPasswordPage = () => {
     const [email, setEmail] = useState('');
-    const [message, setMessage] = useState('');
-    const [error, setError] = useState('');
+    const [status, setStatus] = useState({ type: '', text: '' });
     const [loading, setLoading] = useState(false);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
-        setMessage('');
-        setError('');
+        setStatus({ type: '', text: '' });
 
         try {
             await authService.forgotPassword(email);
-            setMessage('Se o email existir, enviámos instruções para o email para a recuperação.');
+            setStatus({
+                type: 'success',
+                text: 'Se este email estiver registado, receberá um link de recuperação em breve.'
+            });
         } catch (err) {
-            setError('Ocorreu um erro ao tentar recuperar a password.');
+            setStatus({
+                type: 'error',
+                text: 'Ocorreu um erro ao processar o seu pedido. Tente novamente.'
+            });
             console.error(err);
         } finally {
             setLoading(false);
@@ -27,55 +32,115 @@ const ForgotPasswordPage = () => {
     };
 
     return (
-        <div className="min-h-screen bg-dark-bg flex items-center justify-center p-4">
-            <div className="bg-dark-card p-8 rounded-xl shadow-2xl w-full max-w-md border border-dark-border">
-                <div className="text-center mb-8">
-                    <h2 className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                        Recuperar Password
-                    </h2>
-                    <p className="text-gray-400 mt-2">Insira o seu email para receber o link.</p>
+        <div style={{
+            minHeight: '100vh',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'radial-gradient(circle at center, var(--bg-gradient-start), var(--bg-gradient-end))',
+            padding: '2rem'
+        }}>
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+                className="glass-card"
+                style={{ maxWidth: '480px', width: '100%', padding: '3rem' }}
+            >
+                <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
+                    <div style={{
+                        width: '60px',
+                        height: '60px',
+                        background: 'rgba(56, 189, 248, 0.1)',
+                        borderRadius: '16px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        margin: '0 auto 1.5rem',
+                        border: '1px solid var(--border-glass)'
+                    }}>
+                        <Mail size={30} color="var(--primary)" />
+                    </div>
+                    <h2 style={{ fontSize: '2rem', fontWeight: '800', marginBottom: '0.75rem' }}>Recuperar Acesso</h2>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem' }}>
+                        Introduza o seu email institucional para receber as instruções de recuperação.
+                    </p>
                 </div>
 
-                {message && (
-                    <div className="bg-green-500/10 border border-green-500/50 text-green-400 p-3 rounded-lg mb-4 text-center">
-                        {message}
-                    </div>
-                )}
+                <AnimatePresence mode="wait">
+                    {status.text ? (
+                        <motion.div
+                            key="status"
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            style={{
+                                padding: '1.25rem',
+                                borderRadius: '12px',
+                                backgroundColor: status.type === 'success' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                                color: status.type === 'success' ? '#10b981' : '#f87171',
+                                fontSize: '0.9rem',
+                                textAlign: 'center',
+                                border: `1px solid ${status.type === 'success' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)'}`,
+                                marginBottom: '2rem',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.75rem'
+                            }}
+                        >
+                            {status.type === 'success' ? <CheckCircle2 size={20} /> : <AlertCircle size={20} />}
+                            <span style={{ flex: 1 }}>{status.text}</span>
+                        </motion.div>
+                    ) : null}
+                </AnimatePresence>
 
-                {error && (
-                    <div className="bg-red-500/10 border border-red-500/50 text-red-400 p-3 rounded-lg mb-4 text-center">
-                        {error}
-                    </div>
-                )}
-
-                <form onSubmit={handleSubmit} className="space-y-6">
+                <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                     <div>
-                        <label className="block text-gray-300 text-sm font-medium mb-2">Email</label>
-                        <input
-                            type="email"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            className="w-full bg-dark-input border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-primary transition-colors"
-                            placeholder="exemplo@atec.pt"
-                            required
-                        />
+                        <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--text-secondary)', fontWeight: '500' }}>
+                            Endereço de Email
+                        </label>
+                        <div style={{ position: 'relative' }}>
+                            <Mail size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                            <input
+                                type="email"
+                                className="input-field"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                style={{ paddingLeft: '3rem' }}
+                                placeholder="exemplo@atec.pt"
+                                required
+                            />
+                        </div>
                     </div>
 
                     <button
                         type="submit"
-                        disabled={loading}
-                        className="w-full bg-primary hover:bg-primary-dark text-white font-bold py-3 px-4 rounded-lg transition-all transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-primary/20"
+                        className="btn-primary"
+                        disabled={loading || (status.type === 'success')}
+                        style={{ justifyContent: 'center', padding: '1rem', width: '100%' }}
                     >
-                        {loading ? 'A enviar...' : 'Recuperar Password'}
+                        {loading ? 'A enviar...' : (
+                            <>
+                                <Send size={18} />
+                                {status.type === 'success' ? 'Link Enviado' : 'Enviar Link de Recuperação'}
+                            </>
+                        )}
                     </button>
                 </form>
 
-                <div className="mt-6 text-center">
-                    <Link to="/login" className="text-primary hover:text-accent transition-colors text-sm">
-                        Voltar ao Login
+                <div style={{ marginTop: '2.5rem', textAlign: 'center' }}>
+                    <Link to="/login" style={{
+                        color: 'var(--text-secondary)',
+                        textDecoration: 'none',
+                        fontSize: '0.9rem',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        transition: 'var(--transition)'
+                    }} className="btn-glass">
+                        <ArrowLeft size={16} /> Voltar ao Início de Sessão
                     </Link>
                 </div>
-            </div>
+            </motion.div>
         </div>
     );
 };
