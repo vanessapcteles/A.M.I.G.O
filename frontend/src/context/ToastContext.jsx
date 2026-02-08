@@ -39,12 +39,12 @@ export const ToastProvider = ({ children }) => {
                             animate={{ opacity: 1, x: 0, scale: 1 }}
                             exit={{ opacity: 0, x: 20, scale: 0.8 }}
                             style={{
-                                background: 'rgba(15, 23, 42, 0.9)',
+                                background: 'var(--bg-sidebar)',
                                 backdropFilter: 'blur(10px)',
                                 border: `1px solid ${t.type === 'success' ? 'rgba(16, 185, 129, 0.2)' : t.type === 'error' ? 'rgba(239, 68, 68, 0.2)' : 'rgba(56, 189, 248, 0.2)'}`,
                                 borderRadius: '12px',
                                 padding: '1rem 1.5rem',
-                                color: 'white',
+                                color: 'var(--text-primary)',
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: '1rem',

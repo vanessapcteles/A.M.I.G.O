@@ -87,5 +87,16 @@ export const horarioService = {
         const response = await fetch(url, { headers: getAuthHeader() });
         if (!response.ok) throw new Error('Erro ao carregar todos os horários');
         return response.json();
+    },
+
+    generateAutoSchedule: async (turmaId, dataInicio) => {
+        const response = await fetch(`${API_URL}/api/schedules/generate/${turmaId}`, {
+            method: 'POST',
+            headers: getAuthHeader(),
+            body: JSON.stringify({ dataInicio })
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || 'Erro ao gerar horário');
+        return data;
     }
 };

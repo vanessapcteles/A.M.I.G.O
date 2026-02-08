@@ -93,6 +93,20 @@ export const createLesson = async (req, res) => {
             fim: dateFim.toISOString()
         });
 
+        // 2.5 Validar Disponibilidade do Formador
+        const [availability] = await db.query(
+            `SELECT 1 FROM disponibilidade_formadores 
+             WHERE id_formador = ? 
+             AND inicio <= ? AND fim >= ?`,
+            [id_formador, dateInicio, dateFim]
+        );
+
+        if (availability.length === 0) {
+            return res.status(400).json({
+                message: 'O formador não tem disponibilidade registada para este horário.'
+            });
+        }
+
         // 3. Validar se ultrapassa as horas planeadas
         const [hourCheck] = await db.query(`
             SELECT COALESCE(SUM(TIMESTAMPDIFF(SECOND, inicio, fim)) / 3600, 0) as horas_agendadas
@@ -295,5 +309,120 @@ export const listAllLessons = async (req, res) => {
     } catch (error) {
         console.error(error);
         return res.status(500).json({ message: 'Erro ao carregar todos os horários' });
+    }
+};
+// GERADOR AUTOMÁTICO DE HORÁRIOS (O "CÉREBRO")
+export const autoGenerateSchedule = async (req, res) => {
+    const { turmaId } = req.params;
+    const { dataInicio } = req.body;
+
+    if (!dataInicio) return res.status(400).json({ message: 'Data de início é obrigatória.' });
+
+    try {
+        // 1. Obter detalhes e calcular horas restantes para CADA módulo
+        const [detalhesOriginal] = await db.query(`
+            SELECT td.*, m.nome_modulo, m.carga_horaria 
+            FROM turma_detalhes td
+            JOIN modulos m ON td.id_modulo = m.id
+            WHERE td.id_turma = ?
+            ORDER BY td.sequencia ASC
+        `, [turmaId]);
+
+        if (detalhesOriginal.length === 0) return res.status(400).json({ message: 'A turma não tem módulos atribuídos.' });
+
+        // Preparar lista de trabalho com horas restantes controladas
+        let modulesWorkList = [];
+        for (let m of detalhesOriginal) {
+            const [check] = await db.query(`
+                SELECT COALESCE(SUM(TIMESTAMPDIFF(SECOND, inicio, fim)) / 3600, 0) as agendado
+                FROM horarios_aulas WHERE id_turma_detalhe = ?
+            `, [m.id]);
+
+            modulesWorkList.push({
+                ...m,
+                horasRestantes: m.horas_planeadas - parseFloat(check[0].agendado)
+            });
+        }
+
+        let lessonsCreated = 0;
+        let searchCursor = new Date(dataInicio);
+        searchCursor.setHours(9, 0, 0, 0);
+
+        let allDone = false;
+        let safetyCounter = 0;
+
+        // O NOVO CICLO: Enquanto houver horas para marcar...
+        while (!allDone && safetyCounter < 1000) {
+            allDone = true;
+            let scheduledSomethingThisCycle = false;
+
+            // Percorrer cada módulo (isso cria a ALTERNÂNCIA)
+            for (let modulo of modulesWorkList) {
+                if (modulo.horasRestantes <= 0) continue;
+                if (!modulo.id_formador || !modulo.id_sala) continue;
+
+                allDone = false;
+                const duration = Math.min(3, modulo.horasRestantes);
+
+                const [available] = await db.query(`
+                    SELECT * FROM disponibilidade_formadores 
+                    WHERE id_formador = ? 
+                    AND inicio >= ? 
+                    AND TIMESTAMPDIFF(HOUR, inicio, fim) >= ?
+                    ORDER BY inicio ASC LIMIT 1
+                `, [modulo.id_formador, searchCursor, duration]);
+
+                if (available.length > 0) {
+                    let slotStart = new Date(available[0].inicio);
+                    if (slotStart < searchCursor) slotStart = new Date(searchCursor);
+
+                    const slotEnd = new Date(slotStart);
+                    slotEnd.setHours(slotStart.getHours() + duration);
+
+                    const [conflicts] = await db.query(`
+                        SELECT h.id FROM horarios_aulas h
+                        JOIN turma_detalhes td ON h.id_turma_detalhe = td.id
+                        WHERE (td.id_sala = ? OR td.id_turma = ?)
+                        AND ? < h.fim AND ? > h.inicio
+                    `, [modulo.id_sala, modulo.id_turma, slotStart, slotEnd]);
+
+                    if (conflicts.length === 0) {
+                        await db.query(`
+                            INSERT INTO horarios_aulas (id_turma_detalhe, inicio, fim) 
+                            VALUES (?, ?, ?)
+                        `, [modulo.id, slotStart, slotEnd]);
+
+                        modulo.horasRestantes -= duration;
+                        lessonsCreated++;
+                        scheduledSomethingThisCycle = true;
+                        searchCursor = new Date(slotEnd);
+
+                        // Se já passamos das 18h, saltamos para o dia seguinte
+                        if (searchCursor.getHours() > 18) {
+                            searchCursor.setDate(searchCursor.getDate() + 1);
+                            searchCursor.setHours(9, 0, 0, 0);
+                        }
+                    }
+                }
+            }
+
+            if (!scheduledSomethingThisCycle && !allDone) {
+                searchCursor.setHours(searchCursor.getHours() + 1);
+                if (searchCursor.getHours() > 22) {
+                    searchCursor.setDate(searchCursor.getDate() + 1);
+                    searchCursor.setHours(9, 0, 0, 0);
+                }
+            }
+            safetyCounter++;
+        }
+
+        return res.json({
+            message: `Sucesso! Foram geradas ${lessonsCreated} aulas alternadas.`,
+            lessonsCreated
+        });
+
+    } catch (error) {
+        console.error('Erro na geração automática:', error);
+        return res.status(500).json({ message: 'Erro interno ao gerar horário.' });
     }
 };

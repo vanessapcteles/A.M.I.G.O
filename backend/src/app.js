@@ -15,6 +15,8 @@ import turmaDetalhesRoutes from './routes/turmaDetalhesRoutes.js';
 import horarioRoutes from './routes/horarioRoutes.js';
 import dashboardRoutes from './routes/dashboardRoutes.js';
 import candidatosRoutes from './routes/candidatosRoutes.js';
+import disponibilidadeRoutes from './routes/disponibilidadeRoutes.js';
+import evaluationRoutes from './routes/evaluationRoutes.js';
 
 const app = express();
 
@@ -35,6 +37,8 @@ app.use('/api/turma-details', turmaDetalhesRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/schedules', horarioRoutes);
 app.use('/api/candidatos', candidatosRoutes);
+app.use('/api/availability', disponibilidadeRoutes);
+app.use('/api/evaluations', evaluationRoutes);
 
 
 app.listen(3001, () => {

@@ -113,6 +113,59 @@ export const getFormandoAcademicRecord = async (req, res) => {
     }
 };
 
+// Obter Notas Detalhadas (Por Módulo)
+export const getFormandoGrades = async (req, res) => {
+    try {
+        const { userId } = req.params;
+
+        // Buscar inscrição ativa (ou a última)
+        const [inscricao] = await db.query(`
+            SELECT i.id, c.nome_curso, t.codigo_turma 
+            FROM inscricoes i
+            JOIN formandos f ON i.id_formando = f.id
+            JOIN turmas t ON i.id_turma = t.id
+            JOIN cursos c ON t.id_curso = c.id
+            WHERE f.utilizador_id = ? 
+            ORDER BY i.data_inscricao DESC 
+            LIMIT 1
+        `, [userId]);
+
+        if (inscricao.length === 0) {
+            return res.json({ message: 'Sem inscrições ativas', grades: [] });
+        }
+
+        const inscricaoId = inscricao[0].id;
+
+        // Buscar módulos do curso e notas correspondentes
+        const [grades] = await db.query(`
+            SELECT 
+                m.id as modulo_id, 
+                m.nome_modulo, 
+                m.carga_horaria,
+                a.nota, 
+                a.data_avaliacao, 
+                a.observacoes
+            FROM inscricoes i
+            JOIN turmas t ON i.id_turma = t.id
+            JOIN curso_modulos cm ON t.id_curso = cm.id_curso
+            JOIN modulos m ON cm.id_modulo = m.id
+            LEFT JOIN avaliacoes a ON (a.id_inscricao = i.id AND a.id_modulo = m.id)
+            WHERE i.id = ?
+            ORDER BY cm.sequencia ASC
+        `, [inscricaoId]);
+
+        return res.json({
+            curso: inscricao[0].nome_curso,
+            turma: inscricao[0].codigo_turma,
+            grades: grades
+        });
+
+    } catch (error) {
+        console.error('Erro ao obter notas:', error);
+        return res.status(500).json({ message: 'Erro ao obter notas detalhadas' });
+    }
+};
+
 // Atribuir Turma a Formando
 export const assignTurma = async (req, res) => {
     try {

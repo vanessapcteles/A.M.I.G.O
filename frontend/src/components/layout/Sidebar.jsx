@@ -11,7 +11,8 @@ import {
     LogOut,
     FileText,
     Sun,
-    Moon
+    Moon,
+    Clock
 } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 
@@ -62,6 +63,8 @@ const Sidebar = () => {
         ...(isFormador ? [
             { icon: Users, label: 'Minhas Turmas', path: '/turmas' },
             { icon: Calendar, label: 'Horários', path: '/schedules' },
+            { icon: Clock, label: 'Minha Disponibilidade', path: '/trainer-availability' },
+            { icon: GraduationCap, label: 'Lançar Notas', path: '/trainer-grades' },
             { icon: DoorOpen, label: 'Salas e Aulas', path: '/rooms' },
             { icon: FileText, label: 'Ficha de Formador', path: '/formador-ficha' },
         ] : []),

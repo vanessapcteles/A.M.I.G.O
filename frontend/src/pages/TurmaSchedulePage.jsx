@@ -10,7 +10,7 @@ import 'react-big-calendar/lib/css/react-big-calendar.css';
 
 import { horarioService } from '../services/horarioService';
 import { turmaService } from '../services/turmaService'; // Para obter lista de módulos disponíveis
-import { ArrowLeft, Plus, Trash2, X, Calendar as CalendarIcon, Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, X, Calendar as CalendarIcon, Search, ChevronLeft, ChevronRight, Wand2 } from 'lucide-react';
 import CalendarToolbar from '../components/ui/CalendarToolbar';
 import { useToast } from '../context/ToastContext';
 import ConfirmDialog from '../components/common/ConfirmDialog';
@@ -35,6 +35,9 @@ function TurmaSchedulePage() {
     const [events, setEvents] = useState([]);
     const [turmaModules, setTurmaModules] = useState([]);
     const [showModal, setShowModal] = useState(false);
+    const [showAutoModal, setShowAutoModal] = useState(false);
+    const [generating, setGenerating] = useState(false);
+    const [autoStartDate, setAutoStartDate] = useState(format(new Date(), 'yyyy-MM-dd'));
 
     // Module List Pagination & Search
     const [moduleSearch, setModuleSearch] = useState('');
@@ -146,6 +149,20 @@ function TurmaSchedulePage() {
         }
     };
 
+    const handleAutoGenerate = async () => {
+        setGenerating(true);
+        try {
+            const res = await horarioService.generateAutoSchedule(id, autoStartDate);
+            toast(res.message, 'success');
+            setShowAutoModal(false);
+            loadData();
+        } catch (error) {
+            toast(error.message, 'error');
+        } finally {
+            setGenerating(false);
+        }
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
@@ -211,9 +228,20 @@ function TurmaSchedulePage() {
                     </button>
                     <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>Horário da Turma</h1>
                 </div>
-                <button className="btn-primary" onClick={() => setShowModal(true)}>
-                    <Plus size={20} /> Nova Aula
-                </button>
+                <div style={{ display: 'flex', gap: '1rem' }}>
+                    <button
+                        className="btn-glass"
+                        onClick={() => setShowAutoModal(true)}
+                        disabled={generating}
+                        style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--primary)', borderColor: 'var(--primary)' }}
+                    >
+                        <Wand2 size={20} />
+                        {generating ? 'A Gerar...' : 'Geração Automática'}
+                    </button>
+                    <button className="btn-primary" onClick={() => setShowModal(true)}>
+                        <Plus size={20} /> Nova Aula
+                    </button>
+                </div>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: '1.5rem', alignItems: 'start' }}>
@@ -422,6 +450,51 @@ function TurmaSchedulePage() {
                                 Agendar
                             </button>
                         </form>
+                    </div>
+                </div>
+            )}
+
+            {showAutoModal && (
+                <div style={{
+                    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+                    background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center',
+                    justifyContent: 'center', zIndex: 1000, backdropFilter: 'blur(5px)'
+                }}>
+                    <div className="glass-card" style={{ maxWidth: '400px', width: '90%', padding: '2rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem', alignItems: 'center' }}>
+                            <h2 style={{ fontSize: '1.25rem', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <Wand2 size={24} color="var(--primary)" /> Gerar Horário
+                            </h2>
+                            <button onClick={() => setShowAutoModal(false)} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer' }}>
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        <p style={{ marginBottom: '1.5rem', fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
+                            O sistema irá preencher automaticamente as aulas em falta, respeitando a disponibilidade dos formadores e salas.
+                        </p>
+
+                        <div style={{ marginBottom: '2rem' }}>
+                            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem' }}>Começar o agendamento em:</label>
+                            <input
+                                type="date"
+                                className="input-field"
+                                value={autoStartDate}
+                                onChange={e => setAutoStartDate(e.target.value)}
+                            />
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '1rem' }}>
+                            <button onClick={() => setShowAutoModal(false)} className="btn-glass" style={{ flex: 1 }}>Cancelar</button>
+                            <button
+                                onClick={handleAutoGenerate}
+                                className="btn-primary"
+                                style={{ flex: 1 }}
+                                disabled={generating}
+                            >
+                                {generating ? 'A processar...' : 'Confirmar'}
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}

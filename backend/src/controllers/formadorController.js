@@ -68,7 +68,7 @@ export const getFormadorHistory = async (req, res) => {
     try {
         const { userId } = req.params;
         const [history] = await db.query(`
-            SELECT m.nome_modulo, c.nome_curso, t.codigo_turma, t.data_inicio, t.data_fim
+            SELECT m.nome_modulo, c.nome_curso, t.codigo_turma, t.data_inicio, t.data_fim, td.id_turma, td.id_modulo
             FROM turma_detalhes td
             JOIN modulos m ON td.id_modulo = m.id
             JOIN turmas t ON td.id_turma = t.id

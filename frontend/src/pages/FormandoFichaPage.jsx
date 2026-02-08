@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FileText, Download, User, Mail, Phone, MapPin, Calendar, Award } from 'lucide-react';
 import { authService, API_URL } from '../services/authService';
@@ -6,9 +7,16 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
 function FormandoFichaPage() {
-    const [user, setUser] = useState(authService.getCurrentUser());
+    const { id } = useParams(); // ID do utilizador vindo da URL (opcional)
+    const currentUser = authService.getCurrentUser();
+
+    // Se houver ID na URL, usa esse. Senão, usa o do utilizador logado.
+    const targetUserId = id || currentUser.id;
+
+    const [user, setUser] = useState(currentUser); // Começa com o logado, mas será atualizado
     const [extra, setExtra] = useState(null);
     const [academicRecords, setAcademicRecords] = useState([]);
+    const [detailedGrades, setDetailedGrades] = useState({ grades: [] });
     const [loading, setLoading] = useState(true);
     const [profilePhoto, setProfilePhoto] = useState(null);
 
@@ -18,19 +26,37 @@ function FormandoFichaPage() {
                 const token = localStorage.getItem('auth_token');
                 const headers = { 'Authorization': `Bearer ${token}` };
 
-                // Perfil
-                const res = await fetch(`${API_URL}/api/formandos/${user.id}/profile`, { headers });
-                const data = await res.json();
-                setExtra(data);
+                // Perfil (Traz nome, email, telemovel, etc.)
+                const res = await fetch(`${API_URL}/api/formandos/${targetUserId}/profile`, { headers });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    setExtra(data);
+
+                    // Se estivermos a ver outro utilizador, atualizamos o objeto 'user' para ter os dados corretos
+                    if (id && data.nome_completo) {
+                        setUser({
+                            id: targetUserId,
+                            nome_completo: data.nome_completo,
+                            email: data.email,
+                            role: 'FORMANDO' // Assumimos que é formando ao ver esta página
+                        });
+                    }
+                }
 
                 // Histórico Académico
-                const academicRes = await fetch(`${API_URL}/api/formandos/${user.id}/academic`, { headers });
+                const academicRes = await fetch(`${API_URL}/api/formandos/${targetUserId}/academic`, { headers });
                 const academicData = await academicRes.json();
                 setAcademicRecords(academicData || []);
 
+                // Avaliações Detalhadas
+                const gradesRes = await fetch(`${API_URL}/api/formandos/${targetUserId}/grades`, { headers });
+                const gradesData = await gradesRes.json();
+                setDetailedGrades(gradesData || { grades: [] });
+
                 // Carregar Foto
                 try {
-                    const photoRes = await fetch(`${API_URL}/api/files/user/${user.id}/photo`, { headers });
+                    const photoRes = await fetch(`${API_URL}/api/files/user/${targetUserId}/photo`, { headers });
                     if (photoRes.ok) {
                         const blob = await photoRes.blob();
                         const base64 = await new Promise((resolve) => {
@@ -49,7 +75,7 @@ function FormandoFichaPage() {
             }
         };
         fetchData();
-    }, [user.id]);
+    }, [targetUserId]);
 
     const exportPDF = async () => {
         const doc = new jsPDF();
@@ -114,6 +140,31 @@ function FormandoFichaPage() {
             theme: 'striped',
             headStyles: { fillColor: [56, 189, 248] }
         });
+
+        // Avaliações Detalhadas
+        if (detailedGrades.grades && detailedGrades.grades.length > 0) {
+            const finalY = doc.lastAutoTable.finalY + 15;
+
+            doc.setFontSize(14);
+            doc.setFont('helvetica', 'bold');
+            doc.text(`Avaliações: ${detailedGrades.curso} (${detailedGrades.turma})`, 15, finalY);
+            doc.line(15, finalY + 3, 60, finalY + 3);
+
+            const gradesRows = detailedGrades.grades.map(g => [
+                g.nome_modulo,
+                `${g.carga_horaria}h`,
+                g.nota ? `${g.nota} val` : '-',
+                g.data_avaliacao ? new Date(g.data_avaliacao).toLocaleDateString() : '-'
+            ]);
+
+            autoTable(doc, {
+                startY: finalY + 10,
+                head: [['Módulo', 'Carga', 'Nota', 'Data']],
+                body: gradesRows,
+                theme: 'grid',
+                headStyles: { fillColor: [71, 85, 105] } // Slate-600
+            });
+        }
 
         // Footer
         const finalY = (doc.lastAutoTable ? doc.lastAutoTable.finalY : 250) + 20;
@@ -233,6 +284,38 @@ function FormandoFichaPage() {
                             ))}
                         </div>
                     </div>
+
+                    {detailedGrades.grades && detailedGrades.grades.length > 0 && (
+                        <div className="glass-card">
+                            <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                <FileText size={20} color="#818cf8" /> Avaliações Detalhadas
+                            </h3>
+                            <h4 style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
+                                {detailedGrades.jsData ? '' : `${detailedGrades.curso} (${detailedGrades.turma})`}
+                            </h4>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                {detailedGrades.grades.map((g, i) => (
+                                    <div key={i} style={{
+                                        padding: '0.75rem',
+                                        background: 'rgba(255,255,255,0.02)',
+                                        borderRadius: '8px',
+                                        display: 'flex',
+                                        justifyContent: 'space-between',
+                                        alignItems: 'center',
+                                        borderLeft: g.nota ? '3px solid #10b981' : '3px solid var(--text-muted)'
+                                    }}>
+                                        <div>
+                                            <p style={{ fontSize: '0.95rem' }}>{g.nome_modulo}</p>
+                                            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{g.carga_horaria}h • {g.data_avaliacao ? new Date(g.data_avaliacao).toLocaleDateString() : 'A aguardar'}</p>
+                                        </div>
+                                        <span style={{ fontWeight: 'bold', color: g.nota ? '#10b981' : 'var(--text-muted)' }}>
+                                            {g.nota ? `${g.nota} val` : '-'}
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

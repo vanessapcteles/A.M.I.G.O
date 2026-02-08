@@ -16,3 +16,9 @@ npm-debug.log*
 .vscode/
 .idea/
 .DS_Store
+
+# Ficheiros de Teste e Chatbot (Locais)
+check_avail.js
+resultado_check.txt
+chatbot_data.txt
+backend/generate_chatbot_data.js

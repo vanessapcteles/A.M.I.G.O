@@ -407,7 +407,7 @@ function TurmaDetailsPage() {
                             >
                                 <option value="">Selecione Sala...</option>
                                 {availableRooms.map(r => (
-                                    <option key={r.id} value={r.id}>{r.nome}</option>
+                                    <option key={r.id} value={r.id}>{r.nome_sala}</option>
                                 ))}
                             </select>
                         </div>

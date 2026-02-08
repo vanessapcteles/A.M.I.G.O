@@ -24,6 +24,8 @@ import GradesPage from './pages/GradesPage';
 import FormandoFichaPage from './pages/FormandoFichaPage';
 import FormadorFichaPage from './pages/FormadorFichaPage';
 import ChatWidget from './components/ChatWidget';
+import TrainerAvailabilityPage from './pages/TrainerAvailabilityPage';
+import TrainerGradesPage from './pages/TrainerGradesPage';
 import { authService } from './services/authService';
 import './App.css';
 
@@ -107,9 +109,12 @@ function App() {
 
               {/* Rotas de Formador */}
               <Route path="/formador-ficha" element={<RoleBasedRoute allowedRoles={['FORMADOR']}><FormadorFichaPage /></RoleBasedRoute>} />
+              <Route path="/trainer-availability" element={<RoleBasedRoute allowedRoles={['FORMADOR']}><TrainerAvailabilityPage /></RoleBasedRoute>} />
+              <Route path="/trainer-grades" element={<RoleBasedRoute allowedRoles={['FORMADOR']}><TrainerGradesPage /></RoleBasedRoute>} />
 
               {/* Rotas mais específicas (Admin/Secretaria) */}
               <Route path="/users" element={<RoleBasedRoute allowedRoles={['ADMIN', 'SECRETARIA']}><UsersPage /></RoleBasedRoute>} />
+              <Route path="/formandos/:id/ficha" element={<RoleBasedRoute allowedRoles={['ADMIN', 'SECRETARIA', 'FORMADOR']}><FormandoFichaPage /></RoleBasedRoute>} />
               <Route path="/rooms" element={<RoleBasedRoute allowedRoles={['ADMIN', 'SECRETARIA', 'FORMADOR']}><RoomsPage /></RoleBasedRoute>} />
               <Route path="/turmas" element={<RoleBasedRoute allowedRoles={['ADMIN', 'SECRETARIA', 'FORMADOR']}><TurmasPage /></RoleBasedRoute>} />
               <Route path="/turmas/:id" element={<RoleBasedRoute allowedRoles={['ADMIN', 'SECRETARIA', 'FORMADOR']}><TurmaDetailsPage /></RoleBasedRoute>} />

@@ -11,7 +11,9 @@ import 'react-big-calendar/lib/css/react-big-calendar.css';
 import { horarioService } from '../services/horarioService';
 import { formadorService } from '../services/formadorService';
 import { turmaService } from '../services/turmaService';
-import { Calendar as CalendarIcon, Info, Users, GraduationCap } from 'lucide-react';
+import { disponibilidadeService } from '../services/disponibilidadeService';
+import { authService } from '../services/authService';
+import { Calendar as CalendarIcon, Info, Users, GraduationCap, Eye, EyeOff } from 'lucide-react';
 import CalendarToolbar from '../components/ui/CalendarToolbar';
 
 const locales = {
@@ -27,7 +29,14 @@ const localizer = dateFnsLocalizer({
 });
 
 function SchedulesPage() {
+    const user = authService.getCurrentUser();
+    const isAdmin = user?.tipo_utilizador === 'ADMIN' || user?.tipo_utilizador === 'SECRETARIA';
+    const isFormador = user?.tipo_utilizador === 'FORMADOR';
+    const canSeeAvailabilities = isAdmin || isFormador;
+
     const [events, setEvents] = useState([]);
+    const [availabilities, setAvailabilities] = useState([]);
+    const [showAvailabilities, setShowAvailabilities] = useState(false);
     const [loading, setLoading] = useState(true);
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
@@ -46,9 +55,19 @@ function SchedulesPage() {
         loadFiltersData();
     }, []);
 
+    const toggleAvailabilities = () => {
+        setShowAvailabilities(!showAvailabilities);
+    };
+
+    useEffect(() => {
+        if (showAvailabilities && canSeeAvailabilities) {
+            loadAllAvailabilities();
+        }
+    }, [showAvailabilities]);
+
     useEffect(() => {
         loadAllSchedules();
-    }, [startDate, endDate, filterFormador, filterTurma]);
+    }, [startDate, endDate, filterFormador, filterTurma, showAvailabilities, availabilities]);
 
     const loadFiltersData = async () => {
         try {
@@ -69,6 +88,24 @@ function SchedulesPage() {
         }
     };
 
+    const loadAllAvailabilities = async () => {
+        try {
+            const data = await disponibilidadeService.getAllAvailabilities();
+            const formatted = data.map(item => ({
+                id: `avail-${item.id}`,
+                title: `DISPONÍVEL: ${item.nome_formador} (${item.tipo})`,
+                start: new Date(item.inicio),
+                end: new Date(item.fim),
+                isAvailability: true,
+                id_formador: item.id_formador,
+                tipo: item.tipo
+            }));
+            setAvailabilities(formatted);
+        } catch (error) {
+            console.error('Erro ao carregar disponibilidades:', error);
+        }
+    };
+
     const loadAllSchedules = async () => {
         setLoading(true);
         try {
@@ -81,7 +118,7 @@ function SchedulesPage() {
                 turmaId: filterTurma
             });
 
-            const formattedEvents = data.map(lesson => ({
+            const formattedLessons = data.map(lesson => ({
                 id: lesson.id,
                 title: `${lesson.nome_modulo} (${lesson.codigo_turma}) - ${lesson.nome_sala}`,
                 start: new Date(lesson.inicio),
@@ -89,7 +126,23 @@ function SchedulesPage() {
                 resource: lesson
             }));
 
-            setEvents(formattedEvents);
+            // Alterado: Mostrar APENAS disponibilidades se o modo estiver ativo,
+            // ou APENAS aulas agendadas no modo normal, para evitar confusão visual.
+            let finalEvents;
+            if (showAvailabilities && canSeeAvailabilities) {
+                console.log('Filtrando disponibilidades:', { count: availabilities.length, filter: filterFormador });
+                const filteredAvail = filterFormador
+                    ? availabilities.filter(a => {
+                        const match = String(a.id_formador) === String(filterFormador);
+                        return match;
+                    })
+                    : availabilities;
+                finalEvents = filteredAvail;
+            } else {
+                finalEvents = formattedLessons;
+            }
+
+            setEvents(finalEvents);
         } catch (error) {
             console.error('Erro ao carregar horários:', error);
         } finally {
@@ -98,6 +151,28 @@ function SchedulesPage() {
     };
 
     const eventStyleGetter = (event) => {
+        if (event.isAvailability) {
+            const isOnline = event.tipo === 'online';
+            return {
+                style: {
+                    backgroundColor: isOnline ? '#0ea5e9' : '#10b981', // Cores sólidas e vibrantes
+                    border: 'none',
+                    borderRadius: '8px',
+                    color: '#ffffff', // Texto sempre branco para contraste máximo
+                    fontSize: '0.85rem', // Aumentado para melhor leitura
+                    fontWeight: '700',
+                    padding: '8px 12px',
+                    pointerEvents: 'none',
+                    zIndex: 1,
+                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.2)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center',
+                    lineHeight: '1.2'
+                }
+            };
+        }
+
         // Different style for Agenda view to avoid "cut" look
         if (currentView === 'agenda') {
             return {
@@ -122,8 +197,10 @@ function SchedulesPage() {
                 display: 'block',
                 padding: '5px 10px',
                 fontSize: '0.8rem',
-                fontWeight: '500',
-                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
+                fontWeight: '600',
+                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                zIndex: 10,
+                borderLeft: '4px solid rgba(255,255,255,0.3)'
             }
         };
     };
@@ -157,6 +234,24 @@ function SchedulesPage() {
                 </div>
 
                 <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                    {canSeeAvailabilities && (
+                        <button
+                            className={`btn-glass ${showAvailabilities ? 'active' : ''}`}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.5rem',
+                                background: showAvailabilities ? 'var(--primary-glow)' : 'transparent',
+                                color: showAvailabilities ? 'var(--primary)' : 'var(--text-secondary)',
+                                borderColor: showAvailabilities ? 'var(--primary)' : 'var(--border-glass)',
+                                padding: '0.5rem 1rem'
+                            }}
+                            onClick={toggleAvailabilities}
+                        >
+                            {showAvailabilities ? <EyeOff size={18} /> : <Eye size={18} />}
+                            {showAvailabilities ? 'Ocultar Disponibilidades' : 'Ver Disponibilidades'}
+                        </button>
+                    )}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
                         <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Desde</label>
                         <input

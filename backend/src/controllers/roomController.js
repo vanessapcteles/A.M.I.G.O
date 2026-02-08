@@ -4,7 +4,7 @@ import { db } from '../config/db.js';
 export const getRooms = async (req, res) => {
     try {
         // Colunas reais na DB: id, nome_sala, capacidade, localizacao
-        const [rooms] = await db.query('SELECT id, nome_sala as nome, capacidade, localizacao FROM salas ORDER BY nome_sala ASC');
+        const [rooms] = await db.query('SELECT id, nome_sala, capacidade, localizacao FROM salas ORDER BY nome_sala ASC');
         return res.status(200).json(rooms);
     } catch (error) {
         console.error('Erro ao listar salas:', error);

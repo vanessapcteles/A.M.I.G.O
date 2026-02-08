@@ -17,7 +17,7 @@ const ConfirmDialog = ({ isOpen, onClose, onConfirm, title, message, confirmText
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 50, scale: 0.9 }}
                         style={{
-                            background: '#1e293b',
+                            background: 'var(--bg-main)', // Usar fundo do tema
                             border: '1px solid var(--border-glass)',
                             borderRadius: '16px',
                             padding: '1.5rem 2rem',
@@ -33,7 +33,7 @@ const ConfirmDialog = ({ isOpen, onClose, onConfirm, title, message, confirmText
                     >
                         {isDestructive && <AlertCircle size={32} color="#f87171" />}
                         <div style={{ textAlign: 'center' }}>
-                            <h3 style={{ fontSize: '1.1rem', fontWeight: 'bold', marginBottom: '0.5rem', color: 'white' }}>{title}</h3>
+                            <h3 style={{ fontSize: '1.1rem', fontWeight: 'bold', marginBottom: '0.5rem', color: 'var(--text-primary)' }}>{title}</h3>
                             <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
                                 {message}
                             </p>
