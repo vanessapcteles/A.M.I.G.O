@@ -363,21 +363,49 @@ function FormandosPage() {
 
     return (
         <>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+            <div className="page-header-flex" style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '2rem',
+                gap: '1.5rem',
+                flexWrap: 'wrap'
+            }}>
+                <style>
+                    {`
+                        @media (max-width: 1200px) {
+                            .page-header-flex { flex-direction: column !important; align-items: flex-start !important; }
+                            .formandos-header-actions { width: 100% !important; justify-content: space-between !important; }
+                            .search-bar { flex: 1 !important; max-width: none !important; }
+                        }
+                        @media (max-width: 640px) {
+                            .formandos-header-actions { flex-direction: column !important; gap: 1rem !important; }
+                            .search-bar, .course-filter { width: 100% !important; }
+                        }
+                    `}
+                </style>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                    <div style={{ padding: '0.75rem', borderRadius: '12px', background: 'var(--primary-glow)', color: 'var(--primary)' }}>
+                    <div className="hidden-tablet" style={{
+                        padding: '0.75rem',
+                        borderRadius: '12px',
+                        background: 'var(--primary-glow)',
+                        color: 'var(--primary)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                    }}>
                         <Users size={24} />
                     </div>
                     <div>
-                        <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>Formandos</h1>
-                        <p style={{ color: 'var(--text-secondary)' }}>Gerir lista de formandos e documentos</p>
+                        <h1 style={{ fontSize: '1.5rem', fontWeight: '800', letterSpacing: '-0.5px', margin: 0 }}>Formandos</h1>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', margin: '2px 0 0 0' }}>{formandos.length} alunos encontrados</p>
                     </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                <div className="formandos-header-actions" style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
                     <select
-                        className="input-field"
-                        style={{ width: 'auto', minWidth: '200px' }}
+                        className="input-field course-filter"
+                        style={{ width: 'auto', minWidth: '180px', height: '40px', margin: 0, padding: '0 0.75rem', fontSize: '0.85rem', borderRadius: '10px' }}
                         value={filterCourse}
                         onChange={(e) => setFilterCourse(e.target.value)}
                     >
@@ -386,71 +414,130 @@ function FormandosPage() {
                             <option key={c.id} value={c.id}>{c.nome_curso}</option>
                         ))}
                     </select>
-                    <div className="search-bar" style={{ width: '300px' }}>
-                        <Search size={20} style={{ color: 'var(--text-secondary)' }} />
+                    <div className="search-bar" style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        width: '260px',
+                        height: '40px',
+                        background: 'rgba(255,255,255,0.03)',
+                        border: '1px solid var(--border-glass)',
+                        borderRadius: '10px',
+                        padding: '0 0.85rem'
+                    }}>
+                        <Search size={16} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
                         <input
                             type="text"
-                            placeholder="Pesquisar formando..."
+                            placeholder="Pesquisar por nome ou email..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', outline: 'none', width: '100%' }}
+                            style={{
+                                background: 'transparent',
+                                border: 'none',
+                                color: 'var(--text-primary)',
+                                outline: 'none',
+                                width: '100%',
+                                marginLeft: '0.5rem',
+                                padding: 0,
+                                height: '100%',
+                                fontSize: '0.85rem'
+                            }}
                         />
                     </div>
                 </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: selectedFormando ? '1fr 1fr' : '1fr', gap: '2rem', transition: 'all 0.3s ease' }}>
+            <div className="responsive-grid" style={{
+                display: 'grid',
+                gridTemplateColumns: selectedFormando ? '1.8fr 1.2fr' : '1fr',
+                gap: '2.5rem',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                alignItems: 'start'
+            }}>
+                <style>
+                    {`
+                        @media (max-width: 1400px) {
+                            .responsive-grid { grid-template-columns: 1fr !important; gap: 2rem !important; }
+                        }
+                    `}
+                </style>
                 <div className="glass-card">
                     {loading ? (
-                        <p>A carregar...</p>
+                        <p style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>A carregar formandos...</p>
                     ) : (
-                        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                            <thead>
-                                <tr style={{ borderBottom: '1px solid var(--border-glass)', textAlign: 'left' }}>
-                                    <th style={{ padding: '1rem', color: 'var(--text-secondary)' }}>Nome</th>
-                                    <th style={{ padding: '1rem', color: 'var(--text-secondary)' }}>Curso</th>
-                                    <th style={{ padding: '1rem', color: 'var(--text-secondary)' }}>Contacto</th>
-                                    <th style={{ padding: '1rem', color: 'var(--text-secondary)' }}>Ações</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {formandos.map(formando => (
-                                    <tr key={formando.id}
-                                        style={{
-                                            borderBottom: '1px solid var(--border-glass)',
-                                            background: selectedFormando?.id === formando.id ? 'var(--card-hover-bg)' : 'transparent'
-                                        }}
-                                    >
-                                        <td style={{ padding: '1rem' }}>
-                                            <div style={{ fontWeight: '500' }}>{formando.nome_completo}</div>
-                                            <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{formando.email}</div>
-                                        </td>
-                                        <td style={{ padding: '1rem' }}>
-                                            {formando.curso_atual ? (
-                                                <span style={{ fontSize: '0.85rem', padding: '2px 8px', borderRadius: '12px', background: 'rgba(59, 130, 246, 0.1)', color: '#60a5fa' }}>
-                                                    {formando.curso_atual}
-                                                </span>
-                                            ) : '-'}
-                                        </td>
-                                        <td style={{ padding: '1rem' }}>
-                                            {formando.telemovel || '-'}
-                                        </td>
-                                        <td style={{ padding: '1rem' }}>
-                                            <button
-                                                onClick={() => handleSelectFormando(formando.id)}
-                                                className="btn-glass"
-                                                style={{ padding: '0.5rem', fontSize: '0.9rem' }}
-                                            >
-                                                Ver Perfil
-                                            </button>
-                                        </td>
+                        <div className="table-container">
+                            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                                <thead>
+                                    <tr style={{ borderBottom: '1px solid var(--border-glass)', textAlign: 'left' }}>
+                                        <th style={{ padding: '1rem', color: 'var(--text-secondary)' }}>Nome</th>
+                                        <th style={{ padding: '1rem', color: 'var(--text-secondary)' }}>Curso</th>
+                                        <th style={{ padding: '1rem', color: 'var(--text-secondary)' }}>Contacto</th>
+                                        <th style={{ padding: '1rem', color: 'var(--text-secondary)', textAlign: 'right' }}>Ações</th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody>
+                                    {formandos.length === 0 ? (
+                                        <tr>
+                                            <td colSpan="4" style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+                                                Nenhum formando encontrado.
+                                            </td>
+                                        </tr>
+                                    ) : (
+                                        formandos.map(formando => (
+                                            <tr key={formando.id}
+                                                onClick={() => handleSelectFormando(formando.id)}
+                                                style={{
+                                                    borderBottom: '1px solid var(--border-glass)',
+                                                    background: selectedFormando?.id === formando.id ? 'var(--card-hover-bg)' : 'transparent',
+                                                    cursor: 'pointer',
+                                                    transition: 'var(--transition)'
+                                                }}
+                                            >
+                                                <td style={{ padding: '1rem' }} data-label="Nome">
+                                                    <div style={{ fontWeight: '600', color: 'var(--text-primary)' }}>{formando.nome_completo}</div>
+                                                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{formando.email}</div>
+                                                </td>
+                                                <td style={{ padding: '1rem' }} data-label="Curso">
+                                                    {formando.curso_atual ? (
+                                                        <span style={{
+                                                            fontSize: '0.75rem',
+                                                            padding: '6px 12px',
+                                                            borderRadius: '8px',
+                                                            background: 'rgba(56, 189, 248, 0.08)',
+                                                            color: 'var(--primary)',
+                                                            fontWeight: '600',
+                                                            display: 'inline-block',
+                                                            maxWidth: '250px',
+                                                            whiteSpace: 'normal',
+                                                            lineHeight: '1.3',
+                                                            border: '1px solid rgba(56, 189, 248, 0.2)'
+                                                        }}>
+                                                            {formando.curso_atual}
+                                                        </span>
+                                                    ) : (
+                                                        <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Não Registado</span>
+                                                    )}
+                                                </td>
+                                                <td style={{ padding: '1rem', fontSize: '0.9rem' }} data-label="Contacto">
+                                                    {formando.telemovel || '-'}
+                                                </td>
+                                                <td style={{ padding: '1rem', textAlign: 'right' }} data-label="Ações">
+                                                    <button
+                                                        className="btn-glass"
+                                                        style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem' }}
+                                                    >
+                                                        Ver Perfil
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
                     )}
                 </div>
 
+                {/* Painel de Detalhes */}
                 <AnimatePresence>
                     {selectedFormando && (
                         <motion.div
@@ -458,6 +545,7 @@ function FormandosPage() {
                             animate={{ opacity: 1, x: 0 }}
                             exit={{ opacity: 0, x: 20 }}
                             className="glass-card"
+                            style={{ padding: '2rem', position: 'sticky', top: '100px' }}
                         >
                             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2rem' }}>
                                 <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>

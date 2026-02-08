@@ -117,7 +117,7 @@ function FormadorFichaPage() {
         const finalY = (doc.lastAutoTable ? doc.lastAutoTable.finalY : 250) + 20;
         doc.setFontSize(9);
         doc.setTextColor(150);
-        doc.text(`Academy Manager System - Ficha Gerada em ${new Date().toLocaleDateString()}`, pageWidth / 2, Math.min(finalY, 285), { align: 'center' });
+        doc.text(`A.M.I.G.O System - Ficha Gerada em ${new Date().toLocaleDateString()}`, pageWidth / 2, Math.min(finalY, 285), { align: 'center' });
 
         doc.save(`Ficha_Formador_${user.nome_completo.replace(/ /g, '_')}.pdf`);
     };

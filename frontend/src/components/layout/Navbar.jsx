@@ -35,7 +35,7 @@ function Navbar() {
         }}>
             <div style={{ fontSize: '1.5rem', fontWeight: 'bold', fontFamily: 'Outfit' }}>
                 <Link to="/" style={{ textDecoration: 'none', color: 'white' }}>
-                    Academy Manager <span style={{ color: 'var(--primary)' }}>ATEC</span>
+                    A.M.I.G.<span style={{ color: 'var(--primary)' }}>O</span>
                 </Link>
             </div>
 

@@ -285,10 +285,21 @@ const CandidacyPage = () => {
                     <a href="/#cursos" className="btn-primary" style={{ textDecoration: 'none' }}>Ver Cursos</a>
                 </div>
             ) : (
-                <div className="glass-card" style={{ width: '100%', maxWidth: '900px', margin: '2rem', padding: '0', display: 'grid', gridTemplateColumns: '300px 1fr', overflow: 'hidden', minHeight: '500px' }}>
+                <div className="responsive-candidacy-grid glass-card" style={{ width: '100%', maxWidth: '900px', margin: '2rem', padding: '0', display: 'grid', gridTemplateColumns: '300px 1fr', overflow: 'hidden', minHeight: '500px' }}>
+                    <style>
+                        {`
+                            @media (max-width: 900px) {
+                                .responsive-candidacy-grid { grid-template-columns: 1fr !important; }
+                                .candidacy-sidebar { border-right: none !important; border-bottom: 1px solid var(--border-glass); padding: 1.5rem !important; }
+                                .candidacy-content { padding: 1.5rem !important; }
+                                .candidacy-form-container { flex-direction: column !important; }
+                                .candidacy-photo-upload { width: 100% !important; max-width: 200px; margin: 0 auto; }
+                            }
+                        `}
+                    </style>
 
                     {/* Sidebar com Steps */}
-                    <div style={{ background: 'rgba(255,255,255,0.03)', borderRight: '1px solid var(--border-glass)', padding: '2rem' }}>
+                    <div className="candidacy-sidebar" style={{ background: 'rgba(255,255,255,0.03)', borderRight: '1px solid var(--border-glass)', padding: '2rem' }}>
                         <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '2rem', fontFamily: 'var(--font-title)' }}>Candidatura</h2>
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
@@ -323,7 +334,7 @@ const CandidacyPage = () => {
                     </div>
 
                     {/* Content Area */}
-                    <div style={{ padding: '3rem', position: 'relative' }}>
+                    <div className="candidacy-content" style={{ padding: '3rem', position: 'relative' }}>
                         <AnimatePresence mode='wait'>
                             {step === 1 && (
                                 <motion.div
@@ -334,7 +345,7 @@ const CandidacyPage = () => {
                                     <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '0.5rem', fontFamily: 'var(--font-title)' }}>Complete o seu Perfil</h3>
                                     <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>Precisamos de alguns dados extra para formalizar a inscrição.</p>
 
-                                    <div style={{ display: 'flex', gap: '2rem' }}>
+                                    <div className="candidacy-form-container" style={{ display: 'flex', gap: '2rem' }}>
                                         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                                             {/* Name Field */}
                                             <div>
@@ -407,7 +418,7 @@ const CandidacyPage = () => {
                                         </div>
 
                                         {/* Photo Upload */}
-                                        <div style={{ width: '200px' }}>
+                                        <div className="candidacy-photo-upload" style={{ width: '200px' }}>
                                             <label style={{ display: 'block', fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>Foto de Perfil</label>
                                             <label style={{
                                                 width: '100%', aspectRatio: '1', borderRadius: '20px',

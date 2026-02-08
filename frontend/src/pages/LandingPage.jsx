@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
     Search,
     ChevronRight,
@@ -14,13 +14,15 @@ import {
     Monitor,
     Mail,
     X,
-    Clock
+    Clock,
+    Menu, // Added Menu icon for mobile
+    Sun, // Already present, but ensuring it's here
+    Moon // Already present, but ensuring it's here
 } from 'lucide-react';
 import { publicService } from '../services/publicService';
 import { authService } from '../services/authService';
 import { useTheme } from '../context/ThemeContext';
-import { Sun, Moon } from 'lucide-react';
-import { AnimatePresence } from 'framer-motion';
+
 
 const LandingPage = () => {
     const { isDarkMode, toggleTheme } = useTheme();
@@ -30,6 +32,7 @@ const LandingPage = () => {
     const [filteredCourses, setFilteredCourses] = useState([]);
     const [loading, setLoading] = useState(true);
     const [stats, setStats] = useState({ cursos: 0, formandos: 0, empregabilidade: '94%' });
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false); // Mobile menu state
 
     // Estados para o Modal de Detalhes
     const [selectedCourse, setSelectedCourse] = useState(null);
@@ -64,7 +67,7 @@ const LandingPage = () => {
         const element = document.getElementById(id);
         if (element) {
             element.scrollIntoView({ behavior: 'smooth' });
-            window.history.pushState(null, null, `#${id}`);
+            window.history.pushState(null, null, `#${id} `);
         }
     };
 
@@ -107,7 +110,18 @@ const LandingPage = () => {
             c.nome_curso.toLowerCase().includes(searchTerm.toLowerCase()) ||
             c.area.toLowerCase().includes(searchTerm.toLowerCase())
         );
-        setFilteredCourses(filtered);
+
+        // Ordenar: 2026 primeiro, depois o resto pela data
+        const sorted = [...filtered].sort((a, b) => {
+            const yearA = a.proxima_data_inicio ? new Date(a.proxima_data_inicio).getFullYear() : 0;
+            const yearB = b.proxima_data_inicio ? new Date(b.proxima_data_inicio).getFullYear() : 0;
+
+            if (yearA === 2026 && yearB !== 2026) return -1;
+            if (yearB === 2026 && yearA !== 2026) return 1;
+            return 0;
+        });
+
+        setFilteredCourses(sorted);
     }, [searchTerm, courses]);
 
     const formatArea = (areaCode) => {
@@ -135,6 +149,30 @@ const LandingPage = () => {
 
     return (
         <div style={{ background: 'var(--bg-main)', color: 'var(--text-primary)', minHeight: '100vh', fontFamily: 'Inter, sans-serif', overflowX: 'hidden' }}>
+            <style>
+                {`
+                    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+                    .animate-fade { animation: fadeIn 0.6s ease-out forwards; }
+                    
+                    @media (max-width: 900px) {
+                        .nav-links-desktop { display: none !important; }
+                        h1 { font-size: 2.2rem !important; line-height: 1.1 !important; }
+                        h2 { font-size: 1.8rem !important; }
+                        header { padding: 8rem 5% 4rem !important; }
+                        .quick-stats { gap: 1.5rem !important; flex-direction: column !important; align-items: center !important; }
+                        .btn-primary, .btn-glass { width: 100% !important; justify-content: center !important; padding: 1rem !important; }
+                        .search-container { flex-direction: column !important; gap: 1rem !important; }
+                        nav { padding: 1rem 5% !important; }
+                        .logo-subtitle { display: none !important; }
+                        .courses-grid { grid-template-columns: 1fr !important; padding: 0 1rem !important; }
+                    }
+
+                    @media (min-width: 901px) and (max-width: 1200px) {
+                        h1 { font-size: 3.5rem !important; }
+                        .courses-grid { grid-template-columns: repeat(2, 1fr) !important; }
+                    }
+                `}
+            </style>
             {/* Navbar Premium */}
             <nav style={{
                 position: 'fixed', top: 0, left: 0, right: 0, zIndex: 1000,
@@ -153,38 +191,97 @@ const LandingPage = () => {
                     }}>
                         <BookOpen size={22} color="white" />
                     </div>
-                    <span>Academy<span className="text-gradient">Manager</span></span>
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <span style={{ lineHeight: '1' }}>A.M.I.G.<span className="text-gradient">O</span></span>
+                        <span className="logo-subtitle" style={{ fontSize: '0.6rem', fontWeight: '500', color: 'var(--text-muted)', letterSpacing: '0.5px', textTransform: 'uppercase', marginTop: '2px' }}>
+                            Academy Management Interactive Guide & Organizer
+                        </span>
+                    </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: '2rem', alignItems: 'center' }}>
-                    <div className="hidden-mobile" style={{ display: 'flex', gap: '2rem' }}>
+                <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
+                    <div className="nav-links-desktop" style={{ display: 'flex', gap: '2rem', alignItems: 'center' }}>
                         <a href="#cursos" onClick={(e) => handleNavClick(e, 'cursos')} style={{ textDecoration: 'none', color: 'var(--text-secondary)', fontWeight: '600', fontSize: '0.9rem', transition: 'color 0.3s' }}>Cursos</a>
                         <a href="#como-funciona" onClick={(e) => handleNavClick(e, 'como-funciona')} style={{ textDecoration: 'none', color: 'var(--text-secondary)', fontWeight: '600', fontSize: '0.9rem', transition: 'color 0.3s' }}>Como Funciona</a>
+
+                        {user ? (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                <Link to={user.tipo_utilizador === 'CANDIDATO' ? "/candidato" : "/dashboard"} className="btn-primary" style={{ padding: '0.6rem 1.25rem', fontSize: '0.85rem', width: 'auto' }}>
+                                    Aceder à Área Pessoal
+                                </Link>
+                                <button
+                                    onClick={() => { authService.logout(); window.location.reload(); }}
+                                    className="btn-glass"
+                                    style={{ padding: '0.6rem 1rem', fontSize: '0.85rem', width: 'auto' }}
+                                >
+                                    Sair
+                                </button>
+                            </div>
+                        ) : (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
+                                <Link to="/login" style={{ textDecoration: 'none', color: 'var(--text-secondary)', fontWeight: '600', fontSize: '0.9rem' }}>Entrar</Link>
+                                <Link to="/register" className="btn-primary" style={{ padding: '0.7rem 1.7rem', fontSize: '0.9rem', width: 'auto' }}>Começar Agora</Link>
+                            </div>
+                        )}
                     </div>
 
-                    <button onClick={toggleTheme} className="btn-glass" style={{ width: '40px', height: '40px', padding: '0', borderRadius: '12px', justifyContent: 'center' }}>
+                    <button
+                        onClick={toggleTheme}
+                        className="btn-glass"
+                        style={{ width: '40px', height: '40px', padding: '0', borderRadius: '12px', justifyContent: 'center', zIndex: 1100 }}
+                    >
                         {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
                     </button>
-                    {user ? (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                            <Link to={user.tipo_utilizador === 'CANDIDATO' ? "/candidato" : "/dashboard"} className="btn-primary" style={{ padding: '0.6rem 1.25rem', fontSize: '0.85rem' }}>
-                                Aceder à Área Pessoal
-                            </Link>
-                            <button
-                                onClick={() => { authService.logout(); window.location.reload(); }}
-                                className="btn-glass"
-                                style={{ padding: '0.6rem 1rem', fontSize: '0.85rem' }}
-                            >
-                                Sair
-                            </button>
-                        </div>
-                    ) : (
-                        <>
-                            <Link to="/login" style={{ textDecoration: 'none', color: 'var(--text-secondary)', fontWeight: '600', fontSize: '0.9rem' }}>Entrar</Link>
-                            <Link to="/register" className="btn-primary" style={{ padding: '0.7rem 1.7rem', fontSize: '0.9rem' }}>Começar Agora</Link>
-                        </>
-                    )}
+
+                    <button
+                        className="btn-glass"
+                        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                        style={{ width: '40px', height: '40px', padding: '0', borderRadius: '12px', justifyContent: 'center', display: 'none', zIndex: 1100 }}
+                        id="mobile-menu-btn"
+                    >
+                        {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+                    </button>
+                    <style>
+                        {`
+                            @media (max-width: 900px) {
+                                #mobile-menu-btn { display: flex !important; }
+                            }
+                        `}
+                    </style>
                 </div>
+
+                {/* Mobile Menu Overlay */}
+                <AnimatePresence>
+                    {isMobileMenuOpen && (
+                        <motion.div
+                            initial={{ opacity: 0, y: -20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -20 }}
+                            style={{
+                                position: 'fixed', top: '70px', left: 0, right: 0,
+                                background: 'var(--bg-main)', padding: '2rem',
+                                borderBottom: '1px solid var(--border-glass)',
+                                display: 'flex', flexDirection: 'column', gap: '1.5rem',
+                                zIndex: 999, boxShadow: '0 10px 30px rgba(0,0,0,0.2)'
+                            }}
+                        >
+                            <a href="#cursos" onClick={(e) => { handleNavClick(e, 'cursos'); setIsMobileMenuOpen(false); }} style={{ textDecoration: 'none', color: 'var(--text-primary)', fontWeight: '600' }}>Cursos</a>
+                            <a href="#como-funciona" onClick={(e) => { handleNavClick(e, 'como-funciona'); setIsMobileMenuOpen(false); }} style={{ textDecoration: 'none', color: 'var(--text-primary)', fontWeight: '600' }}>Como Funciona</a>
+                            <div style={{ height: '1px', background: 'var(--border-glass)' }} />
+                            {user ? (
+                                <>
+                                    <Link to={user.tipo_utilizador === 'CANDIDATO' ? "/candidato" : "/dashboard"} className="btn-primary" onClick={() => setIsMobileMenuOpen(false)} style={{ textDecoration: 'none' }}>Área Pessoal</Link>
+                                    <button onClick={() => { authService.logout(); window.location.reload(); }} className="btn-glass">Sair</button>
+                                </>
+                            ) : (
+                                <>
+                                    <Link to="/login" className="btn-glass" onClick={() => setIsMobileMenuOpen(false)} style={{ textDecoration: 'none' }}>Entrar</Link>
+                                    <Link to="/register" className="btn-primary" onClick={() => setIsMobileMenuOpen(false)} style={{ textDecoration: 'none' }}>Começar Agora</Link>
+                                </>
+                            )}
+                        </motion.div>
+                    )}
+                </AnimatePresence>
             </nav>
 
             {/* Hero Section Reimagined */}
@@ -207,15 +304,18 @@ const LandingPage = () => {
 
                     <h1 style={{ fontSize: 'min(4.5rem, 10vw)', fontWeight: '900', lineHeight: '1', letterSpacing: '-0.04em', fontFamily: 'Outfit, sans-serif', marginBottom: '2rem' }}>
                         O teu futuro profissional <br />
-                        começa <span className="text-gradient">aqui.</span>
+                        começa com o <span className="text-gradient">A.M.I.G.O.</span>
                     </h1>
+                    <div style={{ marginBottom: '2rem', fontSize: '1rem', fontWeight: '600', color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '2px' }}>
+                        Academy Management Interactive Guide & Organizer
+                    </div>
 
                     <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem', maxWidth: '800px', margin: '0 auto 4rem', lineHeight: '1.7', fontWeight: '400' }}>
-                        Plataforma inteligente de gestão de formação. <br />
-                        Explora cursos certificados, consulta os planos curriculares e gere as tuas candidaturas com total facilidade.
+                        O teu guia interativo e organizador de formação profissional. <br />
+                        Explora cursos certificados, consulta planos curriculares e gere o teu percurso académico com total facilidade.
                     </p>
 
-                    <div style={{ maxWidth: '700px', margin: '0 auto', display: 'flex', gap: '1rem', flexWrap: 'wrap', justifyContent: 'center' }}>
+                    <div className="search-container" style={{ maxWidth: '700px', margin: '0 auto', display: 'flex', gap: '1rem', flexWrap: 'wrap', justifyContent: 'center' }}>
                         <div style={{ flex: 1, minWidth: '300px', position: 'relative' }}>
                             <Search size={20} style={{ position: 'absolute', left: '1.5rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
                             <input
@@ -235,8 +335,8 @@ const LandingPage = () => {
                     {/* Quick Stats Grid */}
                     <div style={{ display: 'flex', justifyContent: 'center', gap: '4rem', marginTop: '6rem', flexWrap: 'wrap' }}>
                         {[
-                            { label: 'Cursos Ativos', val: `+${stats.cursos}` },
-                            { label: 'Formandos', val: `+${stats.formandos}` },
+                            { label: 'Cursos Ativos', val: `+ ${stats.cursos} ` },
+                            { label: 'Formandos', val: `+ ${stats.formandos} ` },
                             { label: 'Empregabilidade', val: stats.empregabilidade }
                         ].map((s, i) => (
                             <div key={i} style={{ textAlign: 'center' }}>
@@ -281,8 +381,8 @@ const LandingPage = () => {
             <main id="cursos" style={{ padding: '8rem 5% 10rem', maxWidth: '1400px', margin: '0 auto' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '4rem' }}>
                     <div>
-                        <h2 style={{ fontSize: '2.8rem', fontWeight: '800', fontFamily: 'Outfit, sans-serif' }}>Explora a nossa <br /><span className="text-gradient">Oferta Formativa</span></h2>
-                        <p style={{ color: 'var(--text-secondary)', marginTop: '1rem', fontSize: '1.1rem' }}>Formação certificada e financiada para impulsionar a tua carreira.</p>
+                        <h2 style={{ fontSize: '2.8rem', fontWeight: '800', fontFamily: 'Outfit, sans-serif' }}>Explora o teu <br /><span className="text-gradient">Futuro Próximo</span></h2>
+                        <p style={{ color: 'var(--text-secondary)', marginTop: '1rem', fontSize: '1.1rem' }}>Cursos com inscrições abertas para 2026 e ofertas contínuas.</p>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', color: 'var(--text-muted)', background: 'var(--card-hover-bg)', padding: '0.6rem 1.2rem', borderRadius: '12px', border: '1px solid var(--border-glass)' }}>
                         <Monitor size={16} />
@@ -293,7 +393,11 @@ const LandingPage = () => {
                 {loading ? (
                     <div style={{ display: 'flex', justifyContent: 'center', padding: '10rem' }}><div className="loader"></div></div>
                 ) : (
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(380px, 1fr))', gap: '2.5rem' }}>
+                    <div className="courses-grid" style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 350px), 1fr))',
+                        gap: '2rem'
+                    }}>
                         {filteredCourses.map(course => (
                             <motion.div
                                 key={course.id}
@@ -313,19 +417,37 @@ const LandingPage = () => {
 
                                 <div style={{ padding: '2.5rem' }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
-                                        <div style={{
-                                            padding: '0.4rem 1rem',
-                                            background: isDarkMode ? 'var(--card-hover-bg)' : 'rgba(79, 70, 229, 0.1)',
-                                            borderRadius: '8px',
-                                            fontSize: '0.75rem',
-                                            fontWeight: '800',
-                                            textTransform: 'uppercase',
-                                            color: 'var(--primary)',
-                                            letterSpacing: '1px',
-                                            border: '1px solid var(--border-glass)'
-                                        }}>
-                                            12 Meses
-                                        </div>
+                                        {new Date(course.proxima_data_inicio).getFullYear() === 2026 ? (
+                                            <div style={{
+                                                padding: '0.4rem 1.2rem',
+                                                background: 'linear-gradient(135deg, #059669, #10b981)',
+                                                borderRadius: '20px',
+                                                fontSize: '0.7rem',
+                                                fontWeight: '900',
+                                                color: 'white',
+                                                letterSpacing: '0.5px',
+                                                boxShadow: '0 4px 15px rgba(16, 185, 129, 0.4)',
+                                                border: '1px solid rgba(255,255,255,0.2)',
+                                                textTransform: 'uppercase'
+                                            }}>
+                                                Inscrições 2026
+                                            </div>
+                                        ) : (
+                                            <div style={{
+                                                padding: '0.4rem 1rem',
+                                                background: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(79, 70, 229, 0.1)',
+                                                borderRadius: '8px',
+                                                fontSize: '0.7rem',
+                                                fontWeight: '700',
+                                                textTransform: 'uppercase',
+                                                color: 'var(--primary)',
+                                                letterSpacing: '1px',
+                                                border: '1px solid var(--border-glass)'
+                                            }}>
+                                                12 Meses
+                                            </div>
+                                        )}
+
                                         <div style={{ textAlign: 'right' }}>
                                             <div style={{ fontSize: '0.65rem', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '4px' }}>Área</div>
                                             <div style={{ fontSize: '0.8rem', fontWeight: '600', color: 'var(--text-secondary)' }}>{formatArea(course.area)}</div>
@@ -339,7 +461,12 @@ const LandingPage = () => {
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '2.5rem' }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
                                             <Globe size={16} color="var(--primary)" />
-                                            <span>Início: <span style={{ color: 'var(--text-primary)', fontWeight: '600' }}>{course.proxima_data_inicio ? new Date(course.proxima_data_inicio).toLocaleDateString('pt-PT') : 'Setembro 2025'}</span></span>
+                                            <span>Estado: <span style={{
+                                                color: new Date(course.proxima_data_inicio) > new Date() ? '#10b981' : 'var(--text-primary)',
+                                                fontWeight: '700'
+                                            }}>
+                                                {new Date(course.proxima_data_inicio) > new Date() ? 'Inscrições Abertas' : 'Oferta Formativa / Em Curso'}
+                                            </span></span>
                                         </div>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
                                             <Clock size={16} color="var(--primary)" />
@@ -459,7 +586,7 @@ const LandingPage = () => {
                                 }}>
                                     <p style={{ marginBottom: '1.5rem', fontWeight: '500' }}>Ainda tens dúvidas sobre este curso?</p>
                                     <a
-                                        href={`mailto:academymanager28@gmail.com?subject=Dúvida sobre o curso: ${selectedCourse.nome_curso}`}
+                                        href={`mailto:academymanager28 @gmail.com?subject = Dúvida sobre o curso: ${selectedCourse.nome_curso} `}
                                         className="btn-glass"
                                         style={{ gap: '0.8rem', padding: '0.8rem 2rem' }}
                                     >
@@ -517,7 +644,12 @@ const LandingPage = () => {
                             <div style={{ width: '30px', height: '30px', background: 'var(--primary)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                 <BookOpen size={16} color="white" />
                             </div>
-                            <span>Academy<span style={{ color: 'var(--primary)' }}>Manager</span></span>
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <span style={{ lineHeight: '1' }}>A.M.I.G.<span style={{ color: 'var(--primary)' }}>O</span></span>
+                                <span style={{ fontSize: '0.55rem', fontWeight: '600', color: 'var(--text-muted)', textTransform: 'uppercase', marginTop: '4px' }}>
+                                    Academy Management Interactive Guide & Organizer
+                                </span>
+                            </div>
                         </div>
                         <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', lineHeight: '1.8' }}>
                             Líder na formação tecnológica e profissional, focada na inovação e no sucesso real dos seus formandos.
@@ -534,14 +666,14 @@ const LandingPage = () => {
                     <div>
                         <h4 style={{ fontSize: '1.1rem', marginBottom: '2rem' }}>Contactos</h4>
                         <ul style={{ listStyle: 'none', padding: 0, display: 'flex', flexDirection: 'column', gap: '1rem', color: 'var(--text-secondary)', fontSize: '0.95rem' }}>
-                            <li style={{ display: 'flex', gap: '0.5rem' }}><Globe size={18} /> www.academy-manager.pt</li>
+                            <li style={{ display: 'flex', gap: '0.5rem' }}><Globe size={18} /> www.amigo.pt</li>
                             <li>Email: academymanager28@gmail.com</li>
                             <li>Local: Lisboa | Palmela | Porto</li>
                         </ul>
                     </div>
                 </div>
                 <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem', paddingTop: '3rem', borderTop: '1px solid rgba(255,255,255,0.03)' }}>
-                    &copy; 2026 Academy Manager &bull; Designed for Excellence
+                    &copy; 2026 A.M.I.G.O &bull; Designed for Excellence
                 </div>
             </footer>
         </div>

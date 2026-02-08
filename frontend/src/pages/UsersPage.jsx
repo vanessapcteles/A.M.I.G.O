@@ -134,31 +134,76 @@ function UsersPage() {
     );
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-            {/* Header Section */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
-                    <h1 className="text-gradient" style={{ fontSize: '1.875rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>
-                        Gestão de Utilizadores
-                    </h1>
-                    <p style={{ color: 'var(--text-secondary)' }}>
-                        Visualize e gira as permissões de todos os utilizadores da plataforma.
-                    </p>
+        <>
+            <div className="page-header-flex" style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '2rem',
+                gap: '1.5rem',
+                flexWrap: 'wrap'
+            }}>
+                <style>
+                    {`
+                        @media (max-width: 1200px) {
+                            .page-header-flex { flex-direction: column !important; align-items: flex-start !important; }
+                            .users-header-actions { width: 100% !important; justify-content: space-between !important; }
+                            .search-bar { flex: 1 !important; max-width: none !important; }
+                        }
+                        @media (max-width: 640px) {
+                            .users-header-actions { flex-direction: column !important; gap: 1rem !important; }
+                            .search-bar { width: 100% !important; }
+                        }
+                    `}
+                </style>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    <div className="hidden-tablet" style={{
+                        padding: '0.75rem',
+                        borderRadius: '12px',
+                        background: 'var(--primary-glow)',
+                        color: 'var(--primary)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                    }}>
+                        <Users size={24} />
+                    </div>
+                    <div>
+                        <h1 style={{ fontSize: '1.5rem', fontWeight: '800', letterSpacing: '-0.5px', margin: 0 }}>Gestão de Utilizadores</h1>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', margin: '2px 0 0 0' }}>{filteredUsers.length} utilizadores registados</p>
+                    </div>
                 </div>
-            </div>
 
-            {/* Filters & Actions */}
-            <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                <div style={{ position: 'relative', flex: 1, maxWidth: '400px' }}>
-                    <Search size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-                    <input
-                        type="text"
-                        placeholder="Procurar por nome ou email..."
-                        className="input-field"
-                        style={{ paddingLeft: '3rem' }}
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                    />
+                <div className="users-header-actions" style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                    <div className="search-bar" style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        width: '320px',
+                        height: '40px',
+                        background: 'rgba(255,255,255,0.03)',
+                        border: '1px solid var(--border-glass)',
+                        borderRadius: '10px',
+                        padding: '0 0.85rem'
+                    }}>
+                        <Search size={16} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+                        <input
+                            type="text"
+                            placeholder="Pesquisar por nome ou email..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            style={{
+                                background: 'transparent',
+                                border: 'none',
+                                color: 'var(--text-primary)',
+                                outline: 'none',
+                                width: '100%',
+                                marginLeft: '0.5rem',
+                                padding: 0,
+                                height: '100%',
+                                fontSize: '0.85rem'
+                            }}
+                        />
+                    </div>
                 </div>
             </div>
 
@@ -176,14 +221,14 @@ function UsersPage() {
                         <p>A carregar utilizadores...</p>
                     </div>
                 ) : (
-                    <div style={{ overflowX: 'auto' }}>
-                        <table style={{ color: 'var(--text-primary)' }}>
+                    <div className="table-container">
+                        <table>
                             <thead>
                                 <tr>
-                                    <th style={{ padding: '1.25rem 1.5rem', textAlign: 'left', fontWeight: '600', fontSize: '0.875rem' }}>Utilizador</th>
-                                    <th style={{ padding: '1.25rem 1.5rem', textAlign: 'left', fontWeight: '600', fontSize: '0.875rem' }}>Função</th>
-                                    <th style={{ padding: '1.25rem 1.5rem', textAlign: 'left', fontWeight: '600', fontSize: '0.875rem' }}>Estado</th>
-                                    <th style={{ padding: '1.25rem 1.5rem', textAlign: 'right', fontWeight: '600', fontSize: '0.875rem' }}>Ações</th>
+                                    <th>Utilizador</th>
+                                    <th>Função</th>
+                                    <th className="hidden-tablet">Estado</th>
+                                    <th style={{ textAlign: 'right' }}>Ações</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -196,7 +241,7 @@ function UsersPage() {
                                             exit={{ opacity: 0 }}
                                             style={{ borderBottom: '1px solid var(--border-glass)' }}
                                         >
-                                            <td style={{ padding: '1rem 1.5rem' }}>
+                                            <td style={{ padding: '1rem 1.5rem' }} data-label="Utilizador">
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                                                     <div style={{
                                                         width: '40px',
@@ -228,7 +273,7 @@ function UsersPage() {
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td style={{ padding: '1rem 1.5rem' }}>
+                                            <td style={{ padding: '1rem 1.5rem' }} data-label="Função">
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                                     <span style={{ color: 'var(--primary)' }}>{getRoleIcon(user.tipo_utilizador)}</span>
                                                     <select
@@ -250,7 +295,7 @@ function UsersPage() {
                                                     </select>
                                                 </div>
                                             </td>
-                                            <td style={{ padding: '1rem 1.5rem' }}>
+                                            <td className="hidden-tablet" style={{ padding: '1rem 1.5rem' }} data-label="Estado">
                                                 <span style={{
                                                     display: 'inline-flex',
                                                     alignItems: 'center',
@@ -266,7 +311,7 @@ function UsersPage() {
                                                     {user.is_active ? 'Ativo' : 'Inativo'}
                                                 </span>
                                             </td>
-                                            <td style={{ padding: '1rem 1.5rem', textAlign: 'right' }}>
+                                            <td style={{ padding: '1rem 1.5rem', textAlign: 'right' }} data-label="Ações">
                                                 <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
                                                     {editingUserId === user.id ? (
                                                         <>
@@ -307,7 +352,7 @@ function UsersPage() {
                 message="Tem a certeza que deseja eliminar este utilizador? Esta ação não pode ser desfeita."
                 isDestructive={true}
             />
-        </div>
+        </>
     );
 }
 

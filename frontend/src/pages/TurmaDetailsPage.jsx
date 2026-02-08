@@ -147,7 +147,6 @@ function TurmaDetailsPage() {
     };
 
     // Auto-fill hours when module is selected OR check if already exists
-    // Auto-fill hours when module is selected OR check if already exists
     const handleModuleChange = (moduleId) => {
         const idInt = parseInt(moduleId);
 
@@ -182,39 +181,59 @@ function TurmaDetailsPage() {
 
     const getFilteredModules = () => {
         if (!turmaInfo || !availableModules) return availableModules;
-        // Prioritize modules that belong to the course area or aren't assigned yet?
-        // simple: return all attached, but maybe sort match?
-        // for now just returns all as requested, but we could improve later.
         return availableModules;
     };
+
+    if (loading) {
+        return (
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '600px' }}>
+                <p>A carregar detalhes da turma...</p>
+            </div>
+        );
+    }
 
     return (
         <>
             <div style={{ marginBottom: '2rem' }}>
                 <button
                     onClick={() => navigate('/turmas')}
-                    style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', marginBottom: '1rem' }}
+                    style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', marginBottom: '1.5rem', fontSize: '0.9rem' }}
                 >
                     <ArrowLeft size={16} /> Voltar às Turmas
                 </button>
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div className="page-header-flex" style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'flex-start',
+                    flexWrap: 'wrap',
+                    gap: '1.5rem'
+                }}>
+                    <style>
+                        {`
+                            @media (max-width: 768px) {
+                                .page-header-flex { flex-direction: column !important; align-items: stretch !important; }
+                                .header-title { font-size: 1.25rem !important; }
+                                .btn-import { width: 100% !important; justify-content: center !important; }
+                            }
+                        `}
+                    </style>
                     <div>
-                        <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                        <h1 className="header-title" style={{ fontSize: '1.5rem', fontWeight: '800', letterSpacing: '-0.5px', margin: 0, display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
                             {turmaInfo ? (
                                 <>
                                     <span style={{ color: 'var(--primary)' }}>{turmaInfo.codigo_turma}</span>
-                                    <span style={{ opacity: 0.3 }}>|</span>
+                                    <span style={{ opacity: 0.3 }} className="hidden-tablet">|</span>
                                     <span>{turmaInfo.nome_curso}</span>
                                 </>
                             ) : 'Carregando...'}
                         </h1>
-                        <p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem' }}>Distribuição de Módulos e Formadores</p>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: '4px' }}>Distribuição de Módulos e Formadores</p>
                     </div>
 
                     <button
                         onClick={handleImportCurriculum}
-                        className="glass-card full-hover"
+                        className="glass-card full-hover btn-import"
                         style={{
                             padding: '0.75rem 1.25rem',
                             display: 'flex',
@@ -222,7 +241,8 @@ function TurmaDetailsPage() {
                             gap: '0.75rem',
                             fontSize: '0.9rem',
                             color: 'var(--text-primary)',
-                            cursor: 'pointer'
+                            cursor: 'pointer',
+                            borderRadius: '12px'
                         }}
                         title="Importar todos os módulos definidos no Curso"
                     >
@@ -232,214 +252,194 @@ function TurmaDetailsPage() {
                 </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '2rem' }}>
+            <div className="responsive-grid" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '2rem' }}>
+                <style>
+                    {`
+                        @media (max-width: 1400px) {
+                            .responsive-grid { grid-template-columns: 1fr !important; }
+                            .hidden-tablet { display: none !important; }
+                        }
+                    `}
+                </style>
 
-                {/* LISTA DE MÓDULOS JÁ ASSOCIADOS */}
-                <div className="glass-card">
-                    <h3 style={{ marginBottom: '1.5rem', fontSize: '1.1rem' }}>Plano Curricular (Módulos)</h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+                    {/* LISTA DE MÓDULOS JÁ ASSOCIADOS */}
+                    <div className="glass-card">
+                        <h3 style={{ marginBottom: '1.5rem', fontSize: '1.1rem' }}>Plano Curricular (Módulos)</h3>
 
-                    {turmaModules.length === 0 ? (
-                        <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-                            <AlertCircle size={32} style={{ marginBottom: '0.5rem', opacity: 0.5 }} />
-                            <p>Ainda não há módulos nesta turma.</p>
-                        </div>
-                    ) : (
-                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
-                            <thead>
-                                <tr style={{ borderBottom: '1px solid var(--border-glass)', textAlign: 'left', color: 'var(--text-secondary)' }}>
-                                    <th style={{ padding: '0.75rem' }}>Seq.</th>
-                                    <th style={{ padding: '0.75rem' }}>Módulo</th>
-                                    <th style={{ padding: '0.75rem' }}>Formador</th>
-                                    <th style={{ padding: '0.75rem' }}>Sala</th>
-                                    <th style={{ padding: '0.75rem' }}>Horas</th>
-                                    <th style={{ padding: '0.75rem' }}></th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {turmaModules.map(tm => (
-                                    <tr key={tm.id} style={{ borderBottom: '1px solid var(--border-glass)', background: editingModule?.id === tm.id ? 'rgba(255,255,255,0.05)' : 'transparent' }}>
-                                        <td style={{ padding: '0.75rem' }}>{tm.sequencia}</td>
-                                        <td style={{ padding: '0.75rem', fontWeight: '500' }}>{tm.nome_modulo}</td>
-                                        <td style={{ padding: '0.75rem' }}>
-                                            {tm.nome_formador ? (
-                                                tm.nome_formador
-                                            ) : (
-                                                <button
-                                                    onClick={() => startEdit(tm)}
-                                                    style={{
-                                                        background: 'none', border: '1px solid #f87171', color: '#f87171',
-                                                        fontSize: '0.8rem', padding: '2px 6px', borderRadius: '4px', cursor: 'pointer'
-                                                    }}
-                                                    title="Clique para atribuir formador"
-                                                >
-                                                    Por atribuir
-                                                </button>
-                                            )}
-                                        </td>
-                                        <td style={{ padding: '0.75rem' }}>
-                                            {tm.nome_sala ? (
-                                                tm.nome_sala
-                                            ) : (
-                                                <button
-                                                    onClick={() => startEdit(tm)}
-                                                    style={{
-                                                        background: 'none', border: '1px solid #f87171', color: '#f87171',
-                                                        fontSize: '0.8rem', padding: '2px 6px', borderRadius: '4px', cursor: 'pointer'
-                                                    }}
-                                                    title="Clique para atribuir sala"
-                                                >
-                                                    Por atribuir
-                                                </button>
-                                            )}
-                                        </td>
-                                        <td style={{ padding: '0.75rem' }}>{tm.horas_planeadas}h</td>
-                                        <td style={{ padding: '0.75rem', display: 'flex', gap: '0.5rem' }}>
-                                            <button onClick={() => startEdit(tm)} style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer' }} title="Editar Atribuição">
-                                                <Users size={16} />
-                                            </button>
-                                            <button onClick={() => confirmRemoveModule(tm.id)} style={{ background: 'none', border: 'none', color: '#f87171', cursor: 'pointer' }} title="Remover Módulo">
-                                                <Trash2 size={16} />
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    )}
-                </div>
-
-                {/* LISTA DE FORMANDOS */}
-                <div className="glass-card">
-                    <h3 style={{ marginBottom: '1.5rem', fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <Users size={18} color="var(--primary)" /> Formandos Inscritos ({turmaFormandos.length})
-                    </h3>
-
-                    {turmaFormandos.length === 0 ? (
-                        <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-                            <p>Sem formandos inscritos nesta turma.</p>
-                        </div>
-                    ) : (
-                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
-                            <thead>
-                                <tr style={{ borderBottom: '1px solid var(--border-glass)', textAlign: 'left', color: 'var(--text-secondary)' }}>
-                                    <th style={{ padding: '0.75rem' }}>Nome</th>
-                                    <th style={{ padding: '0.75rem' }}>Email</th>
-                                    <th style={{ padding: '0.75rem' }}>Contacto</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {turmaFormandos.map(f => (
-                                    <tr key={f.id} style={{ borderBottom: '1px solid var(--border-glass)' }}>
-                                        <td style={{ padding: '0.75rem', fontWeight: '500' }}>{f.nome_completo}</td>
-                                        <td style={{ padding: '0.75rem', color: 'var(--text-secondary)' }}>{f.email}</td>
-                                        <td style={{ padding: '0.75rem' }}>{f.telemovel || '-'}</td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    )}
-                </div>
-
-                {/* FORMULÁRIO DE ADIÇÃO / EDIÇÃO */}
-                <div id="module-form" className="glass-card" style={{ height: 'fit-content', border: editingModule ? '1px solid var(--primary)' : 'none' }}>
-                    <h3 style={{ marginBottom: '1.5rem', fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'space-between' }}>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            {editingModule ? <Users size={18} color="var(--primary)" /> : <Plus size={18} color="var(--primary)" />}
-                            {editingModule ? 'Editar Atribuição' : 'Adicionar Módulo'}
-                        </span>
-                        {editingModule && (
-                            <button onClick={cancelEdit} style={{ fontSize: '0.8rem', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
-                                Cancelar
-                            </button>
+                        {turmaModules.length === 0 ? (
+                            <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+                                <AlertCircle size={32} style={{ marginBottom: '0.5rem', opacity: 0.5 }} />
+                                <p>Ainda não há módulos nesta turma.</p>
+                            </div>
+                        ) : (
+                            <div className="table-container">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Seq.</th>
+                                            <th>Módulo</th>
+                                            <th>Formador</th>
+                                            <th className="hidden-tablet">Sala</th>
+                                            <th>Horas</th>
+                                            <th style={{ textAlign: 'right' }}>Ações</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {turmaModules.map(tm => (
+                                            <tr key={tm.id}>
+                                                <td>{tm.sequencia}</td>
+                                                <td style={{ fontWeight: '500' }}>{tm.nome_modulo}</td>
+                                                <td>
+                                                    {tm.nome_formador || (
+                                                        <span style={{ color: '#ef4444', fontSize: '0.8rem' }}>Por atribuir</span>
+                                                    )}
+                                                </td>
+                                                <td className="hidden-tablet">{tm.nome_sala || '-'}</td>
+                                                <td>{tm.horas_planeadas}h</td>
+                                                <td style={{ textAlign: 'right' }}>
+                                                    <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+                                                        <button onClick={() => startEdit(tm)} style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer' }}>
+                                                            <Users size={16} />
+                                                        </button>
+                                                        <button onClick={() => confirmRemoveModule(tm.id)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer' }}>
+                                                            <Trash2 size={16} />
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
                         )}
-                    </h3>
+                    </div>
 
-                    <form onSubmit={handleSubmitModule} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                        <div>
-                            <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.4rem' }}>Módulo</label>
-                            <select
-                                className="input-field"
-                                required
-                                value={formData.id_modulo}
-                                disabled={!!editingModule}
-                                onChange={e => handleModuleChange(e.target.value)}
-                            >
-                                <option value="">Selecione Módulo...</option>
-                                {availableModules.map(m => (
-                                    <option key={m.id} value={m.id}>{m.nome_modulo} ({m.carga_horaria}h)</option>
-                                ))}
-                            </select>
-                        </div>
+                    {/* LISTA DE FORMANDOS */}
+                    <div className="glass-card">
+                        <h3 style={{ marginBottom: '1.5rem', fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <Users size={18} color="var(--primary)" /> Formandos Inscritos ({turmaFormandos.length})
+                        </h3>
 
-                        <div>
-                            <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.4rem' }}>Formador</label>
-                            <select
-                                className="input-field"
-                                required
-                                value={formData.id_formador}
-                                onChange={e => setFormData({ ...formData, id_formador: e.target.value })}
-                            >
-                                <option value="">Selecione Formador...</option>
-                                {/* O id vindo do endpoint formadores é users.id, mas turma_details espera formadores.id? 
-                                    Wait, formadorController.listFormadores return users joined with formadores.
-                                    The ID returned is u.id (user id). 
-                                    My database relation is id_formador -> formadores(id).
-                                    I need to check what id_formador I'm sending.
-                                    Wait, formadorController listQuery returns u.id.
-                                    The table turma_detalhes links to formadores(id).
-                                    So 'id_formador' in insert must be the formadores PK, not users PK.
-                                    
-                                    Let's check getFormadores controller again.
-                                */}
-                                {availableTrainers.map(t => (
-                                    <option key={t.id} value={t.id_formador_perfil}>{t.nome_completo}</option>
-                                ))}
-                            </select>
-                        </div>
+                        {turmaFormandos.length === 0 ? (
+                            <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+                                <p>Sem formandos inscritos nesta turma.</p>
+                            </div>
+                        ) : (
+                            <div className="table-container">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Nome</th>
+                                            <th>Email</th>
+                                            <th className="hidden-tablet">Contacto</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {turmaFormandos.map(f => (
+                                            <tr key={f.id}>
+                                                <td style={{ fontWeight: '500' }}>{f.nome_completo}</td>
+                                                <td style={{ color: 'var(--text-secondary)' }}>{f.email}</td>
+                                                <td className="hidden-tablet">{f.telemovel || '-'}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
+                    </div>
+                </div>
 
-                        <div>
-                            <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.4rem' }}>Sala</label>
-                            <select
-                                className="input-field"
-                                required
-                                value={formData.id_sala}
-                                onChange={e => setFormData({ ...formData, id_sala: e.target.value })}
-                            >
-                                <option value="">Selecione Sala...</option>
-                                {availableRooms.map(r => (
-                                    <option key={r.id} value={r.id}>{r.nome_sala}</option>
-                                ))}
-                            </select>
-                        </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+                    {/* FORMULÁRIO DE ADIÇÃO / EDIÇÃO */}
+                    <div id="module-form" className="glass-card" style={{ height: 'fit-content', border: editingModule ? '1px solid var(--primary)' : 'none' }}>
+                        <h3 style={{ marginBottom: '1.5rem', fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'space-between' }}>
+                            <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                {editingModule ? <Users size={18} color="var(--primary)" /> : <Plus size={18} color="var(--primary)" />}
+                                {editingModule ? 'Editar Atribuição' : 'Adicionar Módulo'}
+                            </span>
+                            {editingModule && (
+                                <button onClick={cancelEdit} style={{ fontSize: '0.8rem', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
+                                    Cancelar
+                                </button>
+                            )}
+                        </h3>
 
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                        <form onSubmit={handleSubmitModule} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                             <div>
-                                <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.4rem' }}>Horas Totais</label>
-                                <input
-                                    type="number"
+                                <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.4rem' }}>Módulo</label>
+                                <select
                                     className="input-field"
                                     required
-                                    value={formData.horas_planeadas}
-                                    onChange={e => setFormData({ ...formData, horas_planeadas: e.target.value })}
-                                />
+                                    value={formData.id_modulo}
+                                    disabled={!!editingModule}
+                                    onChange={e => handleModuleChange(e.target.value)}
+                                >
+                                    <option value="">Selecione Módulo...</option>
+                                    {availableModules.map(m => (
+                                        <option key={m.id} value={m.id}>{m.nome_modulo} ({m.carga_horaria}h)</option>
+                                    ))}
+                                </select>
                             </div>
+
                             <div>
-                                <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.4rem' }}>Sequência</label>
-                                <input
-                                    type="number"
+                                <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.4rem' }}>Formador</label>
+                                <select
                                     className="input-field"
-                                    value={formData.sequencia}
-                                    placeholder="Auto"
-                                    onChange={e => setFormData({ ...formData, sequencia: e.target.value })}
-                                />
+                                    required
+                                    value={formData.id_formador}
+                                    onChange={e => setFormData({ ...formData, id_formador: e.target.value })}
+                                >
+                                    <option value="">Selecione Formador...</option>
+                                    {availableTrainers.map(t => (
+                                        <option key={t.id} value={t.id_formador_perfil}>{t.nome_completo}</option>
+                                    ))}
+                                </select>
                             </div>
-                        </div>
 
+                            <div>
+                                <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.4rem' }}>Sala</label>
+                                <select
+                                    className="input-field"
+                                    required
+                                    value={formData.id_sala}
+                                    onChange={e => setFormData({ ...formData, id_sala: e.target.value })}
+                                >
+                                    <option value="">Selecione Sala...</option>
+                                    {availableRooms.map(r => (
+                                        <option key={r.id} value={r.id}>{r.nome_sala}</option>
+                                    ))}
+                                </select>
+                            </div>
 
-                        <button type="submit" className="btn-primary" style={{ marginTop: '1rem' }}>
-                            {editingModule ? 'Atualizar Atribuição' : 'Gravar Associação'}
-                        </button>
-                    </form>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                <div>
+                                    <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.4rem' }}>Horas Totais</label>
+                                    <input
+                                        type="number"
+                                        className="input-field"
+                                        required
+                                        value={formData.horas_planeadas}
+                                        onChange={e => setFormData({ ...formData, horas_planeadas: e.target.value })}
+                                    />
+                                </div>
+                                <div>
+                                    <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.4rem' }}>Sequência</label>
+                                    <input
+                                        type="number"
+                                        className="input-field"
+                                        value={formData.sequencia}
+                                        placeholder="Auto"
+                                        onChange={e => setFormData({ ...formData, sequencia: e.target.value })}
+                                    />
+                                </div>
+                            </div>
+
+                            <button type="submit" className="btn-primary" style={{ marginTop: '1rem' }}>
+                                {editingModule ? 'Atualizar Atribuição' : 'Gravar Associação'}
+                            </button>
+                        </form>
+                    </div>
                 </div>
             </div>
 

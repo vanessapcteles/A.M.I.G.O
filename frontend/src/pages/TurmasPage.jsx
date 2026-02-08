@@ -150,22 +150,45 @@ function TurmasPage() {
 
     return (
         <>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
-                <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center', flex: 1 }}>
-                    <div style={{ position: 'relative', minWidth: '300px' }}>
+            <div className="page-header-flex" style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '2rem',
+                gap: '1.25rem',
+                flexWrap: 'wrap'
+            }}>
+                <style>
+                    {`
+                        @media (max-width: 1200px) {
+                            .page-header-flex { flex-direction: column !important; align-items: flex-start !important; }
+                            .turma-header-actions { width: 100% !important; justify-content: space-between !important; }
+                            .search-group { flex: 1 !important; width: 100% !important; }
+                            .search-bar { max-width: none !important; width: 100% !important; }
+                        }
+                        @media (max-width: 768px) {
+                            .search-group { flex-direction: column !important; gap: 1rem !important; }
+                            .search-bar, .course-filter { width: 100% !important; }
+                            .turma-header-actions { flex-direction: column-reverse !important; gap: 1rem !important; }
+                            .btn-new-turma { width: 100% !important; justify-content: center !important; }
+                        }
+                    `}
+                </style>
+                <div className="search-group" style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center', flex: 1 }}>
+                    <div className="search-bar" style={{ position: 'relative', width: '320px' }}>
                         <Search style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} size={18} />
                         <input
                             type="text"
-                            placeholder="Pesquisar turma..."
+                            placeholder="Pesquisar por código ou curso..."
                             className="input-field"
-                            style={{ paddingLeft: '3rem' }}
+                            style={{ paddingLeft: '3rem', height: '40px', fontSize: '0.85rem', borderRadius: '10px' }}
                             value={searchTerm}
                             onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
                         />
                     </div>
                     <select
-                        className="input-field"
-                        style={{ width: 'auto', minWidth: '200px' }}
+                        className="input-field course-filter"
+                        style={{ width: 'auto', minWidth: '200px', height: '40px', margin: 0, padding: '0 0.75rem', fontSize: '0.85rem', borderRadius: '10px' }}
                         value={filterCourse}
                         onChange={(e) => { setFilterCourse(e.target.value); setCurrentPage(1); }}
                     >
@@ -175,11 +198,13 @@ function TurmasPage() {
                         ))}
                     </select>
                 </div>
-                {isAdmin && (
-                    <button className="btn-primary" onClick={() => { setEditingTurma(null); setFormData({ id_curso: '', codigo_turma: '', data_inicio: '', data_fim: '', estado: 'planeado' }); setShowModal(true); }}>
-                        <Plus size={20} /> Nova Turma
-                    </button>
-                )}
+                <div className="turma-header-actions">
+                    {isAdmin && (
+                        <button className="btn-primary btn-new-turma" onClick={() => { setEditingTurma(null); setFormData({ id_curso: '', codigo_turma: '', data_inicio: '', data_fim: '', estado: 'planeado' }); setShowModal(true); }}>
+                            <Plus size={20} /> Nova Turma
+                        </button>
+                    )}
+                </div>
             </div>
 
             {loading ? (

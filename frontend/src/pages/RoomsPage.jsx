@@ -140,20 +140,36 @@ function RoomsPage() {
 
     return (
         <>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-                <div style={{ position: 'relative', width: '300px' }}>
+            <div className="page-header-flex" style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '2rem',
+                gap: '1.25rem',
+                flexWrap: 'wrap'
+            }}>
+                <style>
+                    {`
+                        @media (max-width: 768px) {
+                            .page-header-flex { flex-direction: column-reverse !important; align-items: stretch !important; gap: 1rem !important; }
+                            .search-bar { width: 100% !important; max-width: none !important; }
+                            .btn-add-room { justify-content: center !important; }
+                        }
+                    `}
+                </style>
+                <div className="search-bar" style={{ position: 'relative', width: '320px' }}>
                     <Search style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} size={18} />
                     <input
                         type="text"
-                        placeholder="Pesquisar sala..."
+                        placeholder="Pesquisar sala ou localização..."
                         className="input-field"
-                        style={{ paddingLeft: '3rem' }}
+                        style={{ paddingLeft: '3rem', height: '40px', fontSize: '0.85rem', borderRadius: '10px' }}
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
                 </div>
                 {isAdmin && (
-                    <button className="btn-primary" onClick={() => { setEditingRoom(null); setFormData({ nome: '', capacidade: '', localizacao: 'Edifício Principal' }); setShowModal(true); }}>
+                    <button className="btn-primary btn-add-room" onClick={() => { setEditingRoom(null); setFormData({ nome: '', capacidade: '', localizacao: 'Edifício Principal' }); setShowModal(true); }}>
                         <Plus size={20} /> Adicionar Sala
                     </button>
                 )}

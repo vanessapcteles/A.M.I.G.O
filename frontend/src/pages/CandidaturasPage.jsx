@@ -134,60 +134,112 @@ const CandidaciesListPage = () => {
 
     return (
         <div style={{ padding: '0', minHeight: '100vh', color: 'var(--text-primary)' }}>
-            {/* Header Section */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-                <div>
-                    <h1 className="text-gradient" style={{ fontSize: '2rem', fontWeight: 'bold', marginBottom: '0.5rem', fontFamily: 'var(--font-title)' }}>
-                        Gestão de Candidaturas
-                    </h1>
-                    <p style={{ color: 'var(--text-secondary)' }}>
-                        Gerira as candidaturas pendentes e histórico.
-                    </p>
+            <div className="page-header-flex" style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '2rem',
+                gap: '1.5rem',
+                flexWrap: 'wrap'
+            }}>
+                <style>
+                    {`
+                        @media (max-width: 1200px) {
+                            .page-header-flex { flex-direction: column !important; align-items: flex-start !important; }
+                            .cand-header-actions { width: 100% !important; justify-content: space-between !important; }
+                            .search-bar { flex: 1 !important; max-width: none !important; }
+                        }
+                        @media (max-width: 640px) {
+                            .cand-header-actions { flex-direction: column !important; gap: 1rem !important; }
+                            .search-bar { width: 100% !important; }
+                            .filter-group { width: 100% !important; justify-content: center; }
+                        }
+                    `}
+                </style>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    <div className="hidden-tablet" style={{
+                        padding: '0.75rem',
+                        borderRadius: '12px',
+                        background: 'var(--primary-glow)',
+                        color: 'var(--primary)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                    }}>
+                        <FileText size={24} />
+                    </div>
+                    <div>
+                        <h1 style={{ fontSize: '1.5rem', fontWeight: '800', letterSpacing: '-0.5px', margin: 0 }}>Gestão de Candidaturas</h1>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', margin: '2px 0 0 0' }}>{filteredCandidacies.length} candidaturas encontradas</p>
+                    </div>
                 </div>
-            </div>
 
-            {/* Filters */}
-            <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem', flexWrap: 'wrap' }}>
-                <div style={{ position: 'relative', flex: 1, minWidth: '300px' }}>
-                    <Search size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-                    <input
-                        className="input-field"
-                        style={{ paddingLeft: '2.8rem' }}
-                        placeholder="Pesquisar por nome, email ou curso..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                </div>
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    {['ALL', 'PENDENTE', 'APROVADO', 'REJEITADO'].map(status => (
-                        <button
-                            key={status}
-                            onClick={() => setFilter(status)}
-                            className={filter === status ? 'btn-primary' : 'glass-card'}
+                <div className="cand-header-actions" style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                    <div className="search-bar" style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        width: '260px',
+                        height: '40px',
+                        background: 'rgba(255,255,255,0.03)',
+                        border: '1px solid var(--border-glass)',
+                        borderRadius: '10px',
+                        padding: '0 0.85rem'
+                    }}>
+                        <Search size={16} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+                        <input
+                            type="text"
+                            placeholder="Procurar candidato ou curso..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
                             style={{
-                                padding: '0.5rem 1rem', fontSize: '0.8rem', textTransform: 'capitalize',
-                                border: '1px solid var(--border-glass)', cursor: 'pointer',
-                                background: filter === status ? '' : 'transparent',
-                                color: filter === status ? 'white' : 'var(--text-secondary)'
+                                background: 'transparent',
+                                border: 'none',
+                                color: 'var(--text-primary)',
+                                outline: 'none',
+                                width: '100%',
+                                marginLeft: '0.5rem',
+                                padding: 0,
+                                height: '100%',
+                                fontSize: '0.85rem'
                             }}
-                        >
-                            {status === 'ALL' ? 'Todos' : status.toLowerCase()}
-                        </button>
-                    ))}
+                        />
+                    </div>
+                    <div className="filter-group" style={{ display: 'flex', gap: '0.25rem', background: 'rgba(255,255,255,0.03)', padding: '3px', borderRadius: '10px', border: '1px solid var(--border-glass)' }}>
+                        {['ALL', 'PENDENTE', 'APROVADO'].map(status => (
+                            <button
+                                key={status}
+                                onClick={() => setFilter(status)}
+                                style={{
+                                    padding: '6px 14px',
+                                    fontSize: '0.75rem',
+                                    borderRadius: '7px',
+                                    border: 'none',
+                                    background: filter === status ? 'var(--primary)' : 'transparent',
+                                    color: filter === status ? 'white' : 'var(--text-muted)',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s',
+                                    fontWeight: filter === status ? '600' : '500',
+                                    whiteSpace: 'nowrap'
+                                }}
+                            >
+                                {status === 'ALL' ? 'Todos' : status.charAt(0) + status.slice(1).toLowerCase()}
+                            </button>
+                        ))}
+                    </div>
                 </div>
             </div>
 
             {/* Table */}
             <div className="glass-card" style={{ padding: 0, overflow: 'hidden' }}>
-                <div style={{ overflowX: 'auto' }}>
-                    <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-                        <thead style={{ background: 'rgba(255,255,255,0.03)', borderBottom: '1px solid var(--border-glass)' }}>
+                <div className="table-container">
+                    <table>
+                        <thead>
                             <tr>
-                                <th style={{ padding: '1.25rem', fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: '600', fontFamily: 'var(--font-title)' }}>Candidato</th>
-                                <th style={{ padding: '1.25rem', fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: '600', fontFamily: 'var(--font-title)' }}>Curso</th>
-                                <th style={{ padding: '1.25rem', fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: '600', fontFamily: 'var(--font-title)' }}>Data</th>
-                                <th style={{ padding: '1.25rem', fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: '600', fontFamily: 'var(--font-title)' }}>Estado</th>
-                                <th style={{ padding: '1.25rem', fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: '600', textAlign: 'right', fontFamily: 'var(--font-title)' }}>Ações</th>
+                                <th>Candidato</th>
+                                <th>Curso</th>
+                                <th className="hidden-tablet">Data</th>
+                                <th>Estado</th>
+                                <th style={{ textAlign: 'right' }}>Ações</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -198,17 +250,17 @@ const CandidaciesListPage = () => {
                             ) : (
                                 filteredCandidacies.map(cand => (
                                     <tr key={cand.id} style={{ borderBottom: '1px solid var(--border-glass)', transition: 'background 0.2s' }} className="hover-row">
-                                        <td style={{ padding: '1.25rem' }}>
+                                        <td style={{ padding: '1.25rem' }} data-label="Candidato">
                                             <div style={{ fontWeight: '600', marginBottom: '0.2rem', color: 'var(--text-primary)' }}>{cand.nome_completo}</div>
                                             <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{cand.email}</div>
                                         </td>
-                                        <td style={{ padding: '1.25rem', color: 'var(--text-secondary)' }}>
+                                        <td style={{ padding: '1.25rem', color: 'var(--text-secondary)' }} data-label="Curso">
                                             {cand.nome_curso}
                                         </td>
-                                        <td style={{ padding: '1.25rem', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+                                        <td className="hidden-tablet" style={{ padding: '1.25rem', color: 'var(--text-muted)', fontSize: '0.9rem' }} data-label="Data">
                                             {new Date(cand.data_candidatura).toLocaleDateString()}
                                         </td>
-                                        <td style={{ padding: '1.25rem' }}>
+                                        <td style={{ padding: '1.25rem' }} data-label="Estado">
                                             <span style={{
                                                 padding: '0.35rem 0.75rem', borderRadius: '20px', fontSize: '0.8rem', fontWeight: '500',
                                                 background: cand.estado === 'PENDENTE' ? 'rgba(234, 179, 8, 0.1)' :
@@ -221,7 +273,7 @@ const CandidaciesListPage = () => {
                                                 {cand.estado}
                                             </span>
                                         </td>
-                                        <td style={{ padding: '1.25rem', textAlign: 'right' }}>
+                                        <td style={{ padding: '1.25rem', textAlign: 'right' }} data-label="Ações">
                                             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
                                                 {cand.file_id && (
                                                     <button
@@ -233,7 +285,6 @@ const CandidaciesListPage = () => {
                                                         <FileText size={16} />
                                                     </button>
                                                 )}
-
                                                 {cand.estado === 'PENDENTE' && (
                                                     <>
                                                         <button

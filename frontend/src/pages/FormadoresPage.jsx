@@ -212,7 +212,7 @@ function FormadoresPage() {
             const finalY = (doc.lastAutoTable ? doc.lastAutoTable.finalY : 200) + 20;
             doc.setFontSize(9);
             doc.setTextColor(150);
-            doc.text('Documento gerado pelo Academy Manager.', pageWidth / 2, Math.min(finalY, 285), { align: 'center' });
+            doc.text('Documento gerado pelo A.M.I.G.O.', pageWidth / 2, Math.min(finalY, 285), { align: 'center' });
 
             doc.save(`Ficha_Formador_${selectedFormador.nome_completo.replace(/\s+/g, '_')}.pdf`);
         } catch (error) {
@@ -332,69 +332,115 @@ function FormadoresPage() {
 
     return (
         <>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                    <div style={{ padding: '0.75rem', borderRadius: '12px', background: 'var(--primary-glow)', color: 'var(--primary)' }}>
-                        <BookOpen size={24} />
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem', gap: '2rem' }} className="page-header-flex">
+                <style>
+                    {`
+                        @media (max-width: 1200px) {
+                            .page-header-flex { flex-wrap: wrap !important; gap: 1.5rem !important; }
+                            .formadores-header-actions { justify-content: flex-start !important; width: 100% !important; }
+                            .search-bar { flex: 1; max-width: none !important; }
+                            .hidden-tablet { display: none !important; }
+                        }
+                    `}
+                </style>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', flexShrink: 0 }}>
+                    <div className="hidden-tablet" style={{ padding: '0.85rem', borderRadius: '14px', background: 'var(--primary-glow)', color: 'var(--primary)', boxShadow: '0 8px 16px -4px var(--primary-glow)' }}>
+                        <BookOpen size={28} />
                     </div>
                     <div>
-                        <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>Formadores</h1>
-                        <p style={{ color: 'var(--text-secondary)' }}>Gerir equipa pedagógica e documentos</p>
+                        <h1 style={{ fontSize: '1.75rem', fontWeight: '800', letterSpacing: '-0.5px', margin: 0 }}>Formadores</h1>
+                        <p className="hidden-tablet" style={{ color: 'var(--text-muted)', fontSize: '0.9rem', margin: '4px 0 0 0' }}>Gerir equipa pedagógica e documentos</p>
                     </div>
                 </div>
 
-                <div className="search-bar" style={{ width: '300px' }}>
-                    <Search size={20} style={{ color: 'var(--text-secondary)' }} />
-                    <input
-                        type="text"
-                        placeholder="Pesquisar formador..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', outline: 'none', width: '100%' }}
-                    />
+                <div className="formadores-header-actions" style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexShrink: 0 }}>
+                    <div className="search-bar" style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        width: '280px',
+                        height: '42px',
+                        background: 'rgba(255,255,255,0.03)',
+                        border: '1px solid var(--border-glass)',
+                        borderRadius: '12px',
+                        padding: '0 1rem'
+                    }}>
+                        <Search size={18} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+                        <input
+                            type="text"
+                            placeholder="Pesquisar..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            style={{
+                                background: 'transparent',
+                                border: 'none',
+                                color: 'var(--text-primary)',
+                                outline: 'none',
+                                width: '100%',
+                                marginLeft: '0.5rem',
+                                padding: 0,
+                                height: '100%',
+                                fontSize: '0.85rem'
+                            }}
+                        />
+                    </div>
                 </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: selectedFormador ? '1fr 1fr' : '1fr', gap: '2rem', transition: 'all 0.3s ease' }}>
-                <div className="glass-card">
+            <div className="responsive-grid" style={{
+                display: 'grid',
+                gridTemplateColumns: selectedFormador ? '1.8fr 1.2fr' : '1fr',
+                gap: '2.5rem',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                alignItems: 'start'
+            }}>
+                <style>
+                    {`
+                        @media (max-width: 1400px) {
+                            .responsive-grid { grid-template-columns: 1fr !important; gap: 2rem !important; }
+                        }
+                    `}
+                </style>
+                <div className="glass-card" style={{ padding: '0', overflow: 'hidden' }}>
                     {loading ? (
-                        <p>A carregar...</p>
+                        <p style={{ textAlign: 'center', padding: '2rem' }}>A carregar...</p>
                     ) : (
-                        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                            <thead>
-                                <tr style={{ borderBottom: '1px solid var(--border-glass)', textAlign: 'left' }}>
-                                    <th style={{ padding: '1rem', color: 'var(--text-secondary)' }}>Nome</th>
-                                    <th style={{ padding: '1rem', color: 'var(--text-secondary)' }}>Email</th>
-                                    <th style={{ padding: '1rem', color: 'var(--text-secondary)' }}>Ações</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {filteredFormadores.map(formador => (
-                                    <tr key={formador.id}
-                                        style={{
-                                            borderBottom: '1px solid var(--border-glass)',
-                                            background: selectedFormador?.id === formador.id ? 'var(--card-hover-bg)' : 'transparent'
-                                        }}
-                                    >
-                                        <td style={{ padding: '1rem' }}>
-                                            <div style={{ fontWeight: '500' }}>{formador.nome_completo}</div>
-                                        </td>
-                                        <td style={{ padding: '1rem', color: 'var(--text-secondary)' }}>
-                                            {formador.email}
-                                        </td>
-                                        <td style={{ padding: '1rem' }}>
-                                            <button
-                                                onClick={() => handleSelectFormador(formador.id)}
-                                                className="btn-glass"
-                                                style={{ padding: '0.5rem', fontSize: '0.9rem' }}
-                                            >
-                                                Ver Perfil
-                                            </button>
-                                        </td>
+                        <div className="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Nome</th>
+                                        <th>Email</th>
+                                        <th style={{ textAlign: 'right' }}>Ações</th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody>
+                                    {filteredFormadores.map(formador => (
+                                        <tr key={formador.id}
+                                            style={{
+                                                borderBottom: '1px solid var(--border-glass)',
+                                                background: selectedFormador?.id === formador.id ? 'var(--card-hover-bg)' : 'transparent'
+                                            }}
+                                        >
+                                            <td style={{ padding: '1rem' }} data-label="Nome">
+                                                <div style={{ fontWeight: '500' }}>{formador.nome_completo}</div>
+                                            </td>
+                                            <td style={{ padding: '1rem', color: 'var(--text-secondary)' }} data-label="Email">
+                                                {formador.email}
+                                            </td>
+                                            <td style={{ textAlign: 'right' }} data-label="Ações">
+                                                <button
+                                                    onClick={() => handleSelectFormador(formador.id)}
+                                                    className="btn-glass"
+                                                    style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem' }}
+                                                >
+                                                    Ver Perfil
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
                     )}
                 </div>
 
@@ -405,7 +451,7 @@ function FormadoresPage() {
                             animate={{ opacity: 1, x: 0 }}
                             exit={{ opacity: 0, x: 20 }}
                             className="glass-card"
-                            style={{ position: 'relative' }}
+                            style={{ position: 'sticky', top: '100px', padding: '2rem' }}
                         >
                             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2rem' }}>
                                 <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>

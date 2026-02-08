@@ -47,8 +47,9 @@ function HomePage() {
 
     if (loading) {
         return (
-            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh' }}>
-                <p>Carregando dashboard...</p>
+            <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '60vh', gap: '1.5rem' }}>
+                <div className="loader"></div>
+                <p style={{ color: 'var(--text-secondary)', fontWeight: '500', letterSpacing: '0.5px' }}>Preparando a sua área pessoal...</p>
             </div>
         );
     }
@@ -60,8 +61,8 @@ function HomePage() {
                 animate={{ opacity: 1, y: 0 }}
                 style={{ marginBottom: '2.5rem' }}
             >
-                <h1 style={{ fontSize: '2rem', fontWeight: '700', marginBottom: '0.5rem' }}>Estatísticas Académicas</h1>
-                <p style={{ color: 'var(--text-secondary)' }}>Resumo em tempo real do progresso da academia.</p>
+                <h1 style={{ fontSize: '2.5rem', fontWeight: '800', marginBottom: '0.25rem', letterSpacing: '-1px' }}>Dashboard <span className="text-gradient">Geral</span></h1>
+                <p style={{ color: 'var(--text-muted)', fontSize: '1rem' }}>Estatísticas em tempo real da rede A.M.I.G.O.</p>
             </motion.div >
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem', marginBottom: '3rem' }}>
@@ -90,7 +91,14 @@ function HomePage() {
                 ))}
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1.5rem' }}>
+            <div className="dashboard-grid-bottom" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1.5rem' }}>
+                <style>
+                    {`
+                        @media (max-width: 1200px) {
+                            .dashboard-grid-bottom { grid-template-columns: 1fr !important; }
+                        }
+                    `}
+                </style>
                 <div className="glass-card">
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
                         <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
@@ -136,19 +144,31 @@ function HomePage() {
                     </h3>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', marginTop: '1rem' }}>
-                        {data?.charts.cursosPorArea.map((item, i) => {
-                            const total = data.charts.cursosPorArea.reduce((acc, curr) => acc + curr.count, 0);
-                            const percentage = Math.round((item.count / total) * 100);
-
-                            return (
-                                <div key={i}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', padding: '0.75rem', background: 'var(--card-hover-bg)', borderRadius: '8px' }}>
-                                        <span>{item.area}</span>
-                                        <span style={{ fontWeight: '600', color: 'var(--primary)' }}>{item.count}</span>
-                                    </div>
+                        {data?.charts.cursosPorArea.map((item, i) => (
+                            <div key={i} style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                padding: '1rem',
+                                background: 'rgba(56, 189, 248, 0.03)',
+                                border: '1px solid var(--border-glass)',
+                                borderRadius: '12px',
+                                transition: 'all 0.3s'
+                            }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                    <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: i % 2 === 0 ? 'var(--primary)' : 'var(--secondary)' }}></div>
+                                    <span style={{ fontSize: '0.9rem', fontWeight: '500' }}>{item.area}</span>
                                 </div>
-                            );
-                        })}
+                                <span style={{
+                                    fontWeight: '700',
+                                    color: 'var(--primary)',
+                                    background: 'var(--primary-glow)',
+                                    padding: '0.2rem 0.6rem',
+                                    borderRadius: '6px',
+                                    fontSize: '0.8rem'
+                                }}>{item.count}</span>
+                            </div>
+                        ))}
                         {data?.charts.cursosPorArea.length === 0 && (
                             <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '2rem' }}>Sem cursos registados.</p>
                         )}

@@ -82,7 +82,7 @@ function RegisterPage() {
                         Criar Conta
                     </h1>
                     <p style={{ color: 'var(--text-secondary)' }}>
-                        Junte-se à comunidade Academy Manager
+                        Junte-se à comunidade A.M.I.G.O
                     </p>
                 </div>
 

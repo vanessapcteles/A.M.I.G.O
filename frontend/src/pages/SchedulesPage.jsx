@@ -224,19 +224,53 @@ function SchedulesPage() {
 
     return (
         <>
-            <div style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                <div style={{ padding: '0.75rem', borderRadius: '12px', background: 'var(--primary-glow)', color: 'var(--primary)' }}>
-                    <CalendarIcon size={24} />
-                </div>
-                <div style={{ flex: 1 }}>
-                    <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>Horário Geral</h1>
-                    <p style={{ color: 'var(--text-secondary)' }}>Visualize todas as aulas agendadas na academia</p>
+            <div className="page-header-flex" style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '2rem',
+                gap: '1.5rem',
+                flexWrap: 'wrap'
+            }}>
+                <style>
+                    {`
+                        @media (max-width: 1400px) {
+                            .page-header-flex { flex-direction: column !important; align-items: flex-start !important; }
+                            .schedules-header-actions { width: 100% !important; justify-content: space-between !important; flex-wrap: wrap !important; gap: 1rem !important; }
+                        }
+                        @media (max-width: 768px) {
+                            .schedules-header-actions { flex-direction: column !important; align-items: stretch !important; }
+                            .filter-group { width: 100% !important; display: grid !important; grid-template-columns: 1fr 1fr !important; gap: 0.75rem !important; }
+                            .filter-item { width: 100% !important; }
+                            .btn-availability { width: 100% !important; justify-content: center !important; }
+                        }
+                        @media (max-width: 480px) {
+                            .filter-group { grid-template-columns: 1fr !important; }
+                        }
+                    `}
+                </style>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    <div className="hidden-tablet" style={{
+                        padding: '0.75rem',
+                        borderRadius: '12px',
+                        background: 'var(--primary-glow)',
+                        color: 'var(--primary)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                    }}>
+                        <CalendarIcon size={24} />
+                    </div>
+                    <div>
+                        <h1 style={{ fontSize: '1.5rem', fontWeight: '800', letterSpacing: '-0.5px', margin: 0 }}>Horário Geral</h1>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', margin: '2px 0 0 0' }}>Visualize todas as aulas agendadas</p>
+                    </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                <div className="schedules-header-actions" style={{ display: 'flex', gap: '1rem', alignItems: 'flex-end' }}>
                     {canSeeAvailabilities && (
                         <button
-                            className={`btn-glass ${showAvailabilities ? 'active' : ''}`}
+                            className={`btn-glass btn-availability ${showAvailabilities ? 'active' : ''}`}
                             style={{
                                 display: 'flex',
                                 alignItems: 'center',
@@ -244,75 +278,78 @@ function SchedulesPage() {
                                 background: showAvailabilities ? 'var(--primary-glow)' : 'transparent',
                                 color: showAvailabilities ? 'var(--primary)' : 'var(--text-secondary)',
                                 borderColor: showAvailabilities ? 'var(--primary)' : 'var(--border-glass)',
-                                padding: '0.5rem 1rem'
+                                padding: '0.6rem 1rem',
+                                borderRadius: '12px',
+                                height: '40px'
                             }}
                             onClick={toggleAvailabilities}
                         >
                             {showAvailabilities ? <EyeOff size={18} /> : <Eye size={18} />}
-                            {showAvailabilities ? 'Ocultar Disponibilidades' : 'Ver Disponibilidades'}
+                            <span>{showAvailabilities ? 'Ocultar Disponibilidades' : 'Ver Disponibilidades'}</span>
                         </button>
                     )}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
-                        <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Desde</label>
-                        <input
-                            type="date"
-                            className="input-field"
-                            style={{ padding: '0.4rem 0.75rem', fontSize: '0.85rem' }}
-                            value={startDate}
-                            onChange={(e) => {
-                                setStartDate(e.target.value);
-                                if (e.target.value) setCurrentDate(new Date(e.target.value));
-                            }}
-                        />
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
-                        <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Até</label>
-                        <input
-                            type="date"
-                            className="input-field"
-                            style={{ padding: '0.4rem 0.75rem', fontSize: '0.85rem' }}
-                            value={endDate}
-                            onChange={(e) => {
-                                setEndDate(e.target.value);
-                                // Opcional: ajustar currentDate se necessário
-                            }}
-                        />
-                    </div>
 
-                    {/* Filter Dropdowns */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
-                        <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Formador</label>
-                        <div style={{ position: 'relative' }}>
-                            <Users size={14} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-                            <select
+                    <div className="filter-group" style={{ display: 'flex', gap: '0.75rem' }}>
+                        <div className="filter-item" style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                            <label style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: '600' }}>Desde</label>
+                            <input
+                                type="date"
                                 className="input-field"
-                                style={{ padding: '0.4rem 0.75rem 0.4rem 2rem', fontSize: '0.85rem', minWidth: '150px' }}
-                                value={filterFormador}
-                                onChange={(e) => setFilterFormador(e.target.value)}
-                            >
-                                <option value="">Todos</option>
-                                {formadores.map(f => (
-                                    <option key={f.id} value={f.id_formador_perfil}>{f.nome_completo}</option>
-                                ))}
-                            </select>
+                                style={{ padding: '0.5rem 0.75rem', fontSize: '0.85rem', height: '40px', borderRadius: '10px' }}
+                                value={startDate}
+                                onChange={(e) => {
+                                    setStartDate(e.target.value);
+                                    if (e.target.value) setCurrentDate(new Date(e.target.value));
+                                }}
+                            />
+                        </div>
+                        <div className="filter-item" style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                            <label style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: '600' }}>Até</label>
+                            <input
+                                type="date"
+                                className="input-field"
+                                style={{ padding: '0.5rem 0.75rem', fontSize: '0.85rem', height: '40px', borderRadius: '10px' }}
+                                value={endDate}
+                                onChange={(e) => setEndDate(e.target.value)}
+                            />
                         </div>
                     </div>
 
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
-                        <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Turma</label>
-                        <div style={{ position: 'relative' }}>
-                            <GraduationCap size={14} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-                            <select
-                                className="input-field"
-                                style={{ padding: '0.4rem 0.75rem 0.4rem 2rem', fontSize: '0.85rem', minWidth: '150px' }}
-                                value={filterTurma}
-                                onChange={(e) => setFilterTurma(e.target.value)}
-                            >
-                                <option value="">Todas</option>
-                                {turmas.map(t => (
-                                    <option key={t.id} value={t.id}>{t.codigo_turma}</option>
-                                ))}
-                            </select>
+                    <div className="filter-group" style={{ display: 'flex', gap: '0.75rem' }}>
+                        <div className="filter-item" style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                            <label style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: '600' }}>Formador</label>
+                            <div style={{ position: 'relative' }}>
+                                <Users size={14} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                                <select
+                                    className="input-field"
+                                    style={{ padding: '0.5rem 0.75rem 0.5rem 2.2rem', fontSize: '0.85rem', minWidth: '150px', height: '40px', borderRadius: '10px' }}
+                                    value={filterFormador}
+                                    onChange={(e) => setFilterFormador(e.target.value)}
+                                >
+                                    <option value="">Todos</option>
+                                    {formadores.map(f => (
+                                        <option key={f.id} value={f.id_formador_perfil}>{f.nome_completo}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
+
+                        <div className="filter-item" style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                            <label style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: '600' }}>Turma</label>
+                            <div style={{ position: 'relative' }}>
+                                <GraduationCap size={14} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                                <select
+                                    className="input-field"
+                                    style={{ padding: '0.5rem 0.75rem 0.5rem 2.2rem', fontSize: '0.85rem', minWidth: '130px', height: '40px', borderRadius: '10px' }}
+                                    value={filterTurma}
+                                    onChange={(e) => setFilterTurma(e.target.value)}
+                                >
+                                    <option value="">Todas</option>
+                                    {turmas.map(t => (
+                                        <option key={t.id} value={t.id}>{t.codigo_turma}</option>
+                                    ))}
+                                </select>
+                            </div>
                         </div>
                     </div>
 
@@ -323,17 +360,18 @@ function SchedulesPage() {
                                 setEndDate('');
                                 setFilterFormador('');
                                 setFilterTurma('');
-                                setCurrentDate(new Date()); // Voltar a hoje
+                                setCurrentDate(new Date());
                             }}
                             className="btn-glass"
                             style={{
-                                padding: '0.4rem 0.8rem',
+                                padding: '0.5rem 1rem',
                                 fontSize: '0.85rem',
-                                height: 'fit-content',
-                                alignSelf: 'flex-end',
+                                height: '40px',
                                 background: 'rgba(239, 68, 68, 0.1)',
                                 color: '#ef4444',
-                                border: '1px solid rgba(239, 68, 68, 0.2)'
+                                borderRadius: '10px',
+                                border: '1px solid rgba(239, 68, 68, 0.2)',
+                                minWidth: '100px'
                             }}
                         >
                             Limpar

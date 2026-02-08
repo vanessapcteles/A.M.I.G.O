@@ -142,7 +142,7 @@ function LoginPage() {
             >
                 <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
                     <Link to="/" style={{ textDecoration: 'none' }}>
-                        <h1 className="text-gradient" style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>Academy Manager</h1>
+                        <h1 className="text-gradient" style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>A.M.I.G.O</h1>
                     </Link>
                     <p style={{ color: 'var(--text-secondary)' }}>Aceda à sua área de gestão</p>
                 </div>

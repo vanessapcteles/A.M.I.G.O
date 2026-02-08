@@ -170,7 +170,7 @@ function FormandoFichaPage() {
         const finalY = (doc.lastAutoTable ? doc.lastAutoTable.finalY : 250) + 20;
         doc.setFontSize(9);
         doc.setTextColor(150);
-        doc.text('Este documento é um comprovativo interno da academia.', pageWidth / 2, Math.min(finalY, 285), { align: 'center' });
+        doc.text('Este documento é um comprovativo interno gerado pelo A.M.I.G.O.', pageWidth / 2, Math.min(finalY, 285), { align: 'center' });
 
         doc.save(`Ficha_Formando_${user.nome_completo.replace(/ /g, '_')}.pdf`);
     };
