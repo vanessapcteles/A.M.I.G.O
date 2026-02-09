@@ -4,8 +4,9 @@ import { formadorService } from '../services/formadorService';
 import { evaluationService } from '../services/evaluationService';
 import { authService } from '../services/authService';
 import { useToast } from '../context/ToastContext';
-import { BookOpen, Users, Save, ChevronRight, AlertCircle, Search } from 'lucide-react';
+import { BookOpen, Save, ChevronRight, AlertCircle, Search } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import Pagination from '../components/common/Pagination';
 
 function TrainerGradesPage() {
     const { toast } = useToast();
@@ -17,6 +18,10 @@ function TrainerGradesPage() {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
+
+    // Pagination
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 9;
 
     useEffect(() => {
         loadHistory();
@@ -112,23 +117,35 @@ function TrainerGradesPage() {
                             <p>Não foram encontrados módulos atribuídos a si.</p>
                         </div>
                     ) : (
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.2rem' }}>
-                            {history.map((item, idx) => (
-                                <motion.div
-                                    key={idx}
-                                    whileHover={{ scale: 1.02 }}
-                                    onClick={() => handleSelectAssignment(item)}
-                                    className="glass-card full-hover"
-                                    style={{ padding: '1.5rem', cursor: 'pointer', border: '1px solid var(--border-glass)' }}
-                                >
-                                    <div style={{ color: 'var(--primary)', fontWeight: 'bold', marginBottom: '0.5rem' }}>{item.codigo_turma}</div>
-                                    <h4 style={{ fontSize: '1.1rem', marginBottom: '0.5rem' }}>{item.nome_modulo}</h4>
-                                    <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{item.nome_curso}</div>
-                                    <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'flex-end' }}>
-                                        <ChevronRight size={20} color="var(--primary)" />
-                                    </div>
-                                </motion.div>
-                            ))}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.2rem' }}>
+                                {history
+                                    .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+                                    .map((item, idx) => (
+                                        <motion.div
+                                            key={idx}
+                                            whileHover={{ scale: 1.02 }}
+                                            onClick={() => handleSelectAssignment(item)}
+                                            className="glass-card full-hover"
+                                            style={{ padding: '1.5rem', cursor: 'pointer', border: '1px solid var(--border-glass)' }}
+                                        >
+                                            <div style={{ color: 'var(--primary)', fontWeight: 'bold', marginBottom: '0.5rem' }}>{item.codigo_turma}</div>
+                                            <h4 style={{ fontSize: '1.1rem', marginBottom: '0.5rem' }}>{item.nome_modulo}</h4>
+                                            <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{item.nome_curso}</div>
+                                            <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'flex-end' }}>
+                                                <ChevronRight size={20} color="var(--primary)" />
+                                            </div>
+                                        </motion.div>
+                                    ))}
+                            </div>
+
+                            {history.length > itemsPerPage && (
+                                <Pagination
+                                    currentPage={currentPage}
+                                    totalPages={Math.ceil(history.length / itemsPerPage)}
+                                    onPageChange={setCurrentPage}
+                                />
+                            )}
                         </div>
                     )}
                 </div>

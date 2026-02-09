@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
 import ConfirmDialog from '../components/common/ConfirmDialog';
+import Pagination from '../components/common/Pagination';
 
 function UsersPage() {
     const { toast } = useToast();
@@ -28,6 +29,12 @@ function UsersPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
+    const [roleFilter, setRoleFilter] = useState('ALL');
+    const [statusFilter, setStatusFilter] = useState('ALL');
+
+    // Paginação
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 10;
 
     // Edição
     const [editingUserId, setEditingUserId] = useState(null);
@@ -128,10 +135,23 @@ function UsersPage() {
         }
     };
 
-    const filteredUsers = users.filter(user =>
-    (user.nome_completo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.email?.toLowerCase().includes(searchTerm.toLowerCase()))
-    );
+    const filteredUsers = users.filter(user => {
+        const matchesSearch = (
+            user.nome_completo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            user.email?.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+        const matchesRole = roleFilter === 'ALL' || user.tipo_utilizador === roleFilter;
+        const matchesStatus = statusFilter === 'ALL' ||
+            (statusFilter === 'ACTIVE' ? user.is_active : !user.is_active);
+
+        return matchesSearch && matchesRole && matchesStatus;
+    });
+
+    // Lógica de Paginação
+    const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const currentItems = filteredUsers.slice(indexOfFirstItem, indexOfLastItem);
 
     return (
         <>
@@ -174,7 +194,32 @@ function UsersPage() {
                     </div>
                 </div>
 
-                <div className="users-header-actions" style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                <div className="users-header-actions" style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                    <select
+                        value={roleFilter}
+                        onChange={(e) => { setRoleFilter(e.target.value); setCurrentPage(1); }}
+                        className="input-field"
+                        style={{ width: 'auto', height: '40px', fontSize: '0.85rem', borderRadius: '10px', padding: '0 0.75rem', margin: 0 }}
+                    >
+                        <option value="ALL">Todas as Funções</option>
+                        <option value="ADMIN">Administradores</option>
+                        <option value="SECRETARIA">Secretaria</option>
+                        <option value="FORMADOR">Formadores</option>
+                        <option value="FORMANDO">Formandos</option>
+                        <option value="CANDIDATO">Candidatos</option>
+                    </select>
+
+                    <select
+                        value={statusFilter}
+                        onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }}
+                        className="input-field"
+                        style={{ width: 'auto', height: '40px', fontSize: '0.85rem', borderRadius: '10px', padding: '0 0.75rem', margin: 0 }}
+                    >
+                        <option value="ALL">Todos os Estados</option>
+                        <option value="ACTIVE">Ativos</option>
+                        <option value="INACTIVE">Inativos</option>
+                    </select>
+
                     <div className="search-bar" style={{
                         display: 'flex',
                         alignItems: 'center',
@@ -190,7 +235,7 @@ function UsersPage() {
                             type="text"
                             placeholder="Pesquisar por nome ou email..."
                             value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
+                            onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
                             style={{
                                 background: 'transparent',
                                 border: 'none',
@@ -233,7 +278,7 @@ function UsersPage() {
                             </thead>
                             <tbody>
                                 <AnimatePresence>
-                                    {filteredUsers.map((user) => (
+                                    {currentItems.map((user) => (
                                         <motion.tr
                                             key={user.id}
                                             initial={{ opacity: 0 }}
@@ -339,6 +384,23 @@ function UsersPage() {
                                 </AnimatePresence>
                             </tbody>
                         </table>
+
+                        {filteredUsers.length > 0 && (
+                            <div style={{ padding: '0 1.5rem 1.5rem 1.5rem' }}>
+                                <Pagination
+                                    currentPage={currentPage}
+                                    totalPages={totalPages}
+                                    onPageChange={setCurrentPage}
+                                />
+                            </div>
+                        )}
+
+                        {filteredUsers.length === 0 && (
+                            <div style={{ padding: '4rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+                                <Users size={48} style={{ opacity: 0.1, marginBottom: '1rem' }} />
+                                <p>Nenhum utilizador encontrado com os filtros selecionados.</p>
+                            </div>
+                        )}
                     </div>
                 )}
             </div>

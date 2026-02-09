@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { API_URL } from '../services/authService';
-import { Check, X, FileText, Search, Filter, AlertCircle } from 'lucide-react';
+import { Check, X, FileText, Search, AlertCircle } from 'lucide-react';
 import Modal from '../components/ui/Modal';
 import { useToast } from '../context/ToastContext';
+import Pagination from '../components/common/Pagination';
 
 const CandidaciesListPage = () => {
     const { toast } = useToast();
@@ -12,6 +13,10 @@ const CandidaciesListPage = () => {
     const [actionLoading, setActionLoading] = useState(false);
     const [filter, setFilter] = useState('ALL'); // ALL, PENDENTE, APROVADO, REJEITADO
     const [searchTerm, setSearchTerm] = useState('');
+
+    // Pagination
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 8;
 
     // Modal State
     const [modalConfig, setModalConfig] = useState({ isOpen: false });
@@ -132,6 +137,18 @@ const CandidaciesListPage = () => {
         return matchesFilter && matchesSearch;
     });
 
+    // Pagination Logic
+    const totalPages = Math.ceil(filteredCandidacies.length / itemsPerPage);
+    const paginatedCandidacies = filteredCandidacies.slice(
+        (currentPage - 1) * itemsPerPage,
+        currentPage * itemsPerPage
+    );
+
+    // Reset pagination when filters change
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [filter, searchTerm]);
+
     return (
         <div style={{ padding: '0', minHeight: '100vh', color: 'var(--text-primary)' }}>
             <div className="page-header-flex" style={{
@@ -248,7 +265,7 @@ const CandidaciesListPage = () => {
                             ) : filteredCandidacies.length === 0 ? (
                                 <tr><td colSpan="5" style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>Nenhuma candidatura encontrada.</td></tr>
                             ) : (
-                                filteredCandidacies.map(cand => (
+                                paginatedCandidacies.map(cand => (
                                     <tr key={cand.id} style={{ borderBottom: '1px solid var(--border-glass)', transition: 'background 0.2s' }} className="hover-row">
                                         <td style={{ padding: '1.25rem' }} data-label="Candidato">
                                             <div style={{ fontWeight: '600', marginBottom: '0.2rem', color: 'var(--text-primary)' }}>{cand.nome_completo}</div>
@@ -313,6 +330,16 @@ const CandidaciesListPage = () => {
                         </tbody>
                     </table>
                 </div>
+
+                {filteredCandidacies.length > itemsPerPage && (
+                    <div style={{ padding: '1rem' }}>
+                        <Pagination
+                            currentPage={currentPage}
+                            totalPages={totalPages}
+                            onPageChange={setCurrentPage}
+                        />
+                    </div>
+                )}
             </div>
 
             <Modal

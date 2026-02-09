@@ -26,6 +26,7 @@ import {
 import { horarioService } from '../services/horarioService';
 import Modal from '../components/ui/Modal';
 import { useToast } from '../context/ToastContext';
+import Pagination from '../components/common/Pagination';
 
 const locales = { 'pt': pt };
 const localizer = dateFnsLocalizer({ format, parse, startOfWeek, getDay, locales });
@@ -48,6 +49,10 @@ function RoomsPage() {
         capacidade: '',
         localizacao: 'Edifício Principal'
     });
+
+    // Pagination
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 8;
 
     const user = authService.getCurrentUser();
     const role = user?.tipo_utilizador?.toUpperCase();
@@ -138,6 +143,18 @@ function RoomsPage() {
         room.localizacao?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
+    // Pagination Logic
+    const totalPages = Math.ceil(filteredRooms.length / itemsPerPage);
+    const paginatedRooms = filteredRooms.slice(
+        (currentPage - 1) * itemsPerPage,
+        currentPage * itemsPerPage
+    );
+
+    // Reset page when search changes
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm]);
+
     return (
         <>
             <div className="page-header-flex" style={{
@@ -178,66 +195,76 @@ function RoomsPage() {
             {loading ? (
                 <div style={{ textAlign: 'center', padding: '3rem' }}>Carregando salas...</div>
             ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
-                    {filteredRooms.map((room) => (
-                        <motion.div
-                            key={room.id}
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            className="glass-card"
-                            style={{ position: 'relative', overflow: 'hidden' }}
-                        >
-                            <div style={{
-                                position: 'absolute',
-                                top: '1rem',
-                                right: '1rem',
-                                display: 'flex',
-                                gap: '0.5rem'
-                            }}>
-                                {isAdmin && (
-                                    <>
-                                        <button onClick={() => openEdit(room)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
-                                            <Edit2 size={16} />
-                                        </button>
-                                        <button onClick={() => handleDelete(room.id)} style={{ background: 'none', border: 'none', color: '#f87171', cursor: 'pointer' }}>
-                                            <Trash2 size={16} />
-                                        </button>
-                                    </>
-                                )}
-                            </div>
-
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
-                                <div style={{
-                                    padding: '0.75rem',
-                                    background: 'var(--primary-glow)',
-                                    borderRadius: '12px',
-                                    color: 'var(--primary)'
-                                }}>
-                                    <DoorOpen size={24} />
-                                </div>
-                                <div>
-                                    <h3 style={{ fontSize: '1.25rem', fontWeight: '600' }}>{room.nome_sala}</h3>
-                                </div>
-                            </div>
-
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1.5rem' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                                    <Users size={16} /> <span>Capacidade: <strong>{room.capacidade}</strong></span>
-                                </div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                                    <MapPin size={16} /> <span>{room.localizacao}</span>
-                                </div>
-                            </div>
-
-                            <button
-                                onClick={() => handleViewSchedule(room)}
-                                className="btn-glass"
-                                style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
+                        {paginatedRooms.map((room) => (
+                            <motion.div
+                                key={room.id}
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                className="glass-card"
+                                style={{ position: 'relative', overflow: 'hidden' }}
                             >
-                                <CalendarIcon size={16} /> Ver Alocação
-                            </button>
-                        </motion.div>
-                    ))}
+                                <div style={{
+                                    position: 'absolute',
+                                    top: '1rem',
+                                    right: '1rem',
+                                    display: 'flex',
+                                    gap: '0.5rem'
+                                }}>
+                                    {isAdmin && (
+                                        <>
+                                            <button onClick={() => openEdit(room)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
+                                                <Edit2 size={16} />
+                                            </button>
+                                            <button onClick={() => handleDelete(room.id)} style={{ background: 'none', border: 'none', color: '#f87171', cursor: 'pointer' }}>
+                                                <Trash2 size={16} />
+                                            </button>
+                                        </>
+                                    )}
+                                </div>
+
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
+                                    <div style={{
+                                        padding: '0.75rem',
+                                        background: 'var(--primary-glow)',
+                                        borderRadius: '12px',
+                                        color: 'var(--primary)'
+                                    }}>
+                                        <DoorOpen size={24} />
+                                    </div>
+                                    <div>
+                                        <h3 style={{ fontSize: '1.25rem', fontWeight: '600' }}>{room.nome_sala}</h3>
+                                    </div>
+                                </div>
+
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1.5rem' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                                        <Users size={16} /> <span>Capacidade: <strong>{room.capacidade}</strong></span>
+                                    </div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                                        <MapPin size={16} /> <span>{room.localizacao}</span>
+                                    </div>
+                                </div>
+
+                                <button
+                                    onClick={() => handleViewSchedule(room)}
+                                    className="btn-glass"
+                                    style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+                                >
+                                    <CalendarIcon size={16} /> Ver Alocação
+                                </button>
+                            </motion.div>
+                        ))}
+                    </div>
+
+                    {filteredRooms.length > itemsPerPage && (
+                        <Pagination
+                            currentPage={currentPage}
+                            totalPages={totalPages}
+                            onPageChange={setCurrentPage}
+                        />
+                    )}
                 </div>
             )}
 

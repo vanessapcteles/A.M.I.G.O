@@ -16,6 +16,7 @@ import { horarioService } from '../services/horarioService';
 import { useToast } from '../context/ToastContext';
 import Modal from '../components/ui/Modal';
 import CalendarToolbar from '../components/ui/CalendarToolbar';
+import Pagination from '../components/common/Pagination';
 
 const locales = { 'pt': pt };
 const localizer = dateFnsLocalizer({ format, parse, startOfWeek, getDay, locales });
@@ -38,6 +39,10 @@ function FormadoresPage() {
     const [currentView, setCurrentView] = useState('week');
     const [filterStart, setFilterStart] = useState('');
     const [filterEnd, setFilterEnd] = useState('');
+
+    // Pagination
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 8;
 
     // Reload schedule when filters change while viewing
     useEffect(() => {
@@ -64,6 +69,7 @@ function FormadoresPage() {
             const response = await fetch(`${API_URL}/api/formadores`, { headers: getAuthHeader() });
             const data = await response.json();
             setFormadores(data);
+            setCurrentPage(1); // Reset to first page on new search/filter
         } catch (error) {
             console.error('Erro ao carregar formadores:', error);
         } finally {
@@ -330,6 +336,13 @@ function FormadoresPage() {
         f.email.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
+    // Paginated results
+    const totalPages = Math.ceil(filteredFormadores.length / itemsPerPage);
+    const paginatedFormadores = filteredFormadores.slice(
+        (currentPage - 1) * itemsPerPage,
+        currentPage * itemsPerPage
+    );
+
     return (
         <>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem', gap: '2rem' }} className="page-header-flex">
@@ -414,7 +427,7 @@ function FormadoresPage() {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {filteredFormadores.map(formador => (
+                                    {paginatedFormadores.map(formador => (
                                         <tr key={formador.id}
                                             style={{
                                                 borderBottom: '1px solid var(--border-glass)',
@@ -440,6 +453,16 @@ function FormadoresPage() {
                                     ))}
                                 </tbody>
                             </table>
+
+                            {filteredFormadores.length > itemsPerPage && (
+                                <div style={{ padding: '1rem 1.5rem' }}>
+                                    <Pagination
+                                        currentPage={currentPage}
+                                        totalPages={totalPages}
+                                        onPageChange={setCurrentPage}
+                                    />
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>

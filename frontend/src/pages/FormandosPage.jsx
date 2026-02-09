@@ -7,6 +7,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import Modal from '../components/ui/Modal';
 import { useToast } from '../context/ToastContext';
+import Pagination from '../components/common/Pagination';
 
 function FormandosPage() {
     const { toast } = useToast();
@@ -33,6 +34,10 @@ function FormandosPage() {
 
     const [filterCourse, setFilterCourse] = useState('');
     const [courses, setCourses] = useState([]);
+
+    // Pagination
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 8;
 
     useEffect(() => {
         fetchTurmas();
@@ -69,12 +74,20 @@ function FormandosPage() {
             const response = await fetch(url, { headers: getAuthHeader() });
             const data = await response.json();
             setFormandos(data);
+            setCurrentPage(1); // Reset to first page on new search/filter
         } catch (error) {
             console.error('Erro ao carregar formandos:', error);
         } finally {
             setLoading(false);
         }
     };
+
+    // Paginated results
+    const totalPages = Math.ceil(formandos.length / itemsPerPage);
+    const paginatedFormandos = formandos.slice(
+        (currentPage - 1) * itemsPerPage,
+        currentPage * itemsPerPage
+    );
 
     const fetchTurmas = async () => {
         try {
@@ -241,7 +254,6 @@ function FormandosPage() {
                 theme: 'striped'
             });
 
-            // Rodapé
             const finalY = (doc.lastAutoTable ? doc.lastAutoTable.finalY : 200) + 20;
             doc.setFontSize(9);
             doc.setTextColor(150);
@@ -482,7 +494,7 @@ function FormandosPage() {
                                             </td>
                                         </tr>
                                     ) : (
-                                        formandos.map(formando => (
+                                        paginatedFormandos.map(formando => (
                                             <tr key={formando.id}
                                                 onClick={() => handleSelectFormando(formando.id)}
                                                 style={{
@@ -533,6 +545,16 @@ function FormandosPage() {
                                     )}
                                 </tbody>
                             </table>
+
+                            {formandos.length > itemsPerPage && (
+                                <div style={{ padding: '1rem 1.5rem' }}>
+                                    <Pagination
+                                        currentPage={currentPage}
+                                        totalPages={totalPages}
+                                        onPageChange={setCurrentPage}
+                                    />
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>
