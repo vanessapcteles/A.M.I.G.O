@@ -10,8 +10,11 @@ const __dirname = path.dirname(__filename);
 // Carregar .env da raiz do projeto (pasta pai)
 dotenv.config({ path: path.join(__dirname, '../.env') });
 
-// FORÇAR localhost para execução deste script localmente
-process.env.DB_HOST = 'localhost';
+// Configuração do host da BD (permite override via variável de ambiente)
+// Se estiver no Docker, usa 'db' (do .env). Se for local, pode-se forçar DB_HOST=localhost ao correr o comando
+if (!process.env.DB_HOST) {
+    process.env.DB_HOST = 'localhost';
+}
 
 async function seedDatabase() {
     try {
