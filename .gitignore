@@ -1,0 +1,24 @@
+# Dependências
+node_modules/
+dist/
+build/
+
+# Variáveis de Ambiente (CRÍTICO)
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+npm-debug.log*
+
+# IDEs
+.vscode/
+.idea/
+.DS_Store
+
+# Ficheiros de Teste e Chatbot (Locais)
+check_avail.js
+resultado_check.txt
+chatbot_data.txt
+backend/generate_chatbot_data.js
