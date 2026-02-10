@@ -42,6 +42,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                 },
                 ...(isFormando ? [
                     { icon: BookOpen, label: 'Meu Curso', path: '/my-course' },
+                    { icon: Calendar, label: 'Horário', path: '/schedules' },
                     { icon: GraduationCap, label: 'Avaliações', path: '/grades' },
                     { icon: FileText, label: 'Minha Ficha', path: '/formando-ficha' },
                 ] : []),

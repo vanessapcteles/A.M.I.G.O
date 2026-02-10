@@ -55,9 +55,10 @@ export const getMyCandidacy = async (req, res) => {
             `SELECT i.*, c.nome_curso 
              FROM inscricoes i 
              JOIN cursos c ON i.id_curso = c.id
-             WHERE i.user_id = ? 
+             LEFT JOIN formandos f ON i.id_formando = f.id
+             WHERE i.user_id = ? OR f.utilizador_id = ?
              ORDER BY i.data_inscricao DESC LIMIT 1`,
-            [user_id]
+            [user_id, user_id]
         );
 
         if (rows.length === 0) {

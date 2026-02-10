@@ -165,7 +165,8 @@ function GradesPage() {
                                             <span style={{
                                                 padding: '0.35rem 0.75rem', borderRadius: '20px', fontSize: '0.75rem', fontWeight: '600',
                                                 background: `rgba(${statusColor === '#10b981' ? '16, 185, 129' : statusColor === '#f87171' ? '239, 68, 68' : '59, 130, 246'}, 0.1)`,
-                                                color: statusColor
+                                                color: statusColor,
+                                                whiteSpace: 'nowrap'
                                             }}>
                                                 {status}
                                             </span>

@@ -14,6 +14,9 @@ router.get('/', authenticateToken, disponibilidadeController.getMyAvailability);
 // POST /api/disponibilidades (adiciona nova)
 router.post('/', authenticateToken, disponibilidadeController.addAvailability);
 
+// DELETE /api/disponibilidades/all (Limpar Tudo)
+router.delete('/all', authenticateToken, disponibilidadeController.deleteAllAvailability);
+
 // DELETE /api/disponibilidades/:id (remove)
 router.delete('/:id', authenticateToken, disponibilidadeController.removeAvailability);
 
