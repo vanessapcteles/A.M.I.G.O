@@ -217,11 +217,16 @@ function FormandoFichaPage() {
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                                 <span style={{ color: 'var(--text-secondary)' }}>Média Global</span>
-                                <span style={{ fontWeight: 'bold', color: 'var(--primary)' }}>16.2</span>
+                                <span style={{ fontWeight: 'bold', color: 'var(--primary)' }}>
+                                    {detailedGrades.grades && detailedGrades.grades.filter(g => g.nota).length > 0
+                                        ? (detailedGrades.grades.filter(g => g.nota).reduce((acc, curr) => acc + parseFloat(curr.nota), 0) / detailedGrades.grades.filter(g => g.nota).length).toFixed(1)
+                                        : '0.0'
+                                    } med.
+                                </span>
                             </div>
                             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                                 <span style={{ color: 'var(--text-secondary)' }}>Faltas</span>
-                                <span style={{ fontWeight: 'bold', color: '#f87171' }}>2h</span>
+                                <span style={{ fontWeight: 'bold', color: '#10b981' }}>0h</span>
                             </div>
                         </div>
                     </div>
