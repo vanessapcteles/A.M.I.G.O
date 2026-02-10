@@ -7,6 +7,10 @@ import { ActivityIndicator, View } from 'react-native';
 import { AuthProvider, AuthContext } from './src/context/AuthContext';
 import LoginScreen from './src/screens/LoginScreen';
 import DashboardScreen from './src/screens/DashboardScreen';
+import CoursesScreen from './src/screens/CoursesScreen';
+import FormandosScreen from './src/screens/FormandosScreen';
+import FormadoresScreen from './src/screens/FormadoresScreen';
+import RoomsScreen from './src/screens/RoomsScreen';
 import { colors } from './src/theme/colors';
 
 const Stack = createNativeStackNavigator();
@@ -26,7 +30,13 @@ const AppNav = () => {
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {user ? (
-          <Stack.Screen name="Dashboard" component={DashboardScreen} />
+          <>
+            <Stack.Screen name="Dashboard" component={DashboardScreen} />
+            <Stack.Screen name="Courses" component={CoursesScreen} />
+            <Stack.Screen name="Formandos" component={FormandosScreen} />
+            <Stack.Screen name="Formadores" component={FormadoresScreen} />
+            <Stack.Screen name="Rooms" component={RoomsScreen} />
+          </>
         ) : (
           <Stack.Screen name="Login" component={LoginScreen} />
         )}

@@ -1,19 +1,22 @@
 import React, { useContext } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
 import { AuthContext } from '../context/AuthContext';
 import { colors } from '../theme/colors';
-import { LogOut, Calendar, GraduationCap, XCircle } from 'lucide-react-native';
+import { LogOut, BookOpen, Users, User, MapPin } from 'lucide-react-native';
 
 const DashboardScreen = () => {
     const { user, logout } = useContext(AuthContext);
+    const navigation = useNavigation();
 
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.header}>
                 <View>
-                    <Text style={styles.greeting}>Olá,</Text>
+                    <Text style={styles.greeting}>Olá, {user?.role_id === 1 ? 'Admin' : ''}</Text>
                     <Text style={styles.username}>{user?.nome_completo || 'Utilizador'}</Text>
+                    {user?.email && <Text style={styles.userEmail}>{user.email}</Text>}
                 </View>
                 <TouchableOpacity onPress={logout} style={styles.logoutButton}>
                     <LogOut color={colors.error} size={24} />
@@ -24,25 +27,32 @@ const DashboardScreen = () => {
                 <Text style={styles.sectionTitle}>Acesso Rápido</Text>
 
                 <View style={styles.grid}>
-                    <TouchableOpacity style={styles.card}>
+                    <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('Courses')}>
                         <View style={[styles.iconContainer, { backgroundColor: '#e0e7ff' }]}>
-                            <Calendar color={colors.primary} size={32} />
+                            <BookOpen color={colors.primary} size={32} />
                         </View>
-                        <Text style={styles.cardTitle}>Horário</Text>
+                        <Text style={styles.cardTitle}>Cursos</Text>
                     </TouchableOpacity>
 
-                    <TouchableOpacity style={styles.card}>
+                    <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('Formandos')}>
                         <View style={[styles.iconContainer, { backgroundColor: '#dcfce7' }]}>
-                            <GraduationCap color={colors.secondary} size={32} />
+                            <Users color={colors.secondary} size={32} />
                         </View>
-                        <Text style={styles.cardTitle}>Notas</Text>
+                        <Text style={styles.cardTitle}>Formandos</Text>
                     </TouchableOpacity>
 
-                    <TouchableOpacity style={styles.card}>
-                        <View style={[styles.iconContainer, { backgroundColor: '#fee2e2' }]}>
-                            <XCircle color={colors.error} size={32} />
+                    <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('Formadores')}>
+                        <View style={[styles.iconContainer, { backgroundColor: '#fef3c7' }]}>
+                            <User color={colors.warning} size={32} />
                         </View>
-                        <Text style={styles.cardTitle}>Faltas</Text>
+                        <Text style={styles.cardTitle}>Formadores</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('Rooms')}>
+                        <View style={[styles.iconContainer, { backgroundColor: '#fee2e2' }]}>
+                            <MapPin color={colors.error} size={32} />
+                        </View>
+                        <Text style={styles.cardTitle}>Salas</Text>
                     </TouchableOpacity>
                 </View>
 
@@ -80,6 +90,12 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         color: colors.text,
     },
+    userEmail: {
+        fontSize: 12,
+        color: colors.primary,
+        fontWeight: '500',
+        marginTop: 2,
+    },
     logoutButton: {
         padding: 8,
         borderRadius: 8,
@@ -96,6 +112,7 @@ const styles = StyleSheet.create({
     },
     grid: {
         flexDirection: 'row',
+        flexWrap: 'wrap',
         justifyContent: 'space-between',
         marginBottom: 32,
     },
@@ -104,7 +121,8 @@ const styles = StyleSheet.create({
         padding: 16,
         borderRadius: 16,
         alignItems: 'center',
-        width: '30%',
+        width: '48%', // 2 per row
+        marginBottom: 16,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.05,
