@@ -42,6 +42,7 @@ const LoginScreen = ({ navigation }) => {
                 style={styles.keyboardView}
             >
                 <View style={styles.header}>
+                    <Text style={styles.brand}>A.M.I.G.O</Text>
                     <Text style={styles.title}>Bem-vindo</Text>
                     <Text style={styles.subtitle}>Inicie sessão para continuar</Text>
                 </View>
@@ -114,6 +115,12 @@ const styles = StyleSheet.create({
     },
     header: {
         marginBottom: 40,
+    },
+    brand: {
+        fontSize: 48,
+        fontWeight: '900',
+        color: colors.primary,
+        marginBottom: 8,
     },
     title: {
         fontSize: 32,

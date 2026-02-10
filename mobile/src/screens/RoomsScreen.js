@@ -36,7 +36,7 @@ const RoomsScreen = () => {
 
     const renderItem = ({ item }) => (
         <View style={styles.card}>
-            <View style={[styles.iconContainer, { backgroundColor: '#fee2e2' }]}>
+            <View style={[styles.iconContainer, { backgroundColor: colors.iconBgError }]}>
                 <MapPin color={colors.error} size={24} />
             </View>
             <View style={styles.info}>
@@ -51,7 +51,7 @@ const RoomsScreen = () => {
 
     return (
         <SafeAreaView style={styles.container}>
-            <Text style={styles.title}>Salas</Text>
+            <Text style={styles.title}>Disponibilidade de Salas</Text>
             {loading ? (
                 <ActivityIndicator size="large" color={colors.primary} style={styles.loader} />
             ) : errorMsg ? (

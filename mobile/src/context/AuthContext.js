@@ -21,7 +21,15 @@ export const AuthProvider = ({ children }) => {
             const token = await AsyncStorage.getItem('userToken');
 
             if (userInfo && token) {
-                setUser(JSON.parse(userInfo));
+                let parsedUser = JSON.parse(userInfo);
+
+                // Auto-fix for legacy nested structure (migration)
+                if (parsedUser.user && !parsedUser.nome_completo) {
+                    parsedUser = { ...parsedUser.user, token };
+                    AsyncStorage.setItem('userInfo', JSON.stringify(parsedUser));
+                }
+
+                setUser(parsedUser);
                 // Configurar header do axios
                 axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
             }
@@ -41,10 +49,13 @@ export const AuthProvider = ({ children }) => {
         })
             .then(res => {
                 const userInfo = res.data;
-                const token = userInfo.token; // Ajustar conforme resposta do backend
+                const token = userInfo.token;
 
-                setUser(userInfo);
-                AsyncStorage.setItem('userInfo', JSON.stringify(userInfo));
+                // Flatten the object so user state has direct properties
+                const userData = { ...userInfo.user, token };
+
+                setUser(userData);
+                AsyncStorage.setItem('userInfo', JSON.stringify(userData));
                 AsyncStorage.setItem('userToken', token);
 
                 // Setup axios default header

@@ -105,7 +105,7 @@ const styles = StyleSheet.create({
     },
     iconContainer: {
         padding: 12,
-        backgroundColor: '#fef3c7',
+        backgroundColor: colors.iconBgWarning,
         borderRadius: 12,
         marginRight: 16,
     },

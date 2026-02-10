@@ -105,7 +105,7 @@ const styles = StyleSheet.create({
     },
     iconContainer: {
         padding: 12,
-        backgroundColor: '#dcfce7',
+        backgroundColor: colors.iconBgSecondary,
         borderRadius: 12,
         marginRight: 16,
     },

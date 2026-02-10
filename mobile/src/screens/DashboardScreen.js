@@ -14,7 +14,8 @@ const DashboardScreen = () => {
         <SafeAreaView style={styles.container}>
             <View style={styles.header}>
                 <View>
-                    <Text style={styles.greeting}>Olá, {user?.role_id === 1 ? 'Admin' : ''}</Text>
+                    <Text style={styles.brand}>AMIGO</Text>
+                    <Text style={styles.greeting}>Olá, {user?.tipo_utilizador === 'ADMIN' ? 'Admin' : ''}</Text>
                     <Text style={styles.username}>{user?.nome_completo || 'Utilizador'}</Text>
                     {user?.email && <Text style={styles.userEmail}>{user.email}</Text>}
                 </View>
@@ -28,28 +29,28 @@ const DashboardScreen = () => {
 
                 <View style={styles.grid}>
                     <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('Courses')}>
-                        <View style={[styles.iconContainer, { backgroundColor: '#e0e7ff' }]}>
+                        <View style={[styles.iconContainer, { backgroundColor: colors.iconBgPrimary }]}>
                             <BookOpen color={colors.primary} size={32} />
                         </View>
                         <Text style={styles.cardTitle}>Cursos</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('Formandos')}>
-                        <View style={[styles.iconContainer, { backgroundColor: '#dcfce7' }]}>
+                        <View style={[styles.iconContainer, { backgroundColor: colors.iconBgSecondary }]}>
                             <Users color={colors.secondary} size={32} />
                         </View>
                         <Text style={styles.cardTitle}>Formandos</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('Formadores')}>
-                        <View style={[styles.iconContainer, { backgroundColor: '#fef3c7' }]}>
+                        <View style={[styles.iconContainer, { backgroundColor: colors.iconBgWarning }]}>
                             <User color={colors.warning} size={32} />
                         </View>
                         <Text style={styles.cardTitle}>Formadores</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('Rooms')}>
-                        <View style={[styles.iconContainer, { backgroundColor: '#fee2e2' }]}>
+                        <View style={[styles.iconContainer, { backgroundColor: colors.iconBgError }]}>
                             <MapPin color={colors.error} size={32} />
                         </View>
                         <Text style={styles.cardTitle}>Salas</Text>
@@ -81,6 +82,13 @@ const styles = StyleSheet.create({
         borderBottomWidth: 1,
         borderBottomColor: colors.border,
     },
+    brand: {
+        fontSize: 20,
+        fontWeight: '900',
+        color: colors.primary,
+        letterSpacing: 2,
+        marginBottom: 8,
+    },
     greeting: {
         fontSize: 16,
         color: colors.textLight,
@@ -99,7 +107,7 @@ const styles = StyleSheet.create({
     logoutButton: {
         padding: 8,
         borderRadius: 8,
-        backgroundColor: '#fff0f0',
+        backgroundColor: colors.iconBgError,
     },
     content: {
         padding: 24,
