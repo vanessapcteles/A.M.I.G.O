@@ -39,6 +39,18 @@ export const getTurmas = async (req, res) => {
             params.push(`%${search}%`, `%${search}%`);
         }
 
+        if (req.user && req.user.role === 'FORMADOR') {
+            query += `
+                AND t.id IN (
+                    SELECT td.id_turma 
+                    FROM turma_detalhes td 
+                    JOIN formadores f ON td.id_formador = f.id 
+                    WHERE f.utilizador_id = ?
+                )
+            `;
+            params.push(req.user.id);
+        }
+
         if (courseId) {
             query += ' AND t.id_curso = ?';
             params.push(courseId);
@@ -66,6 +78,18 @@ export const getTurmas = async (req, res) => {
         if (courseId) {
             countQuery += ' AND t.id_curso = ?';
             countParams.push(courseId);
+        }
+
+        if (req.user && req.user.role === 'FORMADOR') {
+            countQuery += `
+                AND t.id IN (
+                    SELECT td.id_turma 
+                    FROM turma_detalhes td 
+                    JOIN formadores f ON td.id_formador = f.id 
+                    WHERE f.utilizador_id = ?
+                )
+            `;
+            countParams.push(req.user.id);
         }
 
         const [totalCount] = await db.query(countQuery, countParams);
