@@ -139,13 +139,22 @@ function TurmaSchedulePage() {
     };
 
     const confirmDeleteEvent = async () => {
-        if (!eventToDelete) return;
         try {
-            await horarioService.deleteLesson(eventToDelete.id);
-            toast('Aula removida com sucesso!', 'success');
+            if (eventToDelete) {
+                // Delete single event
+                await horarioService.deleteLesson(eventToDelete.id);
+                toast('Aula removida com sucesso!', 'success');
+            } else {
+                // Delete ALL events (Clear Schedule)
+                await horarioService.deleteTurmaSchedule(id);
+                toast('Horário da turma limpo com sucesso!', 'success');
+            }
             loadData();
         } catch (error) {
             toast(error.message, 'error');
+        } finally {
+            setConfirmOpen(false);
+            setEventToDelete(null);
         }
     };
 
@@ -237,6 +246,13 @@ function TurmaSchedulePage() {
                     >
                         <Wand2 size={20} />
                         {generating ? 'A Gerar...' : 'Geração Automática'}
+                    </button>
+                    <button
+                        className="btn-glass"
+                        onClick={() => { setEventToDelete(null); setConfirmOpen(true); }}
+                        style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#f87171', borderColor: '#f87171' }}
+                    >
+                        <Trash2 size={20} /> Limpar Tudo
                     </button>
                     <button className="btn-primary" onClick={() => setShowModal(true)}>
                         <Plus size={20} /> Nova Aula
@@ -503,8 +519,11 @@ function TurmaSchedulePage() {
                 isOpen={confirmOpen}
                 onClose={() => setConfirmOpen(false)}
                 onConfirm={confirmDeleteEvent}
-                title="Remover Aula"
-                message={`Tem a certeza que deseja remover a aula de ${eventToDelete?.title}?`}
+                title={eventToDelete ? "Remover Aula" : "Limpar Todo o Horário"}
+                message={eventToDelete
+                    ? `Tem a certeza que deseja remover a aula de ${eventToDelete?.title}?`
+                    : "Tem a certeza que deseja apagar TODAS as aulas desta turma? Esta ação é irreversível."
+                }
                 isDestructive={true}
             />
         </>

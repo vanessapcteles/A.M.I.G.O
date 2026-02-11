@@ -177,6 +177,26 @@ export const deleteLesson = async (req, res) => {
         return res.status(500).json({ message: 'Erro ao remover aula' });
     }
 };
+
+// Limpar todo o horário da turma
+export const deleteAllTurmaSchedule = async (req, res) => {
+    try {
+        const { turmaId } = req.params;
+
+        // Apaga todas as aulas cujos detalhes pertençam a esta turma
+        await db.query(`
+            DELETE h 
+            FROM horarios_aulas h
+            JOIN turma_detalhes td ON h.id_turma_detalhe = td.id
+            WHERE td.id_turma = ?
+        `, [turmaId]);
+
+        return res.json({ message: 'Horário da turma limpo com sucesso.' });
+    } catch (error) {
+        console.error('Erro ao limpar horário:', error);
+        return res.status(500).json({ message: 'Erro ao limpar horário da turma.' });
+    }
+};
 // Listar horários de um Formador
 export const getFormadorSchedule = async (req, res) => {
     try {

@@ -38,6 +38,16 @@ export const horarioService = {
         return response.json();
     },
 
+    // Limpar horário da turma
+    deleteTurmaSchedule: async (turmaId) => {
+        const response = await fetch(`${API_URL}/api/schedules/turma/${turmaId}`, {
+            method: 'DELETE',
+            headers: getAuthHeader()
+        });
+        if (!response.ok) throw new Error('Erro ao limpar horário da turma');
+        return response.json();
+    },
+
     getFormadorSchedule: async (userId, start, end) => {
         let url = `${API_URL}/api/schedules/formador/${userId}`;
         const params = new URLSearchParams();

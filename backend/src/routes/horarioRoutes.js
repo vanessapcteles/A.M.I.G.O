@@ -1,5 +1,5 @@
 import express from 'express';
-import { getTurmaSchedule, createLesson, deleteLesson, getFormadorSchedule, getRoomSchedule, listAllLessons, autoGenerateSchedule } from '../controllers/horarioController.js';
+import { getTurmaSchedule, createLesson, deleteLesson, deleteAllTurmaSchedule, getFormadorSchedule, getRoomSchedule, listAllLessons, autoGenerateSchedule } from '../controllers/horarioController.js';
 import { authenticateToken } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
@@ -11,6 +11,7 @@ router.get('/formador/:userId', getFormadorSchedule);
 router.get('/room/:roomId', getRoomSchedule);
 router.get('/all', listAllLessons);
 router.post('/', createLesson);
+router.delete('/turma/:turmaId', deleteAllTurmaSchedule);
 router.delete('/:id', deleteLesson);
 
 // POST /api/schedules/generate/:turmaId
