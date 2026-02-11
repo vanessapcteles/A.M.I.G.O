@@ -354,6 +354,10 @@ function FormadoresPage() {
                             .search-bar { flex: 1; max-width: none !important; }
                             .hidden-tablet { display: none !important; }
                         }
+                        @media (max-width: 640px) {
+                            .formadores-header-actions { flex-direction: column !important; align-items: stretch !important; gap: 1rem !important; }
+                            .search-bar { width: 100% !important; }
+                        }
                     `}
                 </style>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', flexShrink: 0 }}>
@@ -410,6 +414,15 @@ function FormadoresPage() {
                     {`
                         @media (max-width: 1400px) {
                             .responsive-grid { grid-template-columns: 1fr !important; gap: 2rem !important; }
+                        }
+                        @media (max-width: 768px) {
+                             /* Force Table to Card View */
+                             table, thead, tbody, th, td, tr { display: block; }
+                             thead tr { position: absolute; top: -9999px; left: -9999px; }
+                             tr { border: 1px solid var(--border-glass); border-radius: 12px; margin-bottom: 1rem; background: var(--bg-card); padding: 1rem; }
+                             td { border: none; position: relative; padding-left: 50% !important; margin-bottom: 0.5rem; text-align: right; display: flex; justify-content: flex-end; align-items: center; }
+                             td:before { position: absolute; top: 50%; left: 0; transform: translateY(-50%); width: 45%; padding-right: 10px; white-space: nowrap; content: attr(data-label); font-weight: bold; text-align: left; color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; }
+                             td:last-child { margin-bottom: 0; border-bottom: 0; }
                         }
                     `}
                 </style>

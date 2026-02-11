@@ -470,6 +470,25 @@ function FormandosPage() {
                         @media (max-width: 1400px) {
                             .responsive-grid { grid-template-columns: 1fr !important; gap: 2rem !important; }
                         }
+                        @media (max-width: 768px) {
+                             /* Force Table to Card View */
+                             table, thead, tbody, th, td, tr { display: block; }
+                             thead tr { position: absolute; top: -9999px; left: -9999px; }
+                             tr { border: 1px solid var(--border-glass); border-radius: 12px; margin-bottom: 1rem; background: var(--bg-card); padding: 1rem; }
+                             td { border: none; position: relative; padding-left: 50% !important; margin-bottom: 0.5rem; text-align: right; display: flex; justify-content: flex-end; align-items: center; }
+                             td:before { position: absolute; top: 50%; left: 0; transform: translateY(-50%); width: 45%; padding-right: 10px; white-space: nowrap; content: attr(data-label); font-weight: bold; text-align: left; color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; }
+                             td:last-child { margin-bottom: 0; border-bottom: 0; }
+
+                             /* Detail Panel Mobile Styles */
+                             .detail-header-flex { flex-direction: column; align-items: flex-start !important; gap: 1rem; }
+                             .detail-header-left { width: 100%; justify-content: space-between; }
+                             .profile-info-flex { flex-direction: column; text-align: center; }
+                             .profile-avatar-container { margin: 0 auto; }
+                             .profile-actions-row { justify-content: center !important; }
+                             .assign-turma-row { flex-direction: column; align-items: stretch !important; }
+                             .assign-turma-select { max-width: none !important; width: 100% !important; }
+                             .assign-turma-btn { width: 100%; }
+                        }
                     `}
                 </style>
                 <div className="glass-card">
@@ -569,8 +588,8 @@ function FormandosPage() {
                             className="glass-card"
                             style={{ padding: '2rem', position: 'sticky', top: '100px' }}
                         >
-                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2rem' }}>
-                                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                            <div className="detail-header-flex" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2rem' }}>
+                                <div className="detail-header-left" style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
                                     <h3>Detalhes do Formando</h3>
                                     <button
                                         onClick={handleExportPDF}
@@ -587,8 +606,8 @@ function FormandosPage() {
                             </div>
 
                             <div style={{ marginBottom: '2rem' }}>
-                                <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center', marginBottom: '1.5rem' }}>
-                                    <div style={{ position: 'relative' }}>
+                                <div className="profile-info-flex" style={{ display: 'flex', gap: '1.5rem', alignItems: 'center', marginBottom: '1.5rem' }}>
+                                    <div className="profile-avatar-container" style={{ position: 'relative' }}>
                                         <div style={{
                                             width: '80px', height: '80px', borderRadius: '20px', overflow: 'hidden',
                                             border: '2px solid var(--primary)', background: 'var(--card-hover-bg)',
@@ -616,8 +635,8 @@ function FormandosPage() {
                                         </label>
                                     </div>
 
-                                    <div style={{ flex: 1 }}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+                                    <div style={{ flex: 1, width: '100%' }}>
+                                        <div className="profile-actions-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
                                             <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{selectedFormando.nome_completo}</h2>
                                             <button
                                                 onClick={() => setIsEditing(!isEditing)}
@@ -636,11 +655,11 @@ function FormandosPage() {
                                         </p>
 
                                         <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                                            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                                            <div className="assign-turma-row" style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                                                 <select
                                                     value={selectedTurma}
                                                     onChange={(e) => setSelectedTurma(e.target.value)}
-                                                    className="input-field"
+                                                    className="input-field assign-turma-select"
                                                     style={{ padding: '0.4rem', fontSize: '0.9rem', width: 'auto', maxWidth: '200px' }}
                                                 >
                                                     <option value="">Atribuir Turma...</option>
@@ -654,7 +673,7 @@ function FormandosPage() {
                                                 </select>
                                                 <button
                                                     onClick={handleAssignTurma}
-                                                    className="btn-primary"
+                                                    className="btn-primary assign-turma-btn"
                                                     disabled={!selectedTurma}
                                                     style={{ padding: '0.4rem 0.8rem', fontSize: '0.9rem' }}
                                                 >

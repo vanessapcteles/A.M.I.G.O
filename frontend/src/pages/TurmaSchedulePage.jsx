@@ -228,7 +228,42 @@ function TurmaSchedulePage() {
 
     return (
         <>
-            <div style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <style>
+                {`
+                    .schedule-page-grid {
+                        display: grid;
+                        grid-template-columns: 300px 1fr;
+                        gap: 1.5rem;
+                        align-items: start;
+                    }
+                    .schedule-header-actions {
+                        display: flex;
+                        gap: 1rem;
+                    }
+                    @media (max-width: 1024px) {
+                        .schedule-page-grid {
+                            grid-template-columns: 1fr;
+                        }
+                    }
+                    @media (max-width: 640px) {
+                        .schedule-header-container {
+                            flex-direction: column;
+                            align-items: stretch !important;
+                            gap: 1rem;
+                        }
+                        .schedule-header-actions {
+                            flex-direction: column;
+                            width: 100%;
+                        }
+                        .schedule-header-actions button {
+                            justify-content: center;
+                            width: 100%;
+                        }
+                    }
+                `}
+            </style>
+
+            <div className="schedule-header-container" style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
                     <button
                         onClick={() => navigate('/turmas')}
@@ -238,7 +273,7 @@ function TurmaSchedulePage() {
                     </button>
                     <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>Horário da Turma</h1>
                 </div>
-                <div style={{ display: 'flex', gap: '1rem' }}>
+                <div className="schedule-header-actions">
                     <button
                         className="btn-glass"
                         onClick={() => setShowAutoModal(true)}
@@ -246,22 +281,23 @@ function TurmaSchedulePage() {
                         style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--primary)', borderColor: 'var(--primary)' }}
                     >
                         <Wand2 size={20} />
-                        {generating ? 'A Gerar...' : 'Geração Automática'}
+                        <span className="hidden-mobile">{generating ? 'A Gerar...' : 'Geração Automática'}</span>
+                        <span className="visible-mobile-inline">{generating ? 'Gerando...' : 'Auto'}</span>
                     </button>
                     <button
                         className="btn-glass"
                         onClick={() => { setEventToDelete(null); setConfirmOpen(true); }}
                         style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#f87171', borderColor: '#f87171' }}
                     >
-                        <Trash2 size={20} /> Limpar Tudo
+                        <Trash2 size={20} /> <span className="hidden-mobile">Limpar Tudo</span>
                     </button>
                     <button className="btn-primary" onClick={() => setShowModal(true)}>
-                        <Plus size={20} /> Nova Aula
+                        <Plus size={20} /> <span className="hidden-mobile">Nova Aula</span>
                     </button>
                 </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: '1.5rem', alignItems: 'start' }}>
+            <div className="schedule-page-grid">
                 {/* Painel Lateral de Módulos */}
                 <div className="glass-card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', height: '100%' }}>
                     <h3 style={{ fontSize: '1.1rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -344,9 +380,9 @@ function TurmaSchedulePage() {
                 </div>
 
                 {/* Calendário */}
-                <div className="glass-card" style={{ padding: '1.5rem', minHeight: '750px' }}>
+                <div className="glass-card" style={{ padding: '1.5rem', minHeight: '750px', overflowX: 'auto' }}>
                     <style>{`
-                        .rbc-calendar { font-family: inherit; }
+                        .rbc-calendar { font-family: inherit; min-width: 700px; /* Force minimum width for scroll */ }
                         .rbc-off-range-bg { background: rgba(0,0,0,0.1); }
                         .rbc-header { 
                             color: var(--text-secondary); 
@@ -374,6 +410,18 @@ function TurmaSchedulePage() {
                         .rbc-agenda-view table.rbc-agenda-table { border: none !important; color: white; }
                         .rbc-agenda-view table.rbc-agenda-table thead > tr > th { border-bottom: 2px solid var(--border-glass) !important; color: var(--text-secondary); }
                         .rbc-agenda-event-cell { color: white !important; }
+                        
+                        @media (max-width: 640px) {
+                            .hidden-mobile { display: none !important; }
+                            .visible-mobile-inline { display: inline !important; }
+                            .rbc-toolbar {
+                                position: sticky;
+                                left: 0;
+                            }
+                        }
+                        @media (min-width: 641px) {
+                            .visible-mobile-inline { display: none !important; }
+                        }
                     `}</style>
                     <Calendar
                         localizer={localizer}

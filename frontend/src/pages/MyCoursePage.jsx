@@ -81,7 +81,12 @@ function MyCoursePage() {
                     </div>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                <div className="course-info-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                    <style>{`
+                        @media (max-width: 768px) {
+                            .course-info-grid { grid-template-columns: 1fr !important; gap: 1rem !important; }
+                        }
+                    `}</style>
                     <div className="glass-card" style={{ background: 'rgba(255,255,255,0.02)' }}>
                         <h4 style={{ marginBottom: '1rem' }}>Duração da Turma</h4>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>

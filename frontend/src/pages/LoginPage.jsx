@@ -138,7 +138,7 @@ function LoginPage() {
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 className="glass-card"
-                style={{ maxWidth: '480px', width: '100%', padding: '3rem' }}
+                style={{ maxWidth: '480px', width: '100%', padding: 'clamp(1.5rem, 5vw, 3rem)' }}
             >
                 <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
                     <Link to="/" style={{ textDecoration: 'none' }}>
