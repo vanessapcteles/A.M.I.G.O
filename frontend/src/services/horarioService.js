@@ -99,11 +99,11 @@ export const horarioService = {
         return response.json();
     },
 
-    generateAutoSchedule: async (turmaId, dataInicio) => {
+    generateAutoSchedule: async (turmaId, dataInicio, regime) => {
         const response = await fetch(`${API_URL}/api/schedules/generate/${turmaId}`, {
             method: 'POST',
             headers: getAuthHeader(),
-            body: JSON.stringify({ dataInicio })
+            body: JSON.stringify({ dataInicio, regime })
         });
         const data = await response.json();
         if (!response.ok) throw new Error(data.message || 'Erro ao gerar horário');

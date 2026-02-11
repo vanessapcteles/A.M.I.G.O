@@ -334,12 +334,12 @@ export const listAllLessons = async (req, res) => {
 // GERADOR AUTOMÁTICO DE HORÁRIOS (O "CÉREBRO")
 export const autoGenerateSchedule = async (req, res) => {
     const { turmaId } = req.params;
-    const { dataInicio } = req.body;
+    const { dataInicio, regime } = req.body; // regime: 'diurno' | 'pos_laboral'
 
     if (!dataInicio) return res.status(400).json({ message: 'Data de início é obrigatória.' });
 
     try {
-        // 1. Obter detalhes e calcular horas restantes para CADA módulo
+        // 1. Obter detalhes e calcular horas restantes
         const [detalhesOriginal] = await db.query(`
             SELECT td.*, m.nome_modulo, m.carga_horaria 
             FROM turma_detalhes td
@@ -350,7 +350,47 @@ export const autoGenerateSchedule = async (req, res) => {
 
         if (detalhesOriginal.length === 0) return res.status(400).json({ message: 'A turma não tem módulos atribuídos.' });
 
-        // Preparar lista de trabalho com horas restantes controladas
+        // --- VALIDATION: Check if trainers have availability for the selected regime ---
+        const uniqueFormadores = [...new Set(detalhesOriginal.map(d => d.id_formador).filter(id => id))];
+        const missingAvailability = [];
+
+        for (const fId of uniqueFormadores) {
+            // Logic: Do they have ANY slots starting >= dataInicio matching the regime hours?
+            // Pos-Laboral: Starts >= 16:00
+            // Diurno: Starts < 18:00 (approx)
+            let timeCheck = '';
+            if (regime === 'pos_laboral') {
+                timeCheck = 'AND HOUR(inicio) >= 16';
+            } else {
+                timeCheck = 'AND HOUR(inicio) < 18';
+            }
+
+            const [check] = await db.query(`
+                SELECT 1 FROM disponibilidade_formadores 
+                WHERE id_formador = ? 
+                AND inicio >= ? 
+                ${timeCheck}
+                LIMIT 1
+            `, [fId, dataInicio]);
+
+            if (check.length === 0) {
+                // Get trainer name for better error message
+                const [trainerName] = await db.query('SELECT u.nome_completo FROM formadores f JOIN utilizadores u ON f.utilizador_id = u.id WHERE f.id = ?', [fId]);
+                if (trainerName.length > 0) missingAvailability.push(trainerName[0].nome_completo);
+                else missingAvailability.push(`Formador ${fId}`);
+            }
+        }
+
+        if (missingAvailability.length > 0) {
+            return res.status(400).json({
+                message: `Não é possível gerar horário ${regime === 'pos_laboral' ? 'Pós-Laboral' : 'Diurno'}. 
+                Os seguintes formadores não têm disponibilidade registada para este regime a partir de ${dataInicio}: 
+                ${missingAvailability.join(', ')}. 
+                Por favor adicione disponibilidade ou mude o regime.`
+            });
+        }
+        // ---------------------------------------------------------------------------
+
         let modulesWorkList = [];
         for (let m of detalhesOriginal) {
             const [check] = await db.query(`
@@ -366,78 +406,121 @@ export const autoGenerateSchedule = async (req, res) => {
 
         let lessonsCreated = 0;
         let searchCursor = new Date(dataInicio);
-        searchCursor.setHours(9, 0, 0, 0);
+        // Default to configured slots based on regime
+        // Diurno: 08:00, Noturno: 16:00 (start of first slot)
+        const startHour = regime === 'pos_laboral' ? 16 : 8;
+        searchCursor.setHours(startHour, 0, 0, 0);
 
         let allDone = false;
         let safetyCounter = 0;
 
-        // O NOVO CICLO: Enquanto houver horas para marcar...
+        // WEEKLY LOOP
         while (!allDone && safetyCounter < 1000) {
             allDone = true;
-            let scheduledSomethingThisCycle = false;
 
-            // Percorrer cada módulo (isso cria a ALTERNÂNCIA)
-            for (let modulo of modulesWorkList) {
-                if (modulo.horasRestantes <= 0) continue;
-                if (!modulo.id_formador || !modulo.id_sala) continue;
+            // 1. Identify active pool for this week (Max 4 incomplete modules)
+            const activeModules = modulesWorkList.filter(m => m.horasRestantes > 0).slice(0, 4);
 
-                allDone = false;
-                const duration = Math.min(3, modulo.horasRestantes);
+            if (activeModules.length === 0) {
+                break; // No more work
+            }
+            allDone = false;
 
-                const [available] = await db.query(`
-                    SELECT * FROM disponibilidade_formadores 
-                    WHERE id_formador = ? 
-                    AND inicio >= ? 
-                    AND TIMESTAMPDIFF(HOUR, inicio, fim) >= ?
-                    ORDER BY inicio ASC LIMIT 1
-                `, [modulo.id_formador, searchCursor, duration]);
+            // Iterate 5 days of the week (Mon-Fri)
+            for (let dayOffset = 0; dayOffset < 5; dayOffset++) {
+                // Ensure we skip weekends if searchCursor is Sat/Sun
+                while (searchCursor.getDay() === 0 || searchCursor.getDay() === 6) {
+                    searchCursor.setDate(searchCursor.getDate() + 1);
+                }
 
-                if (available.length > 0) {
-                    let slotStart = new Date(available[0].inicio);
-                    if (slotStart < searchCursor) slotStart = new Date(searchCursor);
+                // Define Slots for the day based on Regime
+                const slots = [];
+                const baseDate = new Date(searchCursor);
 
-                    const slotEnd = new Date(slotStart);
-                    slotEnd.setHours(slotStart.getHours() + duration);
+                if (regime === 'pos_laboral') {
+                    // Noturno: 16-19, 20-23
+                    slots.push({ startHour: 16, endHour: 19 });
+                    slots.push({ startHour: 20, endHour: 23 });
+                } else {
+                    // Diurno: 08-11, 12-15
+                    slots.push({ startHour: 8, endHour: 11 });
+                    slots.push({ startHour: 12, endHour: 15 });
+                }
 
-                    const [conflicts] = await db.query(`
-                        SELECT h.id FROM horarios_aulas h
-                        JOIN turma_detalhes td ON h.id_turma_detalhe = td.id
-                        WHERE (td.id_sala = ? OR td.id_turma = ?)
-                        AND ? < h.fim AND ? > h.inicio
-                    `, [modulo.id_sala, modulo.id_turma, slotStart, slotEnd]);
+                // Try to fill each slot
+                for (let slot of slots) {
+                    // Find a module that can take this slot
+                    // We rotate through activeModules to ensure diversity
+                    // Simple strategy: Try 1st, then 2nd...
+                    let slotFilled = false;
 
-                    if (conflicts.length === 0) {
-                        await db.query(`
-                            INSERT INTO horarios_aulas (id_turma_detalhe, inicio, fim) 
-                            VALUES (?, ?, ?)
-                        `, [modulo.id, slotStart, slotEnd]);
+                    for (let modulo of activeModules) {
+                        if (modulo.horasRestantes <= 0) continue;
+                        if (!modulo.id_formador || !modulo.id_sala) continue;
 
-                        modulo.horasRestantes -= duration;
-                        lessonsCreated++;
-                        scheduledSomethingThisCycle = true;
-                        searchCursor = new Date(slotEnd);
+                        const duration = 3; // Fixed 3h slots as requested
+                        if (modulo.horasRestantes < duration && modulo.horasRestantes > 0) {
+                            // If < 3h remaining, we might skip or schedule partial?
+                            // User strictness implies 3h blocks. Let's schedule keeping 3h slot but updating remaining.
+                            // Or strictly only schedule if >= 3? Let's allow partial last lesson.
+                        }
 
-                        // Se já passamos das 18h, saltamos para o dia seguinte
-                        if (searchCursor.getHours() > 18) {
-                            searchCursor.setDate(searchCursor.getDate() + 1);
-                            searchCursor.setHours(9, 0, 0, 0);
+                        const slotStart = new Date(baseDate);
+                        slotStart.setHours(slot.startHour, 0, 0, 0);
+                        const slotEnd = new Date(baseDate);
+                        slotEnd.setHours(slot.endHour, 0, 0, 0);
+
+                        // Check availability strictly covering this slot
+                        const [available] = await db.query(`
+                            SELECT * FROM disponibilidade_formadores 
+                            WHERE id_formador = ? 
+                            AND inicio <= ? AND fim >= ?
+                        `, [modulo.id_formador, slotStart, slotEnd]);
+
+                        if (available.length > 0) {
+                            // Check conflicts
+                            const [conflicts] = await db.query(`
+                                SELECT h.id FROM horarios_aulas h
+                                JOIN turma_detalhes td ON h.id_turma_detalhe = td.id
+                                WHERE (td.id_sala = ? OR td.id_turma = ?)
+                                AND ? < h.fim AND ? > h.inicio
+                            `, [modulo.id_sala, modulo.id_turma, slotStart, slotEnd]);
+
+                            if (conflicts.length === 0) {
+                                // Schedule it
+                                await db.query(`
+                                    INSERT INTO horarios_aulas (id_turma_detalhe, inicio, fim) 
+                                    VALUES (?, ?, ?)
+                                `, [modulo.id, slotStart, slotEnd]);
+
+                                modulo.horasRestantes -= duration;
+                                lessonsCreated++;
+                                slotFilled = true;
+
+                                // Rotate active modules to give others a chance in next slot
+                                // (Simply moving this module to end of active list for next iteration priority)
+                                const idx = activeModules.indexOf(modulo);
+                                if (idx > -1) {
+                                    activeModules.push(activeModules.splice(idx, 1)[0]);
+                                }
+                                break; // Slot filled, move to next slot
+                            }
                         }
                     }
                 }
+
+                // Move cursor to next day
+                searchCursor.setDate(searchCursor.getDate() + 1);
             }
 
-            if (!scheduledSomethingThisCycle && !allDone) {
-                searchCursor.setHours(searchCursor.getHours() + 1);
-                if (searchCursor.getHours() > 22) {
-                    searchCursor.setDate(searchCursor.getDate() + 1);
-                    searchCursor.setHours(9, 0, 0, 0);
-                }
-            }
+            // Logic to advance week if stuck? 
+            // In this specific structure, we just loop until all hours are done.
+            // The searchCursor naturally advances.
             safetyCounter++;
         }
 
         return res.json({
-            message: `Sucesso! Foram geradas ${lessonsCreated} aulas alternadas.`,
+            message: `Sucesso! Foram geradas ${lessonsCreated} aulas (${regime}).`,
             lessonsCreated
         });
 

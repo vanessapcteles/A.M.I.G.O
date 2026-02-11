@@ -38,6 +38,7 @@ function TurmaSchedulePage() {
     const [showAutoModal, setShowAutoModal] = useState(false);
     const [generating, setGenerating] = useState(false);
     const [autoStartDate, setAutoStartDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+    const [autoRegime, setAutoRegime] = useState('diurno');
 
     // Module List Pagination & Search
     const [moduleSearch, setModuleSearch] = useState('');
@@ -161,7 +162,7 @@ function TurmaSchedulePage() {
     const handleAutoGenerate = async () => {
         setGenerating(true);
         try {
-            const res = await horarioService.generateAutoSchedule(id, autoStartDate);
+            const res = await horarioService.generateAutoSchedule(id, autoStartDate, autoRegime);
             toast(res.message, 'success');
             setShowAutoModal(false);
             loadData();
@@ -498,6 +499,18 @@ function TurmaSchedulePage() {
                                 value={autoStartDate}
                                 onChange={e => setAutoStartDate(e.target.value)}
                             />
+                        </div>
+
+                        <div style={{ marginBottom: '2rem' }}>
+                            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem' }}>Regime:</label>
+                            <select
+                                className="input-field"
+                                value={autoRegime}
+                                onChange={e => setAutoRegime(e.target.value)}
+                            >
+                                <option value="diurno">Diurno (08:00 - 15:00)</option>
+                                <option value="pos_laboral">Pós-Laboral (16:00 - 23:00)</option>
+                            </select>
                         </div>
 
                         <div style={{ display: 'flex', gap: '1rem' }}>
