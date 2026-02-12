@@ -11,6 +11,7 @@ import CoursesScreen from './src/screens/CoursesScreen';
 import FormandosScreen from './src/screens/FormandosScreen';
 import FormadoresScreen from './src/screens/FormadoresScreen';
 import RoomsScreen from './src/screens/RoomsScreen';
+import ScheduleScreen from './src/screens/ScheduleScreen';
 import { colors } from './src/theme/colors';
 
 const Stack = createNativeStackNavigator();
@@ -36,6 +37,7 @@ const AppNav = () => {
             <Stack.Screen name="Formandos" component={FormandosScreen} />
             <Stack.Screen name="Formadores" component={FormadoresScreen} />
             <Stack.Screen name="Rooms" component={RoomsScreen} />
+            <Stack.Screen name="Schedule" component={ScheduleScreen} />
           </>
         ) : (
           <Stack.Screen name="Login" component={LoginScreen} />

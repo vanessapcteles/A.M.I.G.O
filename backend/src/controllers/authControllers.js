@@ -6,6 +6,9 @@ import { db } from '../config/db.js';
 import redis from '../config/redis.js';
 import { sendActivationEmail, sendPasswordResetEmail } from '../config/mailer.js';
 import { generateToken } from '../utils/token.js';
+import { OAuth2Client } from 'google-auth-library';
+
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 export const register = async (req, res) => {
   try {
@@ -421,3 +424,92 @@ export const disable2FA = async (req, res) => {
 
 
 
+// Google Login Mobile (Token Based)
+export const googleLoginMobile = async (req, res) => {
+  try {
+    const { idToken } = req.body;
+
+    if (!idToken) {
+      return res.status(400).json({ message: 'Token ID em falta.' });
+    }
+
+    // Verificar o token com a Google
+    const ticket = await client.verifyIdToken({
+      idToken: idToken,
+      audience: process.env.GOOGLE_CLIENT_ID, // Specify the CLIENT_ID of the app that accesses the backend
+    });
+    const payload = ticket.getPayload();
+    const { email, name, sub: googleId } = payload;
+
+    // Verificar se user existe por Google ID
+    const [users] = await db.query(
+      `SELECT u.*, r.nome as tipo_utilizador 
+       FROM utilizadores u 
+       JOIN roles r ON u.role_id = r.id 
+       WHERE provider_id = ? AND auth_provider = ?`,
+      [googleId, 'google']
+    );
+
+    let user = users[0];
+
+    // Se não existe por Google ID, verificar por email
+    if (!user) {
+      const [existingEmail] = await db.query(
+        `SELECT u.*, r.nome as tipo_utilizador 
+         FROM utilizadores u 
+         JOIN roles r ON u.role_id = r.id 
+         WHERE email = ?`,
+        [email]
+      );
+
+      if (existingEmail.length > 0) {
+        // Atualizar user existente para suportar Google
+        await db.query(
+          'UPDATE utilizadores SET provider_id = ?, auth_provider = ? WHERE email = ?',
+          [googleId, 'google', email]
+        );
+        user = existingEmail[0];
+      } else {
+        // Criar novo user
+        const activation_token = uuidv4();
+        const [roles] = await db.query("SELECT id FROM roles WHERE nome = 'CANDIDATO'"); // Default role
+        const role_id = roles[0].id;
+
+        await db.query(
+          `INSERT INTO utilizadores 
+          (nome_completo, email, role_id, auth_provider, provider_id, is_active, activation_token)
+          VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          [name, email, role_id, 'google', googleId, true, activation_token]
+        );
+
+        const [newUser] = await db.query(
+          `SELECT u.*, r.nome as tipo_utilizador 
+           FROM utilizadores u 
+           JOIN roles r ON u.role_id = r.id 
+           WHERE email = ?`,
+          [email]
+        );
+        user = newUser[0];
+      }
+    }
+
+    // Gerar JWT e devolver
+    const userObj = {
+      id: user.id,
+      nome_completo: user.nome_completo,
+      email: user.email,
+      tipo_utilizador: user.tipo_utilizador
+    };
+    const token = generateToken(userObj);
+
+    return res.status(200).json({
+      success: true,
+      user: userObj,
+      token: token
+    });
+
+  } catch (error) {
+    console.error('Erro no Google Login Mobile:', error);
+    return res.status(401).json({ message: 'Token Google inválido.' });
+  }
+};

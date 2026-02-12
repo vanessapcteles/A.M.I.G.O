@@ -3,7 +3,8 @@ import passport from 'passport';
 import {
     register, login,
     setup2FA, verify2FA, validate2FA, recover2FA, disable2FA,
-    activateAccount, forgotPassword, resetPassword, resendActivation
+    activateAccount, forgotPassword, resetPassword, resendActivation,
+    googleLoginMobile
 } from '../controllers/authControllers.js';
 import { generateToken } from '../utils/token.js';
 import { authenticateToken, authorizeRole } from '../middleware/authMiddleware.js';
@@ -61,6 +62,9 @@ router.get('/google/callback',
         res.redirect(`${frontendUrl}/login?token=${token}&user=${req.user.email}&name=${nameEncoded}&id=${req.user.id}&role=${req.user.tipo_utilizador}`);
     }
 );
+
+// AUTH GOOGLE MOBILE
+router.post('/google-mobile', googleLoginMobile);
 
 // AUTH FACEBOOK
 router.get('/facebook', passport.authenticate('facebook', { scope: ['email'] }));

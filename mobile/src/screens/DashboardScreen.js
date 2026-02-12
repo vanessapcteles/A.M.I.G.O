@@ -1,67 +1,85 @@
 import React, { useContext } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { AuthContext } from '../context/AuthContext';
-import { colors } from '../theme/colors';
-import { LogOut, BookOpen, Users, User, MapPin } from 'lucide-react-native';
+import { useThemeColors } from '../theme/colors';
+import { LogOut, BookOpen, Users, User, MapPin, Calendar } from 'lucide-react-native';
 
 const DashboardScreen = () => {
     const { user, logout } = useContext(AuthContext);
     const navigation = useNavigation();
+    const colors = useThemeColors();
+
+    const menuItems = [
+        {
+            title: 'Cursos',
+            icon: BookOpen,
+            color: colors.cardBlue,
+            screen: 'Courses',
+        },
+        {
+            title: 'Horário',
+            icon: Calendar,
+            color: colors.cardPink,
+            screen: 'Schedule',
+        },
+        {
+            title: 'Formandos',
+            icon: Users,
+            color: colors.cardPink,
+            screen: 'Formandos',
+        },
+        {
+            title: 'Equipa',
+            icon: User,
+            color: colors.cardPink,
+            screen: 'Formadores',
+        },
+        {
+            title: 'Salas',
+            icon: MapPin,
+            color: colors.cardBlue,
+            screen: 'Rooms',
+        },
+    ];
 
     return (
-        <SafeAreaView style={styles.container}>
-            <View style={styles.header}>
-                <View>
-                    <Text style={styles.brand}>AMIGO</Text>
-                    <Text style={styles.greeting}>Olá, {user?.tipo_utilizador === 'ADMIN' ? 'Admin' : ''}</Text>
-                    <Text style={styles.username}>{user?.nome_completo || 'Utilizador'}</Text>
-                    {user?.email && <Text style={styles.userEmail}>{user.email}</Text>}
-                </View>
+        <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+            <View style={[styles.header, { borderBottomColor: colors.border }]}>
                 <TouchableOpacity onPress={logout} style={styles.logoutButton}>
-                    <LogOut color={colors.error} size={24} />
+                    <LogOut color={colors.cardPink} size={20} />
+                    <Text style={styles.logoutText}>Sair</Text>
                 </TouchableOpacity>
             </View>
 
             <ScrollView contentContainerStyle={styles.content}>
-                <Text style={styles.sectionTitle}>Acesso Rápido</Text>
-
-                <View style={styles.grid}>
-                    <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('Courses')}>
-                        <View style={[styles.iconContainer, { backgroundColor: colors.iconBgPrimary }]}>
-                            <BookOpen color={colors.primary} size={32} />
-                        </View>
-                        <Text style={styles.cardTitle}>Cursos</Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('Formandos')}>
-                        <View style={[styles.iconContainer, { backgroundColor: colors.iconBgSecondary }]}>
-                            <Users color={colors.secondary} size={32} />
-                        </View>
-                        <Text style={styles.cardTitle}>Formandos</Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('Formadores')}>
-                        <View style={[styles.iconContainer, { backgroundColor: colors.iconBgWarning }]}>
-                            <User color={colors.warning} size={32} />
-                        </View>
-                        <Text style={styles.cardTitle}>Formadores</Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('Rooms')}>
-                        <View style={[styles.iconContainer, { backgroundColor: colors.iconBgError }]}>
-                            <MapPin color={colors.error} size={32} />
-                        </View>
-                        <Text style={styles.cardTitle}>Salas</Text>
-                    </TouchableOpacity>
+                <View style={styles.logoContainer}>
+                    {/* Placeholder for Logo - Using Icon + Text as per design */}
+                    <View style={styles.logoIcon}>
+                        <BookOpen color={colors.cardBlue} size={40} />
+                    </View>
+                    <Text style={[styles.logoText, { color: colors.cardBlue }]}>A.M.I.G.O</Text>
+                    <Text style={[styles.logoSubtext, { color: colors.cardPink }]}>Academy Management Interactive Guide & Organizer</Text>
                 </View>
 
-                <View style={styles.recentActivity}>
-                    <Text style={styles.sectionTitle}>Atividade Recente</Text>
-                    <View style={styles.activityCard}>
-                        <Text style={styles.activityText}>Nenhuma atividade recente encontrada.</Text>
-                    </View>
+                <View style={styles.greetingContainer}>
+                    <Text style={[styles.greetingTitle, { color: colors.cardBlue }]}>Olá, {user?.nome?.split(' ')[0] || 'Utilizador'}!</Text>
+                    <Text style={[styles.greetingSubtitle, { color: colors.textLight }]}>O teu Dashboard</Text>
+                </View>
+
+                <View style={styles.grid}>
+                    {menuItems.map((item, index) => (
+                        <TouchableOpacity
+                            key={index}
+                            style={[styles.card, { backgroundColor: item.color }]}
+                            onPress={() => navigation.navigate(item.screen)}
+                            activeOpacity={0.9}
+                        >
+                            <item.icon color={colors.textInverted} size={32} style={styles.cardIcon} />
+                            <Text style={styles.cardTitle}>{item.title}</Text>
+                        </TouchableOpacity>
+                    ))}
                 </View>
             </ScrollView>
         </SafeAreaView>
@@ -71,96 +89,88 @@ const DashboardScreen = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: colors.background,
     },
     header: {
-        padding: 24,
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        backgroundColor: colors.surface,
-        borderBottomWidth: 1,
-        borderBottomColor: colors.border,
-    },
-    brand: {
-        fontSize: 20,
-        fontWeight: '900',
-        color: colors.primary,
-        letterSpacing: 2,
-        marginBottom: 8,
-    },
-    greeting: {
-        fontSize: 16,
-        color: colors.textLight,
-    },
-    username: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        color: colors.text,
-    },
-    userEmail: {
-        fontSize: 12,
-        color: colors.primary,
-        fontWeight: '500',
-        marginTop: 2,
+        paddingHorizontal: 24,
+        paddingTop: 16,
+        alignItems: 'flex-end',
+        borderBottomWidth: 0, // Removed border for cleaner look, or keep if desired
     },
     logoutButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
         padding: 8,
-        borderRadius: 8,
-        backgroundColor: colors.iconBgError,
+    },
+    logoutText: {
+        // Color is now handled inline
+        marginLeft: 8,
+        fontWeight: 'bold',
+        fontSize: 16,
     },
     content: {
         padding: 24,
+        alignItems: 'center',
     },
-    sectionTitle: {
-        fontSize: 18,
-        fontWeight: '600',
-        color: colors.text,
+    logoContainer: {
+        alignItems: 'center',
+        marginBottom: 32,
+        marginTop: 16,
+    },
+    logoIcon: {
         marginBottom: 16,
+    },
+    logoText: {
+        fontSize: 28,
+        fontWeight: 'bold',
+        letterSpacing: 4,
+    },
+    logoSubtext: {
+        fontSize: 10,
+        marginTop: 4,
+        textAlign: 'center',
+    },
+    greetingContainer: {
+        alignItems: 'center',
+        marginBottom: 32,
+    },
+    greetingTitle: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        marginBottom: 4,
+    },
+    greetingSubtitle: {
+        fontSize: 16,
     },
     grid: {
         flexDirection: 'row',
         flexWrap: 'wrap',
         justifyContent: 'space-between',
-        marginBottom: 32,
+        width: '100%',
     },
     card: {
-        backgroundColor: colors.surface,
-        padding: 16,
-        borderRadius: 16,
+        width: '47%',
+        aspectRatio: 1.1, // make it slightly rectangular/square
+        borderRadius: 20,
+        justifyContent: 'center',
         alignItems: 'center',
-        width: '48%', // 2 per row
-        marginBottom: 16,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 4,
-        elevation: 2,
+        marginBottom: 20,
+        shadowColor: "#000",
+        shadowOffset: {
+            width: 0,
+            height: 4,
+        },
+        shadowOpacity: 0.2,
+        shadowRadius: 5.0,
+        elevation: 6,
     },
-    iconContainer: {
-        padding: 12,
-        borderRadius: 12,
+    cardIcon: {
         marginBottom: 12,
     },
     cardTitle: {
-        fontSize: 14,
-        fontWeight: '500',
-        color: colors.text,
-    },
-    recentActivity: {
-        marginTop: 16,
-    },
-    activityCard: {
-        backgroundColor: colors.surface,
-        padding: 24,
-        borderRadius: 16,
-        alignItems: 'center',
-        borderWidth: 1,
-        borderColor: colors.border,
-        borderStyle: 'dashed',
-    },
-    activityText: {
-        color: colors.textLight,
+        // Color handled inline or passed
+        color: '#FFFFFF', // Constant white for card titles
+        fontSize: 16,
+        fontWeight: 'bold',
     },
 });
 

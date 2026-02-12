@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, StyleSheet, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import axios from 'axios';
-import { colors } from '../theme/colors';
+import { useThemeColors } from '../theme/colors';
 import { API_URL } from '../config/api';
 import { MapPin } from 'lucide-react-native';
 
@@ -10,6 +10,7 @@ const RoomsScreen = () => {
     const [rooms, setRooms] = useState([]);
     const [loading, setLoading] = useState(true);
     const [errorMsg, setErrorMsg] = useState(null);
+    const colors = useThemeColors();
 
     useEffect(() => {
         fetchRooms();
@@ -35,29 +36,29 @@ const RoomsScreen = () => {
     };
 
     const renderItem = ({ item }) => (
-        <View style={styles.card}>
+        <View style={[styles.card, { backgroundColor: colors.surface }]}>
             <View style={[styles.iconContainer, { backgroundColor: colors.iconBgError }]}>
                 <MapPin color={colors.error} size={24} />
             </View>
             <View style={styles.info}>
-                <Text style={styles.roomName}>{item.nome_sala}</Text>
-                <Text style={styles.roomType}>{item.localizacao || 'Edifício Principal'}</Text>
+                <Text style={[styles.roomName, { color: colors.text }]}>{item.nome_sala}</Text>
+                <Text style={[styles.roomType, { color: colors.textLight }]}>{item.localizacao || 'Edifício Principal'}</Text>
             </View>
-            <View style={styles.capacityBadge}>
-                <Text style={styles.capacityText}>{item.capacidade} pax</Text>
+            <View style={[styles.capacityBadge, { backgroundColor: colors.background }]}>
+                <Text style={[styles.capacityText, { color: colors.textLight }]}>{item.capacidade} pax</Text>
             </View>
         </View>
     );
 
     return (
-        <SafeAreaView style={styles.container}>
-            <Text style={styles.title}>Disponibilidade de Salas</Text>
+        <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+            <Text style={[styles.title, { color: colors.text, backgroundColor: colors.surface }]}>Disponibilidade de Salas</Text>
             {loading ? (
                 <ActivityIndicator size="large" color={colors.primary} style={styles.loader} />
             ) : errorMsg ? (
                 <View style={styles.center}>
-                    <Text style={styles.errorText}>Erro: {errorMsg}</Text>
-                    <Text style={styles.errorSub}>Verifique a conexão ao backend</Text>
+                    <Text style={[styles.errorText, { color: colors.error }]}>Erro: {errorMsg}</Text>
+                    <Text style={[styles.errorSub, { color: colors.textLight }]}>Verifique a conexão ao backend</Text>
                 </View>
             ) : (
                 <FlatList
@@ -65,7 +66,7 @@ const RoomsScreen = () => {
                     renderItem={renderItem}
                     keyExtractor={item => item.id.toString()}
                     contentContainerStyle={styles.list}
-                    ListEmptyComponent={<Text style={styles.emptyText}>Nenhuma sala encontrada.</Text>}
+                    ListEmptyComponent={<Text style={[styles.emptyText, { color: colors.textLight }]}>Nenhuma sala encontrada.</Text>}
                 />
             )}
         </SafeAreaView>
@@ -75,14 +76,11 @@ const RoomsScreen = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: colors.background,
     },
     title: {
         fontSize: 24,
         fontWeight: 'bold',
-        color: colors.text,
         padding: 20,
-        backgroundColor: colors.surface,
     },
     loader: {
         marginTop: 50,
@@ -91,7 +89,6 @@ const styles = StyleSheet.create({
         padding: 20,
     },
     card: {
-        backgroundColor: colors.surface,
         padding: 16,
         borderRadius: 12,
         marginBottom: 16,
@@ -114,23 +111,19 @@ const styles = StyleSheet.create({
     roomName: {
         fontSize: 16,
         fontWeight: '600',
-        color: colors.text,
         marginBottom: 4,
     },
     roomType: {
         fontSize: 14,
-        color: colors.textLight,
         marginBottom: 4,
     },
     capacityBadge: {
-        backgroundColor: colors.background,
         paddingHorizontal: 8,
         paddingVertical: 4,
         borderRadius: 8,
     },
     capacityText: {
         fontSize: 12,
-        color: colors.textLight,
         fontWeight: '600',
     },
     center: {
@@ -140,21 +133,18 @@ const styles = StyleSheet.create({
         padding: 20,
     },
     errorText: {
-        color: colors.error,
         fontSize: 16,
         marginBottom: 8,
         textAlign: 'center',
         fontWeight: 'bold',
     },
     errorSub: {
-        color: colors.textLight,
         fontSize: 12,
         textAlign: 'center',
         marginTop: 4,
     },
     emptyText: {
         textAlign: 'center',
-        color: colors.textLight,
         marginTop: 50,
     },
 });
