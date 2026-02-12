@@ -14,46 +14,17 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { AuthContext } from '../context/AuthContext';
 import { useThemeColors } from '../theme/colors';
 import { LogIn, Lock, User, Eye, EyeOff } from 'lucide-react-native';
-import * as WebBrowser from 'expo-web-browser';
-import * as Google from 'expo-auth-session/providers/google';
 
-WebBrowser.maybeCompleteAuthSession();
-
-// Hardcoded for Expo Go development to match .env
-// In production, these should be in app.json or ENV variables
-const GOOGLE_CLIENT_ID = '949180899462-lh3kdvlpvfbo3ar0bu8coemggppg6f0b.apps.googleusercontent.com';
 
 const LoginScreen = ({ navigation }) => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const { isLoading, login, googleLogin } = useContext(AuthContext); // Ensure googleLogin is available
+    const { isLoading, login } = useContext(AuthContext);
     const colors = useThemeColors();
     const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState('');
 
-    const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
-        clientId: GOOGLE_CLIENT_ID,
-        // For Expo Go on Android/iOS, redirectUri is usually handled automatically,
-        // but explicit definition helps clarity.
-    });
 
-    useEffect(() => {
-        if (response?.type === 'success') {
-            const { id_token } = response.params;
-            handleGoogleSignIn(id_token);
-        } else if (response?.type === 'error') {
-            setError('Erro no login com Google.');
-        }
-    }, [response]);
-
-    const handleGoogleSignIn = async (idToken) => {
-        setError('');
-        try {
-            await googleLogin(idToken);
-        } catch (e) {
-            setError('Falha ao autenticar com Google. Tente novamente.');
-        }
-    };
 
     const handleLogin = async () => {
         setError('');
@@ -131,22 +102,7 @@ const LoginScreen = ({ navigation }) => {
                         )}
                     </TouchableOpacity>
 
-                    <View style={styles.dividerContainer}>
-                        <View style={[styles.divider, { backgroundColor: colors.border }]} />
-                        <Text style={[styles.dividerText, { color: colors.textLight }]}>OU</Text>
-                        <View style={[styles.divider, { backgroundColor: colors.border }]} />
-                    </View>
 
-                    <TouchableOpacity
-                        style={[styles.googleButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
-                        disabled={!request || isLoading}
-                        onPress={() => promptAsync()}
-                    >
-                        {/* Placeholder for Google Icon - In a real app use an SVG or Image asset */}
-                        <Text style={[styles.googleButtonText, { color: colors.text }]}>
-                            G  Entrar com Google
-                        </Text>
-                    </TouchableOpacity>
 
                 </View>
             </KeyboardAvoidingView>
@@ -223,31 +179,7 @@ const styles = StyleSheet.create({
         marginBottom: 16,
         textAlign: 'center',
     },
-    dividerContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginVertical: 24,
-    },
-    divider: {
-        flex: 1,
-        height: 1,
-    },
-    dividerText: {
-        marginHorizontal: 16,
-        fontSize: 14,
-    },
-    googleButton: {
-        height: 56,
-        borderRadius: 12,
-        justifyContent: 'center',
-        alignItems: 'center',
-        borderWidth: 1,
-        flexDirection: 'row',
-    },
-    googleButtonText: {
-        fontSize: 16,
-        fontWeight: '600',
-    },
+
 });
 
 export default LoginScreen;
