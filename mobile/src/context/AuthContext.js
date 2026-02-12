@@ -102,6 +102,19 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    const forgotPassword = async (email) => {
+        setIsLoading(true);
+        try {
+            await axios.post(`${API_URL}/auth/forgot-password`, { email });
+            setIsLoading(false);
+            return { success: true };
+        } catch (e) {
+            console.log(`Forgot Password error ${e}`);
+            setIsLoading(false);
+            throw e;
+        }
+    };
+
 
 
     const logout = () => {
@@ -125,6 +138,7 @@ export const AuthProvider = ({ children }) => {
                 splashLoading,
                 login,
                 verifyOTP,
+                forgotPassword,
                 logout,
             }}>
             {children}

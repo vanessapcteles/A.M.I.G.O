@@ -14,6 +14,8 @@ import RoomsScreen from './src/screens/RoomsScreen';
 import ScheduleScreen from './src/screens/ScheduleScreen';
 import { colors } from './src/theme/colors';
 
+import ForgotPasswordScreen from './src/screens/ForgotPasswordScreen';
+
 const Stack = createNativeStackNavigator();
 
 const AppNav = () => {
@@ -40,7 +42,10 @@ const AppNav = () => {
             <Stack.Screen name="Schedule" component={ScheduleScreen} />
           </>
         ) : (
-          <Stack.Screen name="Login" component={LoginScreen} />
+          <>
+            <Stack.Screen name="Login" component={LoginScreen} />
+            <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+          </>
         )}
       </Stack.Navigator>
     </NavigationContainer>

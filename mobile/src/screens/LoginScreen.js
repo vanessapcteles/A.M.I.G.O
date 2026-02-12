@@ -88,7 +88,7 @@ const LoginScreen = ({ navigation }) => {
                 </TouchableOpacity>
             </View>
 
-            <TouchableOpacity onPress={() => {/* Forgot Password logic later */ }}>
+            <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')}>
                 <Text style={[styles.forgotPassword, { color: colors.primary }]}>Esqueceu-se da password?</Text>
             </TouchableOpacity>
 
