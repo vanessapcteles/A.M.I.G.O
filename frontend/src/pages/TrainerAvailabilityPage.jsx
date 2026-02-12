@@ -148,8 +148,16 @@ function TrainerAvailabilityPage() {
             limitDate.setHours(23, 59, 59, 999);
 
             let currentStart = new Date(start);
-            // We must preserve duration to calculate end for each recurrence accurately
-            const durationMs = end.getTime() - start.getTime();
+
+            // Capture target hours/minutes from the normalized inputs to enforce them on every repeat
+            const targetStartH = start.getHours();
+            const targetStartM = start.getMinutes();
+            const targetEndH = end.getHours();
+            const targetEndM = end.getMinutes();
+
+            // Detect overnight (if end time is next day relative to start component)
+            // Note: 'end' variable is already normalized to be start date or start date + 1
+            const isOvernight = end.getDate() !== start.getDate();
 
             while (currentStart <= limitDate) {
                 const dayOfWeek = currentStart.getDay();
@@ -160,9 +168,16 @@ function TrainerAvailabilityPage() {
                     continue;
                 }
 
-                // Calculate End for this specific day based on duration
+                // Explicitly set start time for this day (Forces 08:00 Stay 08:00)
                 const thisStart = new Date(currentStart);
-                const thisEnd = new Date(thisStart.getTime() + durationMs);
+                thisStart.setHours(targetStartH, targetStartM, 0, 0);
+
+                // Explicitly set end time for this day
+                const thisEnd = new Date(thisStart);
+                if (isOvernight) {
+                    thisEnd.setDate(thisEnd.getDate() + 1);
+                }
+                thisEnd.setHours(targetEndH, targetEndM, 0, 0);
 
                 // Add to list
                 generatedSlots.push({
@@ -172,7 +187,6 @@ function TrainerAvailabilityPage() {
                 });
 
                 // Next day
-                // Browser's setDate handles DST correctly (keeping local time 16:00 -> 16:00)
                 currentStart.setDate(currentStart.getDate() + 1);
             }
 
