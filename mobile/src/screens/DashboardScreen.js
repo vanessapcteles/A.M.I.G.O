@@ -49,7 +49,7 @@ const DashboardScreen = () => {
             <View style={[styles.header, { borderBottomColor: colors.border }]}>
                 <TouchableOpacity onPress={logout} style={styles.logoutButton}>
                     <LogOut color={colors.cardPink} size={20} />
-                    <Text style={styles.logoutText}>Sair</Text>
+                    <Text style={[styles.logoutText, { color: colors.cardPink }]}>Sair</Text>
                 </TouchableOpacity>
             </View>
 

@@ -14,14 +14,19 @@ import { useThemeColors } from '../theme/colors';
 import { AuthContext } from '../context/AuthContext';
 import axios from 'axios';
 import { API_URL } from '../config/api';
-import { Calendar as CalendarIcon, Clock, MapPin, User, BookOpen, ChevronLeft, ChevronRight } from 'lucide-react-native';
 
-const ScheduleScreen = ({ navigation }) => {
+import { Calendar as CalendarIcon, Clock, MapPin, User, BookOpen, ChevronLeft, ChevronRight } from 'lucide-react-native';
+import BackButton from '../components/BackButton';
+
+const ScheduleScreen = ({ navigation, route }) => {
     const colors = useThemeColors();
     const { user } = useContext(AuthContext);
     const [loading, setLoading] = useState(true);
     const [schedule, setSchedule] = useState([]);
     const [refreshing, setRefreshing] = useState(false);
+
+    // Params might be passed (e.g. from RoomsScreen)
+    const { roomId, roomName } = route.params || {};
 
     // State for navigation
     const [selectedDate, setSelectedDate] = useState(new Date());
@@ -40,7 +45,10 @@ const ScheduleScreen = ({ navigation }) => {
         try {
             let endpoint = '';
 
-            if (user.tipo_utilizador === 'FORMADOR') {
+            if (roomId) {
+                // Fetch specific room schedule
+                endpoint = `${API_URL}/schedules/room/${roomId}`;
+            } else if (user.tipo_utilizador === 'FORMADOR') {
                 endpoint = `${API_URL}/schedules/formador/${user.id}`;
             } else {
                 endpoint = `${API_URL}/schedules/all`;
@@ -55,7 +63,7 @@ const ScheduleScreen = ({ navigation }) => {
             setLoading(false);
             setRefreshing(false);
         }
-    }, [user]);
+    }, [user, roomId]);
 
     useEffect(() => {
         fetchSchedule();
@@ -113,6 +121,13 @@ const ScheduleScreen = ({ navigation }) => {
 
     const renderHeader = () => (
         <View style={[styles.headerContainer, { backgroundColor: colors.background }]}>
+            <View style={styles.screenHeader}>
+                <BackButton />
+                <Text style={[styles.screenTitle, { color: colors.text }]}>
+                    {roomId ? `Ocupação: ${roomName}` : 'O Meu Horário'}
+                </Text>
+            </View>
+
             <View style={styles.weekControl}>
                 <TouchableOpacity onPress={() => handleWeekChange(-1)} style={[styles.navButton, { backgroundColor: colors.surface }]}>
                     <ChevronLeft size={24} color={colors.text} />
@@ -175,6 +190,11 @@ const ScheduleScreen = ({ navigation }) => {
         const startTime = new Date(item.inicio).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' });
         const endTime = new Date(item.fim).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' });
 
+        // Fallback for missing fields in various endpoints
+        const salaName = item.nome_sala || roomName || 'Sala Indefinida';
+        const formadorName = item.nome_formador || 'Formador';
+        const turmaCode = item.codigo_turma || item.turma || '';
+
         return (
             <View style={[styles.card, { backgroundColor: colors.surface, borderLeftColor: colors.primary }]}>
                 <View style={styles.timeColumn}>
@@ -190,27 +210,29 @@ const ScheduleScreen = ({ navigation }) => {
                     <View style={styles.row}>
                         <MapPin size={14} color={colors.textLight} />
                         <Text style={[styles.infoText, { color: colors.textLight }]}>
-                            {item.nome_sala}
+                            {salaName}
                         </Text>
                     </View>
 
-                    {!isFormador && (
+                    {/* Show Formador if not the formador himself OR if we are viewing Room Schedule */}
+                    {(!isFormador || roomId) && (
                         <View style={styles.row}>
                             <User size={14} color={colors.textLight} />
                             <Text style={[styles.infoText, { color: colors.textLight }]}>
-                                {item.nome_formador}
+                                {formadorName}
                             </Text>
                         </View>
                     )}
 
-                    {isFormador && item.codigo_turma && (
+                    {/* Show Turma if available (always good context) */}
+                    {turmaCode ? (
                         <View style={styles.row}>
                             <User size={14} color={colors.textLight} />
                             <Text style={[styles.infoText, { color: colors.textLight }]}>
-                                Turma: {item.codigo_turma}
+                                Turma: {turmaCode}
                             </Text>
                         </View>
-                    )}
+                    ) : null}
                 </View>
             </View>
         );
@@ -236,7 +258,10 @@ const ScheduleScreen = ({ navigation }) => {
                     ListEmptyComponent={
                         <View style={styles.emptyContainer}>
                             <Text style={[styles.emptyText, { color: colors.textLight }]}>
-                                Sem aulas para este dia.
+                                {roomId
+                                    ? `Sala livre neste dia.`
+                                    : `Sem aulas para este dia.`
+                                }
                             </Text>
                         </View>
                     }
@@ -254,6 +279,16 @@ const styles = StyleSheet.create({
         paddingVertical: 10,
         borderBottomWidth: 1,
         borderBottomColor: 'rgba(0,0,0,0.05)',
+    },
+    screenHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 16,
+        marginBottom: 10,
+    },
+    screenTitle: {
+        fontSize: 24,
+        fontWeight: 'bold',
     },
     weekControl: {
         flexDirection: 'row',

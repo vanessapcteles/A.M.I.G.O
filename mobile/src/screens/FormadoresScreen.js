@@ -5,6 +5,7 @@ import axios from 'axios';
 import { useThemeColors } from '../theme/colors';
 import { API_URL } from '../config/api';
 import { User } from 'lucide-react-native';
+import BackButton from '../components/BackButton';
 
 const FormadoresScreen = () => {
     const [formadores, setFormadores] = useState([]);
@@ -52,7 +53,10 @@ const FormadoresScreen = () => {
 
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-            <Text style={[styles.title, { color: colors.text, backgroundColor: colors.surface }]}>Formadores</Text>
+            <View style={styles.header}>
+                <BackButton />
+                <Text style={[styles.title, { color: colors.text }]}>Formadores</Text>
+            </View>
             {loading ? (
                 <ActivityIndicator size="large" color={colors.warning} style={styles.loader} />
             ) : errorMsg ? (
@@ -77,10 +81,14 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
     },
+    header: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 20,
+    },
     title: {
         fontSize: 24,
         fontWeight: 'bold',
-        padding: 20,
     },
     loader: {
         marginTop: 50,

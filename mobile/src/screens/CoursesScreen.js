@@ -5,6 +5,7 @@ import axios from 'axios';
 import { useThemeColors } from '../theme/colors';
 import { API_URL } from '../config/api';
 import { BookOpen } from 'lucide-react-native';
+import BackButton from '../components/BackButton';
 
 const CoursesScreen = () => {
     const [courses, setCourses] = useState([]);
@@ -56,7 +57,10 @@ const CoursesScreen = () => {
 
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-            <Text style={[styles.title, { color: colors.text, backgroundColor: colors.surface }]}>Cursos</Text>
+            <View style={styles.header}>
+                <BackButton />
+                <Text style={[styles.title, { color: colors.text }]}>Cursos</Text>
+            </View>
             {loading ? (
                 <ActivityIndicator size="large" color={colors.primary} style={styles.loader} />
             ) : errorMsg ? (
@@ -82,10 +86,14 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
     },
+    header: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 20,
+    },
     title: {
         fontSize: 24,
         fontWeight: 'bold',
-        padding: 20,
     },
     loader: {
         marginTop: 50,

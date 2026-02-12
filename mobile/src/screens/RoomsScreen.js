@@ -1,16 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, FlatList, StyleSheet, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import axios from 'axios';
 import { useThemeColors } from '../theme/colors';
 import { API_URL } from '../config/api';
 import { MapPin } from 'lucide-react-native';
+import BackButton from '../components/BackButton';
 
 const RoomsScreen = () => {
     const [rooms, setRooms] = useState([]);
     const [loading, setLoading] = useState(true);
     const [errorMsg, setErrorMsg] = useState(null);
     const colors = useThemeColors();
+    const navigation = useNavigation();
 
     useEffect(() => {
         fetchRooms();
@@ -36,7 +39,10 @@ const RoomsScreen = () => {
     };
 
     const renderItem = ({ item }) => (
-        <View style={[styles.card, { backgroundColor: colors.surface }]}>
+        <TouchableOpacity
+            style={[styles.card, { backgroundColor: colors.surface }]}
+            onPress={() => navigation.navigate('Schedule', { roomId: item.id, roomName: item.nome_sala })}
+        >
             <View style={[styles.iconContainer, { backgroundColor: colors.iconBgError }]}>
                 <MapPin color={colors.error} size={24} />
             </View>
@@ -47,12 +53,15 @@ const RoomsScreen = () => {
             <View style={[styles.capacityBadge, { backgroundColor: colors.background }]}>
                 <Text style={[styles.capacityText, { color: colors.textLight }]}>{item.capacidade} pax</Text>
             </View>
-        </View>
+        </TouchableOpacity>
     );
 
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-            <Text style={[styles.title, { color: colors.text, backgroundColor: colors.surface }]}>Disponibilidade de Salas</Text>
+            <View style={styles.header}>
+                <BackButton />
+                <Text style={[styles.title, { color: colors.text }]}>Disponibilidade de Salas</Text>
+            </View>
             {loading ? (
                 <ActivityIndicator size="large" color={colors.primary} style={styles.loader} />
             ) : errorMsg ? (
@@ -77,10 +86,14 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
     },
+    header: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 20,
+    },
     title: {
         fontSize: 24,
         fontWeight: 'bold',
-        padding: 20,
     },
     loader: {
         marginTop: 50,
