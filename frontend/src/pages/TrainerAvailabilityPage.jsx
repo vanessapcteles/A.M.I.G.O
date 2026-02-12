@@ -360,17 +360,17 @@ function TrainerAvailabilityPage() {
 
                                             // Aplicar ao dia de inicio
                                             const newStart = new Date(s);
-                                            newStart.setHours(7, 30, 0, 0);
+                                            newStart.setHours(8, 0, 0, 0);
 
                                             const newEnd = new Date(s);
-                                            newEnd.setHours(15, 30, 0, 0);
+                                            newEnd.setHours(15, 0, 0, 0);
 
                                             setSelectedSlot({ start: newStart, end: newEnd });
                                         }}
                                         className="btn-glass"
                                         style={{ flex: 1, fontSize: '0.85rem', padding: '0.5rem' }}
                                     >
-                                        ☀️ Diurno (07:30 - 15:30)
+                                        ☀️ Diurno (08:00 - 15:00)
                                     </button>
                                     <button
                                         onClick={() => {
