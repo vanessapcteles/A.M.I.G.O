@@ -398,10 +398,28 @@ export const autoGenerateSchedule = async (req, res) => {
 
         let lessonsCreated = 0;
         let safetyCounter = 0;
-        const maxDays = 200; // Evitar loops infinitos
+        const maxDays = 600;
+
+        // Helper timezone logic
+        const getLisbonOffset = (date) => {
+            // Retorna 1 se for hora de verão (GMT+1), 0 se for inverno (GMT)
+            // Assumindo ambiente UTC
+            try {
+                const formatted = new Intl.DateTimeFormat('en-US', {
+                    timeZone: 'Europe/Lisbon',
+                    timeZoneName: 'short'
+                }).format(date);
+                const isSummer = formatted.includes('GMT+1') || formatted.includes('WEST');
+                // console.log(`[TZ] ${date.toISOString()} -> ${formatted} -> Offset: ${isSummer ? 1 : 0}`);
+                return isSummer ? 1 : 0;
+            } catch (e) {
+                console.error(`[TZ] Error:`, e);
+                return 0; // Fallback
+            }
+        };
 
         // Helper para verificar disponibilidade estrita
-        const checkAvailability = async (moduleId, start, end) => {
+        const checkAvailability = async (moduleId, start, end, isDiagnostic = false) => {
             const module = modulesData.find(m => m.id === moduleId);
             if (!module) return false;
             if (!module.id_formador || !module.id_sala) return false;
@@ -413,11 +431,33 @@ export const autoGenerateSchedule = async (req, res) => {
                 AND inicio <= ? AND fim >= ?
             `, [module.id_formador, start, end]);
 
-            if (trainerAll.length === 0) return false;
+            if (trainerAll.length === 0) {
+                if (isDiagnostic) {
+                    console.log(`   [Conflict] Modulo ${module.nome_modulo}: Formador ${module.id_formador} sem disponibilidade EXATA para ${start.toISOString()} - ${end.toISOString()}.`);
+
+                    // DEBUG: What DOES he have on this day?
+                    const dayStart = new Date(start); dayStart.setHours(0, 0, 0, 0);
+                    const dayEnd = new Date(start); dayEnd.setHours(23, 59, 59, 999);
+
+                    const [anyAvail] = await db.query(`SELECT inicio, fim FROM disponibilidade_formadores WHERE id_formador = ? AND inicio >= ? AND fim <= ?`, [module.id_formador, dayStart, dayEnd]);
+                    if (anyAvail.length > 0) {
+                        console.log(`      -> Mas encontrei estas disponibilidades no dia: ${anyAvail.map(a => `${new Date(a.inicio).toISOString().substr(11, 5)}-${new Date(a.fim).toISOString().substr(11, 5)}`).join(', ')}`);
+                    } else {
+                        console.log(`      -> E NÃO encontrei nenhuma disponibilidade registada neste dia.`);
+                    }
+                }
+                return false;
+            }
 
             // 2. Conflitos (Sala, Formador, Turma)?
             const [conflicts] = await db.query(`
-                SELECT h.id FROM horarios_aulas h
+                SELECT h.id, 
+                       CASE 
+                           WHEN td.id_sala = ? THEN 'Sala'
+                           WHEN td.id_formador = ? THEN 'Formador'
+                           WHEN td.id_turma = ? THEN 'Turma'
+                       END as tipo_conflito
+                FROM horarios_aulas h
                 JOIN turma_detalhes td ON h.id_turma_detalhe = td.id
                 WHERE (
                     td.id_sala = ? 
@@ -425,9 +465,21 @@ export const autoGenerateSchedule = async (req, res) => {
                     OR td.id_turma = ?
                 )
                 AND ? < h.fim AND ? > h.inicio
-            `, [module.id_sala, module.id_formador, turmaId, start, end]);
+            `, [
+                module.id_sala, module.id_formador, turmaId, // CASE params
+                module.id_sala, module.id_formador, turmaId, // WHERE params
+                start, end
+            ]);
 
-            return conflicts.length === 0;
+            if (conflicts.length > 0) {
+                if (isDiagnostic) {
+                    const types = [...new Set(conflicts.map(c => c.tipo_conflito))].join(', ');
+                    console.log(`   [Conflict] Modulo ${module.nome_modulo}: Conflito de ${types} em ${start.toISOString()}`);
+                }
+                return false;
+            }
+
+            return true;
         };
 
         // --- Loop Principal (Dias) ---
@@ -440,8 +492,7 @@ export const autoGenerateSchedule = async (req, res) => {
         // Inicializar usageCount
         modulesData.forEach(m => usageCount[m.id] = 0);
 
-        // Aumentar segurança para cursos longos (300 dias úteis ~ 1 ano e pouco)
-        const SAFE_MAX_DAYS = 300;
+        const SAFE_MAX_DAYS = 600;
 
         // Helper para calcular duração ideal de um módulo para limpar sobras
         const getPreferredDuration = (module) => {
@@ -452,19 +503,34 @@ export const autoGenerateSchedule = async (req, res) => {
             return 3;
         };
 
-        const calculateSegments = (startTime, durationHours, config) => {
+        const calculateSegments = (startTime, durationHours, currentConfig) => {
             let segments = [];
             let remaining = durationHours;
+            // startTIme ja vem ajustado? Nao. startTime deve ser o inicio do dia UTC ajustado.
             let current = new Date(startTime);
-            const lunchStart = new Date(startTime); lunchStart.setHours(config.lunchStart, 0, 0, 0);
-            const lunchEnd = new Date(startTime); lunchEnd.setHours(config.lunchEnd, 0, 0, 0);
-            const dayEnd = new Date(startTime); dayEnd.setHours(config.endHour, 0, 0, 0);
+
+            // Todos os limites devem usar a config ajustada
+            const lunchStart = new Date(startTime); lunchStart.setHours(currentConfig.lunchStart, 0, 0, 0);
+            const lunchEnd = new Date(startTime); lunchEnd.setHours(currentConfig.lunchEnd, 0, 0, 0);
+            const dayEnd = new Date(startTime); dayEnd.setHours(currentConfig.endHour, 0, 0, 0);
+
             while (remaining > 0 && current < dayEnd) {
-                if (current >= lunchStart && current < lunchEnd) { current = new Date(lunchEnd); continue; }
+                if (current >= lunchStart && current < lunchEnd) {
+                    current = new Date(lunchEnd);
+                    continue;
+                }
+
                 let proposedEnd = new Date(current.getTime() + remaining * 3600000);
-                if (current < lunchStart && proposedEnd > lunchStart) proposedEnd = new Date(lunchStart);
+
+                // Pula almoço se atravessar
+                if (current < lunchStart && proposedEnd > lunchStart) {
+                    proposedEnd = new Date(lunchStart);
+                }
+
                 if (proposedEnd > dayEnd) proposedEnd = new Date(dayEnd);
-                if (proposedEnd <= current) break;
+
+                if (proposedEnd <= current) break; // Evita loops se preso
+
                 segments.push({ start: new Date(current), end: new Date(proposedEnd) });
                 remaining -= (proposedEnd - current) / 3600000;
                 current = new Date(proposedEnd);
@@ -479,6 +545,20 @@ export const autoGenerateSchedule = async (req, res) => {
                 searchCursor.setDate(searchCursor.getDate() + 1);
             }
 
+            // --- AJUSTE DE FUSO HORÁRIO (DST) ---
+            // Calcular offset para o dia atual
+            const offset = getLisbonOffset(searchCursor);
+            const dayConfig = { ...config };
+            if (offset > 0) {
+                // Se é verão (GMT+1), subtraímos 1 hora ao UTC para termos a mesma 'hora local'
+                // Ex: 16:00 Local = 15:00 UTC
+                dayConfig.startHour -= offset;
+                dayConfig.lunchStart -= offset;
+                dayConfig.lunchEnd -= offset;
+                dayConfig.endHour -= offset;
+            }
+            // ------------------------------------
+
             // 1. Atualizar Pool
             let activePool = modulesData.filter(m => m.horasRestantes > 0).slice(0, poolSize);
             if (activePool.length === 0) break;
@@ -489,8 +569,7 @@ export const autoGenerateSchedule = async (req, res) => {
             for (let i = 0; i < activePool.length; i++) {
                 let modA = activePool[i];
 
-                // Opção A: Apenas ModA (Fallback se não der para parear)
-                // Score baixo para evitar usar sempre, mas serve para tapar buraco
+                // Opção A: Apenas ModA
                 candidates.push({ mod1: modA, mod2: null, score: -5 - (usageCount[modA.id] || 0) });
 
                 // Opção B: Pares ModA + ModB
@@ -499,22 +578,16 @@ export const autoGenerateSchedule = async (req, res) => {
                     let modB = activePool[j];
 
                     let score = 0;
-                    // Frescura (Ontem)
                     if (!lastDayModuleIds.includes(modA.id)) score += 10;
                     if (!lastDayModuleIds.includes(modB.id)) score += 10;
-
-                    // Penalidade de Uso (Global) - Diversificação a longo prazo
                     score -= (usageCount[modA.id] || 0) * 0.5;
                     score -= (usageCount[modB.id] || 0) * 0.5;
-
-                    // Prioridade para acabar logo (poucas horas)
                     if (modA.horasRestantes < 10) score += 5;
 
                     candidates.push({ mod1: modA, mod2: modB, score });
                 }
             }
 
-            // Ordenar por Score Decrescente + Random Tie-Breaker
             candidates.sort((a, b) => {
                 if (Math.abs(b.score - a.score) < 1) return Math.random() - 0.5;
                 return b.score - a.score;
@@ -526,62 +599,54 @@ export const autoGenerateSchedule = async (req, res) => {
             for (let cand of candidates) {
                 let { mod1, mod2 } = cand;
 
-                // --- Determinar Slots ---
                 let dur1 = getPreferredDuration(mod1);
-                if (dur1 > config.dayHours) dur1 = config.dayHours;
+                if (dur1 > dayConfig.dayHours) dur1 = dayConfig.dayHours;
 
                 let slot1 = dur1;
-                let slot2 = config.dayHours - slot1;
+                let slot2 = dayConfig.dayHours - slot1;
 
                 if (mod2) {
                     if (mod2.horasRestantes < slot2) slot2 = mod2.horasRestantes;
                 } else {
                     slot2 = 0;
-                    // Se for Single, o slot1 pode crescer para ocupar o dia todo se modulo tiver horas
                     if (mod1.horasRestantes > slot1) {
-                        let possible = config.dayHours;
+                        let possible = dayConfig.dayHours;
                         if (mod1.horasRestantes < possible) possible = mod1.horasRestantes;
                         slot1 = possible;
                         slot2 = 0;
                     }
                 }
 
-                // --- Orientação 1: Normal (Priority 2h rule apply) ---
                 let attempts = [];
-
-                // 1. Default Logic: Swap if slot1 > slot2 (forces small block first)
                 let try1 = { m1: mod1, s1: slot1, m2: mod2, s2: slot2 };
                 if (slot2 > 0 && try1.s1 > try1.s2) {
-                    try1 = { m1: mod2, s1: slot2, m2: mod1, s2: slot1 }; // Swap
+                    try1 = { m1: mod2, s1: slot2, m2: mod1, s2: slot1 };
                 }
                 attempts.push(try1);
-
-                // 2. Fallback Logic: Original order (if availability fails on swap)
-                // Só adiciona se for diferente da primeira tentativa
                 if (try1.m1 !== mod1 || try1.s1 !== slot1) {
                     attempts.push({ m1: mod1, s1: slot1, m2: mod2, s2: slot2 });
                 }
 
-                // Tentar as orientações
                 for (let attempt of attempts) {
                     let { m1, s1, m2, s2 } = attempt;
                     let blocksAttempt = [];
                     let dayCursor = new Date(searchCursor);
-                    dayCursor.setHours(config.startHour, 0, 0, 0);
+                    // Usar dayConfig.startHour
+                    dayCursor.setHours(dayConfig.startHour, 0, 0, 0);
 
                     // Slot 1
                     if (m1 && s1 > 0) {
-                        const res = calculateSegments(dayCursor, s1, config);
+                        const res = calculateSegments(dayCursor, s1, dayConfig);
                         res.segments.forEach(s => blocksAttempt.push({ mod: m1, start: s.start, end: s.end }));
                         dayCursor = res.nextStartTime;
                     }
                     // Slot 2
                     if (m2 && s2 > 0) {
-                        const res = calculateSegments(dayCursor, s2, config);
+                        const res = calculateSegments(dayCursor, s2, dayConfig);
                         res.segments.forEach(s => blocksAttempt.push({ mod: m2, start: s.start, end: s.end }));
                     }
 
-                    // Validação de Disponibilidade
+                    // Validação
                     let valid = true;
                     for (let b of blocksAttempt) {
                         if (!(await checkAvailability(b.mod.id, b.start, b.end))) {
@@ -591,33 +656,40 @@ export const autoGenerateSchedule = async (req, res) => {
                     }
 
                     if (valid) {
-                        // COMMIT
                         let currentScheduledIds = [];
                         for (let b of blocksAttempt) {
                             await db.query(`INSERT INTO horarios_aulas (id_turma_detalhe, inicio, fim) VALUES (?, ?, ?)`, [b.mod.id, b.start, b.end]);
                             b.mod.horasRestantes -= (b.end - b.start) / 3600000;
-
                             usageCount[b.mod.id] = (usageCount[b.mod.id] || 0) + 1;
                             if (!currentScheduledIds.includes(b.mod.id)) currentScheduledIds.push(b.mod.id);
-
                             lessonsCreated++;
                         }
-
-                        // Verificar total horas scheduled no dia
                         let totalHours = blocksAttempt.reduce((acc, b) => acc + (b.end - b.start) / 3600000, 0);
                         console.log(`[AutoSchedule] Dia ${searchCursor.toISOString().split('T')[0]}: ${m1.nome_modulo} (${s1}h) + ${m2?.nome_modulo || '-'} (${s2}h) -> Total ${totalHours}h`);
-
                         lastDayModuleIds = currentScheduledIds;
                         dayScheduled = true;
-                        break; // Sai do loop de attempts
+                        break;
                     }
                 }
-
-                if (dayScheduled) break; // Sai do loop de candidates
+                if (dayScheduled) break;
             }
 
             if (!dayScheduled) {
-                console.log(`[AutoSchedule] FALHA CRÍTICA: Nenhum par ou single serviu em ${searchCursor.toISOString().split('T')[0]}. Pulando dia.`);
+                console.log(`[AutoSchedule] FALHA CRÍTICA em ${searchCursor.toISOString().split('T')[0]}.`);
+                // Diagnostic logging
+                const topCandidates = candidates.slice(0, 3);
+                for (let cand of topCandidates) {
+                    const m1 = cand.mod1; const m2 = cand.mod2;
+                    // Teste com horário ajustado
+                    const start1 = new Date(searchCursor); start1.setHours(dayConfig.startHour, 0, 0, 0);
+                    const end1 = new Date(searchCursor); end1.setHours(dayConfig.startHour + 1, 0, 0, 0);
+                    console.log(`   -> Testando Modulo ${m1.nome_modulo}:`);
+                    await checkAvailability(m1.id, start1, end1, true);
+                    if (m2) {
+                        console.log(`   -> Testando Modulo ${m2.nome_modulo}:`);
+                        await checkAvailability(m2.id, start1, end1, true);
+                    }
+                }
             }
 
             searchCursor.setDate(searchCursor.getDate() + 1);
