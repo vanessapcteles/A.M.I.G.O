@@ -1,4 +1,4 @@
-import React, { useContext, useState, useEffect } from 'react';
+import React, { useContext, useState } from 'react';
 import {
     View,
     Text,
@@ -8,23 +8,22 @@ import {
     ActivityIndicator,
     KeyboardAvoidingView,
     Platform,
-    Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AuthContext } from '../context/AuthContext';
 import { useThemeColors } from '../theme/colors';
-import { LogIn, Lock, User, Eye, EyeOff } from 'lucide-react-native';
-
+import { LogIn, Lock, User, Eye, EyeOff, Shield, ChevronLeft } from 'lucide-react-native';
 
 const LoginScreen = ({ navigation }) => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const { isLoading, login } = useContext(AuthContext);
+    const [otp, setOtp] = useState('');
+    const [show2FA, setShow2FA] = useState(false);
+
+    const { isLoading, login, verifyOTP } = useContext(AuthContext);
     const colors = useThemeColors();
     const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState('');
-
-
 
     const handleLogin = async () => {
         setError('');
@@ -33,11 +32,128 @@ const LoginScreen = ({ navigation }) => {
             return;
         }
         try {
-            await login(email, password);
+            const result = await login(email, password);
+            if (result && result.requires2FA) {
+                setShow2FA(true);
+            }
         } catch (e) {
             setError('Email ou password incorretos.');
         }
     };
+
+    const handleVerify = async () => {
+        setError('');
+        if (!otp || otp.length < 6) {
+            setError('O código deve ter 6 dígitos.');
+            return;
+        }
+        try {
+            await verifyOTP(email, otp);
+        } catch (e) {
+            setError('Código incorreto. Tente novamente.');
+        }
+    };
+
+    const renderLoginForm = () => (
+        <View style={styles.form}>
+            <View style={[styles.inputContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                <User color={colors.textLight} size={20} style={styles.icon} />
+                <TextInput
+                    style={[styles.input, { color: colors.text }]}
+                    placeholder="Email"
+                    placeholderTextColor={colors.textLight}
+                    value={email}
+                    onChangeText={setEmail}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                />
+            </View>
+
+            <View style={[styles.inputContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                <Lock color={colors.textLight} size={20} style={styles.icon} />
+                <TextInput
+                    style={[styles.input, { color: colors.text }]}
+                    placeholder="Password"
+                    placeholderTextColor={colors.textLight}
+                    value={password}
+                    onChangeText={setPassword}
+                    secureTextEntry={!showPassword}
+                />
+                <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+                    {showPassword ? (
+                        <EyeOff color={colors.textLight} size={20} />
+                    ) : (
+                        <Eye color={colors.textLight} size={20} />
+                    )}
+                </TouchableOpacity>
+            </View>
+
+            <TouchableOpacity onPress={() => {/* Forgot Password logic later */ }}>
+                <Text style={[styles.forgotPassword, { color: colors.primary }]}>Esqueceu-se da password?</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+                style={[styles.button, { backgroundColor: colors.primary, shadowColor: colors.primary }]}
+                onPress={handleLogin}
+                disabled={isLoading}
+            >
+                {isLoading ? (
+                    <ActivityIndicator color="#fff" />
+                ) : (
+                    <Text style={styles.buttonText}>Entrar</Text>
+                )}
+            </TouchableOpacity>
+        </View>
+    );
+
+    const render2FAForm = () => (
+        <View style={styles.form}>
+            <View style={styles.shieldIconContainer}>
+                <Shield size={64} color={colors.primary} />
+            </View>
+            <Text style={[styles.otpInstruction, { color: colors.textLight }]}>
+                Introduza o código de 6 dígitos da sua aplicação autenticadora.
+            </Text>
+
+            <View style={[styles.inputContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                <Lock color={colors.textLight} size={20} style={styles.icon} />
+                <TextInput
+                    style={[styles.input, { color: colors.text, letterSpacing: 5, fontSize: 20, textAlign: 'center' }]}
+                    placeholder="000000"
+                    placeholderTextColor={colors.textLight}
+                    value={otp}
+                    onChangeText={setOtp}
+                    keyboardType="number-pad"
+                    maxLength={6}
+                    autoFocus
+                />
+            </View>
+
+            <TouchableOpacity
+                style={[styles.button, { backgroundColor: colors.primary, shadowColor: colors.primary }]}
+                onPress={handleVerify}
+                disabled={isLoading}
+            >
+                {isLoading ? (
+                    <ActivityIndicator color="#fff" />
+                ) : (
+                    <Text style={styles.buttonText}>Verificar Código</Text>
+                )}
+            </TouchableOpacity>
+
+            <TouchableOpacity
+                style={styles.backButton}
+                onPress={() => {
+                    setShow2FA(false);
+                    setOtp('');
+                    setError('');
+                }}
+            >
+                <ChevronLeft size={20} color={colors.textLight} />
+                <Text style={[styles.backButtonText, { color: colors.textLight }]}>Voltar ao Login</Text>
+            </TouchableOpacity>
+        </View>
+    );
 
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
@@ -47,64 +163,18 @@ const LoginScreen = ({ navigation }) => {
             >
                 <View style={styles.header}>
                     <Text style={[styles.brand, { color: colors.primary }]}>A.M.I.G.O</Text>
-                    <Text style={[styles.title, { color: colors.text }]}>Bem-vindo</Text>
-                    <Text style={[styles.subtitle, { color: colors.textLight }]}>Inicie sessão para continuar</Text>
+                    <Text style={[styles.title, { color: colors.text }]}>
+                        {show2FA ? 'Verificação 2FA' : 'Bem-vindo'}
+                    </Text>
+                    <Text style={[styles.subtitle, { color: colors.textLight }]}>
+                        {show2FA ? 'Proteja a sua conta' : 'Inicie sessão para continuar'}
+                    </Text>
                 </View>
 
-                <View style={styles.form}>
-                    {error ? <Text style={[styles.errorText, { color: colors.error }]}>{error}</Text> : null}
+                {error ? <Text style={[styles.errorText, { color: colors.error }]}>{error}</Text> : null}
 
-                    <View style={[styles.inputContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                        <User color={colors.textLight} size={20} style={styles.icon} />
-                        <TextInput
-                            style={[styles.input, { color: colors.text }]}
-                            placeholder="Email"
-                            placeholderTextColor={colors.textLight}
-                            value={email}
-                            onChangeText={setEmail}
-                            keyboardType="email-address"
-                            autoCapitalize="none"
-                        />
-                    </View>
+                {show2FA ? render2FAForm() : renderLoginForm()}
 
-                    <View style={[styles.inputContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                        <Lock color={colors.textLight} size={20} style={styles.icon} />
-                        <TextInput
-                            style={[styles.input, { color: colors.text }]}
-                            placeholder="Password"
-                            placeholderTextColor={colors.textLight}
-                            value={password}
-                            onChangeText={setPassword}
-                            secureTextEntry={!showPassword}
-                        />
-                        <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-                            {showPassword ? (
-                                <EyeOff color={colors.textLight} size={20} />
-                            ) : (
-                                <Eye color={colors.textLight} size={20} />
-                            )}
-                        </TouchableOpacity>
-                    </View>
-
-                    <TouchableOpacity onPress={() => {/* Forgot Password logic later */ }}>
-                        <Text style={[styles.forgotPassword, { color: colors.primary }]}>Esqueceu-se da password?</Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        style={[styles.button, { backgroundColor: colors.primary, shadowColor: colors.primary }]}
-                        onPress={handleLogin}
-                        disabled={isLoading}
-                    >
-                        {isLoading ? (
-                            <ActivityIndicator color="#fff" />
-                        ) : (
-                            <Text style={styles.buttonText}>Entrar</Text>
-                        )}
-                    </TouchableOpacity>
-
-
-
-                </View>
             </KeyboardAvoidingView>
         </SafeAreaView>
     );
@@ -121,6 +191,7 @@ const styles = StyleSheet.create({
     },
     header: {
         marginBottom: 40,
+        alignItems: 'center', // Center align header for better OTP look
     },
     brand: {
         fontSize: 48,
@@ -178,8 +249,29 @@ const styles = StyleSheet.create({
     errorText: {
         marginBottom: 16,
         textAlign: 'center',
+        fontWeight: '600',
     },
-
+    shieldIconContainer: {
+        alignItems: 'center',
+        marginBottom: 24,
+    },
+    otpInstruction: {
+        textAlign: 'center',
+        marginBottom: 24,
+        fontSize: 14,
+        lineHeight: 20,
+    },
+    backButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginTop: 24,
+        padding: 10,
+    },
+    backButtonText: {
+        marginLeft: 8,
+        fontSize: 14,
+    }
 });
 
 export default LoginScreen;

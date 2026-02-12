@@ -40,35 +40,66 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    const login = (email, password) => {
+    const login = async (email, password) => {
         setIsLoading(true);
 
-        axios.post(`${API_URL}/auth/login`, {
-            email,
-            password,
-        })
-            .then(res => {
-                const userInfo = res.data;
-                const token = userInfo.token;
-
-                // Flatten the object so user state has direct properties
-                const userData = { ...userInfo.user, token };
-
-                setUser(userData);
-                AsyncStorage.setItem('userInfo', JSON.stringify(userData));
-                AsyncStorage.setItem('userToken', token);
-
-                // Setup axios default header
-                axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-
-                setIsLoading(false);
-            })
-            .catch(e => {
-                console.log(`Login error ${e}`);
-                setIsLoading(false);
-                // Retornar erro para UI
-                throw e;
+        try {
+            const res = await axios.post(`${API_URL}/auth/login`, {
+                email,
+                password,
             });
+
+            if (res.data.requires2FA) {
+                setIsLoading(false);
+                return { requires2FA: true };
+            }
+
+            const userInfo = res.data;
+            const token = userInfo.token;
+
+            // Flatten the object so user state has direct properties
+            const userData = { ...userInfo.user, token };
+
+            setUser(userData);
+            await AsyncStorage.setItem('userInfo', JSON.stringify(userData));
+            await AsyncStorage.setItem('userToken', token);
+
+            // Setup axios default header
+            axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+
+            setIsLoading(false);
+            return { success: true };
+        } catch (e) {
+            console.log(`Login error ${e}`);
+            setIsLoading(false);
+            throw e;
+        }
+    };
+
+    const verifyOTP = async (email, code) => {
+        setIsLoading(true);
+        try {
+            const res = await axios.post(`${API_URL}/auth/2fa/validate`, {
+                email,
+                token: code
+            });
+
+            const { user: userObj, token } = res.data;
+            const userData = { ...userObj, token };
+
+            setUser(userData);
+            await AsyncStorage.setItem('userInfo', JSON.stringify(userData));
+            await AsyncStorage.setItem('userToken', token);
+
+            axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+
+            setIsLoading(false);
+            return { success: true };
+        } catch (e) {
+            console.log(`Verify OTP error ${e}`);
+            setIsLoading(false);
+            throw e;
+        }
     };
 
 
@@ -93,6 +124,7 @@ export const AuthProvider = ({ children }) => {
                 user,
                 splashLoading,
                 login,
+                verifyOTP,
                 logout,
             }}>
             {children}
