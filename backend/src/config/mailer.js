@@ -3,7 +3,7 @@ import nodemailer from 'nodemailer';
 const transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
     port: 465,
-    secure: true, // Forçar SSL/TLS porto 465
+    secure: true, // Forçar SSL/TLS port 465
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS
@@ -12,7 +12,7 @@ const transporter = nodemailer.createTransport({
         rejectUnauthorized: false
     }
 });
-
+// Função para enviar email de ativação
 export const sendActivationEmail = async (email, token) => {
     const appUrl = process.env.APP_URL || 'http://localhost:3001';
     const activationLink = `${appUrl}/api/auth/activate?token=${token}`;
@@ -32,7 +32,7 @@ export const sendActivationEmail = async (email, token) => {
     console.log('Link de Ativação (DEV):', activationLink);
     return transporter.sendMail(mailOptions);
 };
-
+// Função para enviar email de recuperação de password
 export const sendPasswordResetEmail = async (email, token) => {
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
     const resetLink = `${frontendUrl}/reset-password?token=${token}`;
@@ -53,7 +53,7 @@ export const sendPasswordResetEmail = async (email, token) => {
     console.log('Link de Reset (DEV):', resetLink);
     return transporter.sendMail(mailOptions);
 };
-
+// Função para enviar email de desativação de 2FA
 export const send2FADisableEmail = async (email, token) => {
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
     const disableLink = `${frontendUrl}/disable-2fa?token=${token}`;

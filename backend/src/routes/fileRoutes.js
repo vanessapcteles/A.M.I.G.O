@@ -23,7 +23,7 @@ const uploadMiddleware = (req, res, next) => {
             if (err.code === 'LIMIT_UNEXPECTED_FILE') {
                 return res.status(400).json({ message: 'Erro no upload: campo incorreto ou tipo de ficheiro inválido.' });
             }
-            // Multer generic error
+            // Multer erro genérico
             return res.status(500).json({ message: `Erro ao processar o upload: ${err.message}` });
         }
         next();
@@ -36,7 +36,7 @@ router.post('/user/:id', uploadMiddleware, uploadFile);
 // A URL será /api/files/:fileId
 router.get('/:fileId', getFile);
 
-// Apagar
+// Apaga o ficheiro
 router.delete('/:fileId', deleteFile);
 
 export default router;

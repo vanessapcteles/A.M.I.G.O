@@ -124,7 +124,6 @@ export const updateTurmaModule = async (req, res) => {
         const { detalheId } = req.params;
         const { id_formador, id_sala, horas_planeadas } = req.body;
 
-        // Allow un-assigning by sending null
         await db.query(
             'UPDATE turma_detalhes SET id_formador = ?, id_sala = ?, horas_planeadas = ? WHERE id = ?',
             [id_formador || null, id_sala || null, horas_planeadas, detalheId]

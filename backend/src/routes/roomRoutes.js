@@ -3,7 +3,7 @@ import { getRooms, createRoom, updateRoom, deleteRoom } from '../controllers/roo
 
 const router = express.Router();
 
-// Todas as rotas de sala exigem login (Middleware de auth seria ideal aqui futuramente)
+// Todas as rotas de sala exigem login
 router.get('/', getRooms);
 router.post('/', createRoom);
 router.put('/:id', updateRoom);

@@ -52,7 +52,7 @@ export const createLesson = async (req, res) => {
         const start = new Date(inicio);
         const end = new Date(fim);
 
-        // 1. Validar duração Max 3h
+        // Valida duração Max 3h
         const durationMs = end - start;
         const durationHours = durationMs / (1000 * 60 * 60);
 
@@ -63,7 +63,7 @@ export const createLesson = async (req, res) => {
             return res.status(400).json({ message: 'A data de fim deve ser posterior à de início.' });
         }
 
-        // 2. Detetar Conflitos e Validar Carga Horária
+        // Deteta conflitos e valida carga horária
         // Obter recursos e limites (sala, formador, turma e horas totais do módulo)
         const [detalhes] = await db.query(`
             SELECT td.id_sala, td.id_formador, td.id_turma, td.horas_planeadas, m.nome_modulo
@@ -76,7 +76,7 @@ export const createLesson = async (req, res) => {
 
         const { id_sala, id_formador, id_turma, horas_planeadas, nome_modulo } = detalhes[0];
 
-        // Validar se tem recursos atribuídos
+        // Valida se tem recursos atribuídos
         if (!id_formador || !id_sala) {
             return res.status(400).json({
                 message: 'Não é possível agendar: O módulo deve ter Formador e Sala atribuídos na gestão da turma.'
@@ -93,7 +93,7 @@ export const createLesson = async (req, res) => {
             fim: dateFim.toISOString()
         });
 
-        // 2.5 Validar Disponibilidade do Formador
+        // Valida disponibilidade do formador
         const [availability] = await db.query(
             `SELECT 1 FROM disponibilidade_formadores 
              WHERE id_formador = ? 
@@ -107,7 +107,7 @@ export const createLesson = async (req, res) => {
             });
         }
 
-        // 3. Validar se ultrapassa as horas planeadas
+        // Valida se ultrapassa as horas planeadas
         const [hourCheck] = await db.query(`
             SELECT COALESCE(SUM(TIMESTAMPDIFF(SECOND, inicio, fim)) / 3600, 0) as horas_agendadas
             FROM horarios_aulas 
@@ -121,7 +121,7 @@ export const createLesson = async (req, res) => {
             });
         }
 
-        // 4. Verificar sobreposição genérica
+        // Verifica sobreposição genérica
         const [conflicts] = await db.query(`
             SELECT h.id, 'Sala' as tipo
             FROM horarios_aulas h
@@ -331,7 +331,7 @@ export const listAllLessons = async (req, res) => {
         return res.status(500).json({ message: 'Erro ao carregar todos os horários' });
     }
 };
-// GERADOR AUTOMÁTICO DE HORÁRIOS (Refatorado)
+// Gerador de horários automático 
 export const autoGenerateSchedule = async (req, res) => {
     const { turmaId } = req.params;
     const { dataInicio, regime } = req.body; // regime: 'diurno' | 'pos_laboral'
@@ -339,8 +339,7 @@ export const autoGenerateSchedule = async (req, res) => {
     if (!dataInicio) return res.status(400).json({ message: 'Data de início é obrigatória.' });
 
     try {
-        // --- 1. Preparação dos Dados ---
-
+        // Preparação dos dados
         // Carregar módulos ordenados pela sequência
         const [detalhesOriginal] = await db.query(`
             SELECT td.*, m.nome_modulo, m.carga_horaria 
@@ -376,7 +375,7 @@ export const autoGenerateSchedule = async (req, res) => {
             return res.status(400).json({ message: 'Todos os módulos desta turma já estão totalmente agendados.' });
         }
 
-        // --- 2. Configurações do Regime ---
+        // Configurações do regime
         const config = regime === 'pos_laboral'
             ? {
                 startHour: 16,
@@ -410,11 +409,10 @@ export const autoGenerateSchedule = async (req, res) => {
                     timeZoneName: 'short'
                 }).format(date);
                 const isSummer = formatted.includes('GMT+1') || formatted.includes('WEST');
-                // console.log(`[TZ] ${date.toISOString()} -> ${formatted} -> Offset: ${isSummer ? 1 : 0}`);
                 return isSummer ? 1 : 0;
             } catch (e) {
                 console.error(`[TZ] Error:`, e);
-                return 0; // Fallback
+                return 0; 
             }
         };
 
@@ -424,7 +422,7 @@ export const autoGenerateSchedule = async (req, res) => {
             if (!module) return false;
             if (!module.id_formador || !module.id_sala) return false;
 
-            // 1. Formador Disponível?
+            // Formador Disponível?
             const [trainerAll] = await db.query(`
                 SELECT * FROM disponibilidade_formadores 
                 WHERE id_formador = ? 
@@ -435,9 +433,8 @@ export const autoGenerateSchedule = async (req, res) => {
                 if (isDiagnostic) {
                     console.log(`   [Conflict] Modulo ${module.nome_modulo}: Formador ${module.id_formador} sem disponibilidade EXATA para ${start.toISOString()} - ${end.toISOString()}.`);
 
-                    // DEBUG: What DOES he have on this day?
-                    const dayStart = new Date(start); dayStart.setHours(0, 0, 0, 0);
-                    const dayEnd = new Date(start); dayEnd.setHours(23, 59, 59, 999);
+                    const dayStart = new Date(start); dayStart.setHours(0, 0, 0, 0); // Início do dia
+                    const dayEnd = new Date(start); dayEnd.setHours(23, 59, 59, 999); // Fim do dia
 
                     const [anyAvail] = await db.query(`SELECT inicio, fim FROM disponibilidade_formadores WHERE id_formador = ? AND inicio >= ? AND fim <= ?`, [module.id_formador, dayStart, dayEnd]);
                     if (anyAvail.length > 0) {
@@ -449,7 +446,7 @@ export const autoGenerateSchedule = async (req, res) => {
                 return false;
             }
 
-            // 2. Conflitos (Sala, Formador, Turma)?
+            // Conflitos (Sala, Formador, Turma)?
             const [conflicts] = await db.query(`
                 SELECT h.id, 
                        CASE 
@@ -466,7 +463,7 @@ export const autoGenerateSchedule = async (req, res) => {
                 )
                 AND ? < h.fim AND ? > h.inicio
             `, [
-                module.id_sala, module.id_formador, turmaId, // CASE params
+                module.id_sala, module.id_formador, turmaId, // CASE params 
                 module.id_sala, module.id_formador, turmaId, // WHERE params
                 start, end
             ]);
@@ -482,11 +479,10 @@ export const autoGenerateSchedule = async (req, res) => {
             return true;
         };
 
-        // --- Loop Principal (Dias) ---
         // Estratégia: Smart Permutation & 2h Priority & Penalidade de Uso
 
         let lastDayModuleIds = [];
-        let usageCount = {}; // Rastrear uso global para evitar repetição massiva
+        let usageCount = {}; // Contagem de uso global para evitar repetição massiva
         let poolSize = 5;
 
         // Inicializar usageCount
@@ -505,8 +501,7 @@ export const autoGenerateSchedule = async (req, res) => {
 
         const calculateSegments = (startTime, durationHours, currentConfig) => {
             let segments = [];
-            let remaining = durationHours;
-            // startTIme ja vem ajustado? Nao. startTime deve ser o inicio do dia UTC ajustado.
+            let remaining = durationHours; 
             let current = new Date(startTime);
 
             // Todos os limites devem usar a config ajustada
@@ -529,7 +524,7 @@ export const autoGenerateSchedule = async (req, res) => {
 
                 if (proposedEnd > dayEnd) proposedEnd = new Date(dayEnd);
 
-                if (proposedEnd <= current) break; // Evita loops se preso
+                if (proposedEnd <= current) break; // Evita loops se ficar preso
 
                 segments.push({ start: new Date(current), end: new Date(proposedEnd) });
                 remaining -= (proposedEnd - current) / 3600000;
@@ -545,7 +540,7 @@ export const autoGenerateSchedule = async (req, res) => {
                 searchCursor.setDate(searchCursor.getDate() + 1);
             }
 
-            // --- AJUSTE DE FUSO HORÁRIO (DST) ---
+            // Ajuste do fuso horário (DST)
             // Calcular offset para o dia atual
             const offset = getLisbonOffset(searchCursor);
             const dayConfig = { ...config };
@@ -557,13 +552,12 @@ export const autoGenerateSchedule = async (req, res) => {
                 dayConfig.lunchEnd -= offset;
                 dayConfig.endHour -= offset;
             }
-            // ------------------------------------
 
-            // 1. Atualizar Pool
+            // Atualizar a "Pool" de módulos
             let activePool = modulesData.filter(m => m.horasRestantes > 0).slice(0, poolSize);
             if (activePool.length === 0) break;
 
-            // 2. Gerar Candidatos (Pares e Singles)
+            // Gerar Candidatos (Pares e Singles)
             let candidates = [];
 
             for (let i = 0; i < activePool.length; i++) {
@@ -595,7 +589,7 @@ export const autoGenerateSchedule = async (req, res) => {
 
             let dayScheduled = false;
 
-            // 3. Tentar Candidatos
+            // Tentar Candidatos
             for (let cand of candidates) {
                 let { mod1, mod2 } = cand;
 
@@ -631,16 +625,14 @@ export const autoGenerateSchedule = async (req, res) => {
                     let { m1, s1, m2, s2 } = attempt;
                     let blocksAttempt = [];
                     let dayCursor = new Date(searchCursor);
-                    // Usar dayConfig.startHour
+                    // Usar dayConfig.startHour ajustado para o fuso horário local (DST) 
                     dayCursor.setHours(dayConfig.startHour, 0, 0, 0);
 
-                    // Slot 1
                     if (m1 && s1 > 0) {
                         const res = calculateSegments(dayCursor, s1, dayConfig);
                         res.segments.forEach(s => blocksAttempt.push({ mod: m1, start: s.start, end: s.end }));
                         dayCursor = res.nextStartTime;
                     }
-                    // Slot 2
                     if (m2 && s2 > 0) {
                         const res = calculateSegments(dayCursor, s2, dayConfig);
                         res.segments.forEach(s => blocksAttempt.push({ mod: m2, start: s.start, end: s.end }));
@@ -655,6 +647,7 @@ export const autoGenerateSchedule = async (req, res) => {
                         }
                     }
 
+                    // Se válido, agendar
                     if (valid) {
                         let currentScheduledIds = [];
                         for (let b of blocksAttempt) {
@@ -674,13 +667,12 @@ export const autoGenerateSchedule = async (req, res) => {
                 if (dayScheduled) break;
             }
 
+            // Se não foi possível agendar, mostrar candidatos
             if (!dayScheduled) {
                 console.log(`[AutoSchedule] FALHA CRÍTICA em ${searchCursor.toISOString().split('T')[0]}.`);
-                // Diagnostic logging
                 const topCandidates = candidates.slice(0, 3);
                 for (let cand of topCandidates) {
                     const m1 = cand.mod1; const m2 = cand.mod2;
-                    // Teste com horário ajustado
                     const start1 = new Date(searchCursor); start1.setHours(dayConfig.startHour, 0, 0, 0);
                     const end1 = new Date(searchCursor); end1.setHours(dayConfig.startHour + 1, 0, 0, 0);
                     console.log(`   -> Testando Modulo ${m1.nome_modulo}:`);

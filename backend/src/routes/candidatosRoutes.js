@@ -4,11 +4,11 @@ import { authenticateToken, authorizeRole } from '../middleware/authMiddleware.j
 
 const router = express.Router();
 
-// Public or User routes (Candidato submitting)
+// Publico ou Utilizador rotas (Candidato a submeter candidatura)
 router.post('/submit', authenticateToken, submitCandidacy);
 router.get('/me', authenticateToken, getMyCandidacy);
 
-// Admin/Secretaria routes
+// Admin/Secretaria rotas (Candidaturas a analisar)
 router.get('/', authenticateToken, authorizeRole(['ADMIN', 'SECRETARIA']), getCandidacies);
 router.post('/:id/approve', authenticateToken, authorizeRole(['ADMIN', 'SECRETARIA']), approveCandidacy);
 router.post('/:id/reject', authenticateToken, authorizeRole(['ADMIN', 'SECRETARIA']), rejectCandidacy);

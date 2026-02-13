@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken';
-
+// Middleware de autenticação
 export const authenticateToken = (req, res, next) => {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
@@ -12,7 +12,7 @@ export const authenticateToken = (req, res, next) => {
         next();
     });
 };
-
+// Middleware de autorização
 export const authorizeRole = (allowedRoles) => {
     return (req, res, next) => {
         if (!req.user || !allowedRoles.includes(req.user.role)) {

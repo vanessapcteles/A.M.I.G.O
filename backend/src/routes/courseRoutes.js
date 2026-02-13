@@ -9,11 +9,9 @@ router.post('/', createCourse);
 router.put('/:id', updateCourse);
 router.delete('/:id', deleteCourse);
 
-// Curriculum Routes
+// Rotas de currículo
 router.get('/:id/modules', getCourseModules);
 router.post('/:id/modules', addModuleToCourse);
-// Note: delete uses absolute path /api/courses/modules/:id or nested /:id/modules/:moduleId
-// Let's use /modules/:moduleId to be clean if we use the connection ID
 router.delete('/modules/:moduleId', removeModuleFromCourse);
 
 export default router;
