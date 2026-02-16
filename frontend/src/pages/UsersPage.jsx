@@ -135,6 +135,9 @@ function UsersPage() {
         }
     };
 
+    const currentUser = authService.getCurrentUser();
+    const isSecretaria = currentUser?.tipo_utilizador === 'SECRETARIA';
+
     const filteredUsers = users.filter(user => {
         const matchesSearch = (
             user.nome_completo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -325,11 +328,13 @@ function UsersPage() {
                                                         value={user.tipo_utilizador}
                                                         onChange={(e) => handleRoleChange(user.id, e.target.value)}
                                                         className="input-field"
+                                                        disabled={isSecretaria}
                                                         style={{
                                                             padding: '0.25rem 0.5rem',
                                                             width: 'auto',
                                                             fontSize: '0.875rem',
-                                                            cursor: 'pointer'
+                                                            cursor: isSecretaria ? 'not-allowed' : 'pointer',
+                                                            opacity: isSecretaria ? 0.7 : 1
                                                         }}
                                                     >
                                                         <option value="CANDIDATO">Candidato</option>
@@ -372,9 +377,11 @@ function UsersPage() {
                                                             <button onClick={() => startEditing(user)} className="btn-secondary" style={{ padding: '0.5rem', width: 'auto' }} title="Editar Nome">
                                                                 <Edit2 size={16} />
                                                             </button>
-                                                            <button onClick={() => handleDelete(user.id)} className="btn-secondary" style={{ padding: '0.5rem', width: 'auto', color: '#f87171' }} title="Eliminar">
-                                                                <Trash2 size={16} />
-                                                            </button>
+                                                            {!isSecretaria && (
+                                                                <button onClick={() => handleDelete(user.id)} className="btn-secondary" style={{ padding: '0.5rem', width: 'auto', color: '#f87171' }} title="Eliminar">
+                                                                    <Trash2 size={16} />
+                                                                </button>
+                                                            )}
                                                         </>
                                                     )}
                                                 </div>
