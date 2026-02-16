@@ -41,7 +41,7 @@ export const updateFormadorProfile = async (req, res) => {
 // Listar todos os formadores
 export const listFormadores = async (req, res) => {
     try {
-        // Self-repair: Garantir que todos com role FORMADOR têm perfil na tabela formadores
+        // Garantir que todos com role de FORMADOR têm perfil na tabela formadores
         await db.query(`
             INSERT INTO formadores (utilizador_id)
             SELECT u.id FROM utilizadores u
@@ -49,7 +49,7 @@ export const listFormadores = async (req, res) => {
             WHERE r.nome = 'FORMADOR'
             AND u.id NOT IN (SELECT utilizador_id FROM formadores)
         `);
-
+        // Procura todos os formadores
         const [formadores] = await db.query(`
             SELECT u.id, u.nome_completo, u.email, u.is_active, f.biografia, f.id as id_formador_perfil
             FROM utilizadores u
@@ -63,7 +63,7 @@ export const listFormadores = async (req, res) => {
         return res.status(500).json({ message: 'Erro ao listar formadores' });
     }
 };
-// Obter histórico de lecionação
+// Obter histórico do formador
 export const getFormadorHistory = async (req, res) => {
     try {
         const { userId } = req.params;

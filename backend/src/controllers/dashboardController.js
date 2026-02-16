@@ -2,13 +2,13 @@ import { db } from '../config/db.js';
 
 export const getDashboardStats = async (req, res) => {
     try {
-        // i. Total de cursos terminados
+        // Total de cursos terminados
         const [cursosTerminados] = await db.query("SELECT COUNT(*) as count FROM cursos WHERE estado = 'terminado'");
 
-        // ii. Total de cursos a decorrer
+        // Total de cursos a decorrer
         const [cursosADecorrer] = await db.query("SELECT COUNT(*) as count FROM cursos WHERE estado = 'a decorrer'");
 
-        // iii. Total de formandos registados no sistema
+        // Total de formandos registados no sistema
         const [formandosAtivos] = await db.query(`
             SELECT COUNT(*) as count 
             FROM utilizadores u
@@ -16,14 +16,14 @@ export const getDashboardStats = async (req, res) => {
             WHERE r.nome = 'FORMANDO'
         `);
 
-        // iv. Nº de cursos por área
+        // Nº de cursos por área
         const [cursosPorArea] = await db.query(`
             SELECT area, COUNT(*) as count 
             FROM cursos 
             GROUP BY area
         `);
 
-        // v. Top 10 de formadores com maior nº de horas lecionadas (baseado no histórico de aulas real)
+        // Top 10 de formadores com maior nº de horas lecionadas (baseado no histórico de aulas real)
         const [topFormadores] = await db.query(`
             SELECT 
                 u.nome_completo, 

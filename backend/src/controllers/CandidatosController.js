@@ -1,5 +1,5 @@
 import { db } from '../config/db.js';
-
+// Submeter candidatura
 export const submitCandidacy = async (req, res) => {
     try {
         const { curso_id, dados_candidatura, pdf_file_id } = req.body;
@@ -11,7 +11,7 @@ export const submitCandidacy = async (req, res) => {
             return res.status(400).json({ message: 'Curso e PDF são obrigatórios.' });
         }
 
-        // Check if already applied to this course
+        // Verificar se já aplicou a este curso
         const [existing] = await db.query(
             'SELECT id, estado FROM inscricoes WHERE user_id = ? AND id_curso = ?',
             [user_id, curso_id]
@@ -48,6 +48,7 @@ export const submitCandidacy = async (req, res) => {
     }
 };
 
+// Obter minha candidatura
 export const getMyCandidacy = async (req, res) => {
     try {
         const user_id = req.user.id;
@@ -71,8 +72,7 @@ export const getMyCandidacy = async (req, res) => {
             candidacy.dados_candidatura = JSON.parse(candidacy.dados_candidatura);
         }
 
-        // Fetch Turma Dates (Active or Latest)
-        // Correct Link: formandos -> inscricoes (with id_turma) -> turmas
+        // Obter datas da turma (ativa ou mais recente)
         const [turmaRes] = await db.query(
             `SELECT t.data_inicio, t.data_fim 
              FROM turmas t 
@@ -88,10 +88,6 @@ export const getMyCandidacy = async (req, res) => {
             candidacy.data_inicio = turmaRes[0].data_inicio;
             candidacy.data_fim = turmaRes[0].data_fim;
         }
-
-        // --- Progress Calculation (Restored/Preserved but using new data if needed, currently disabled by user request for bar) ---
-        // User asked to remove bar, so we just send dates.
-
         res.json(candidacy);
     } catch (error) {
         console.error('Erro ao buscar minha candidatura:', error);
@@ -99,11 +95,10 @@ export const getMyCandidacy = async (req, res) => {
     }
 };
 
+// Obter lista de candidaturas
 export const getCandidacies = async (req, res) => {
     try {
-        // Fetch users who are candidates (role 'CANDIDATO' or just check inscricoes with status pending?)
-        // The user wants a list of candidacies.
-        // We join with utilizadores and cursos.
+        // Obter candidaturas
         const [candidacies] = await db.query(`
             SELECT 
                 i.id, 
@@ -123,8 +118,6 @@ export const getCandidacies = async (req, res) => {
             ORDER BY i.data_inscricao DESC
         `);
 
-        // Parse JSON data if needed, though frontend might handle it or we pass it as string
-        // Let's parse it for cleaner API response
         const formatted = candidacies.map(c => ({
             ...c,
             dados_candidatura: typeof c.dados_candidatura === 'string'
@@ -139,37 +132,34 @@ export const getCandidacies = async (req, res) => {
     }
 };
 
+// Aprovar candidatura
 export const approveCandidacy = async (req, res) => {
     const { id } = req.params;
     const connection = await db.getConnection();
     try {
         await connection.beginTransaction();
 
-        // 1. Update status in inscricoes
+        // Atualizar estado da candidatura
         await connection.query(
             'UPDATE inscricoes SET estado = ? WHERE id = ?',
             ['APROVADO', id]
         );
 
-        // 2. Get user info from the candidatura
+        // Obter dados do utilizador
         const [rows] = await connection.query('SELECT user_id, dados_candidatura FROM inscricoes WHERE id = ?', [id]);
         if (rows.length === 0) {
             throw new Error('Candidatura não encontrada.');
         }
         const { user_id, dados_candidatura } = rows[0];
-        // dados_candidatura might be a string or object depending on driver/mysql version json handling
         const dados = typeof dados_candidatura === 'string' ? JSON.parse(dados_candidatura) : dados_candidatura;
 
-        // 3. Promote user role to FORMANDO (Assuming ID 5 is Formando, need to check ROLES table or use subquery)
-        // Check ROLES table: 1: CANDIDATO, 2: ADMIN, 3: SECRETARIA, 4: FORMADOR, 5: FORMANDO
-        // Or safer: SELECT id FROM roles WHERE nome = 'FORMANDO'
+        // Promover o utilizador para FORMANDO
         await connection.query(
             'UPDATE utilizadores SET role_id = (SELECT id FROM roles WHERE nome = "FORMANDO") WHERE id = ?',
             [user_id]
         );
 
-        // 4. Create record in formandos table if not exists
-        // Check if already exists
+        // Criar registo na tabela formandos se não existir
         const [formandoExists] = await connection.query('SELECT id FROM formandos WHERE utilizador_id = ?', [user_id]);
 
         let formandoId;
@@ -183,13 +173,13 @@ export const approveCandidacy = async (req, res) => {
             formandoId = formandoExists[0].id;
         }
 
-        // 5. Link inscricao to the new formando_id
+        // Atualizar inscricao com o id_formando
         await connection.query(
             'UPDATE inscricoes SET id_formando = ? WHERE id = ?',
             [formandoId, id]
         );
 
-        await connection.commit();
+        await connection.commit(); 
         res.json({ message: 'Candidatura aprovada e utilizador promovido a Formando.' });
     } catch (error) {
         await connection.rollback();
@@ -200,6 +190,7 @@ export const approveCandidacy = async (req, res) => {
     }
 };
 
+// Rejeitar candidatura
 export const rejectCandidacy = async (req, res) => {
     try {
         const { id } = req.params;

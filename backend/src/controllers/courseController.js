@@ -38,7 +38,7 @@ export const getCourses = async (req, res) => {
 
         const [courses] = await db.query(query, params);
 
-        // Count for pagination
+        // Contagem para paginação
         let countQuery = "SELECT COUNT(DISTINCT c.id) as total FROM cursos c";
         const countParams = [];
 
@@ -167,7 +167,7 @@ export const addModuleToCourse = async (req, res) => {
             return res.status(400).json({ message: 'ID do módulo é obrigatório' });
         }
 
-        // Check if exists
+        // Verificar se o módulo já existe no curso
         const [existing] = await db.query(
             'SELECT id FROM curso_modulos WHERE id_curso = ? AND id_modulo = ?',
             [id, id_modulo]
@@ -219,9 +219,9 @@ export const getPublicStats = async (req, res) => {
             JOIN roles r ON u.role_id = r.id
             WHERE r.nome = 'FORMANDO'
         `);
-
-        // Empregabilidade simulada baseada em dados reais (ex: % de cursos terminados com sucesso)
-        // Por agora retornamos um valor fixo realista ou calculado se houver dados
+        
+// Empregabilidade simulada baseada em dados reais (ex: % de cursos terminados com sucesso)
+// Por agora retornamos um valor fixo realista ou calculado se houver dados
         const employability = "94%";
 
         return res.json({

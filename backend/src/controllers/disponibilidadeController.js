@@ -51,25 +51,13 @@ export const addAvailability = async (req, res) => {
         await connection.beginTransaction();
 
         const userId = req.user.id;
-        // Check for batch input
+        // Verificar se o utilizador é formador
         let itemsToProcess = [];
 
         if (req.body.availabilities && Array.isArray(req.body.availabilities)) {
-            // Batch mode (Frontend handles recurrence)
             itemsToProcess = req.body.availabilities;
         } else {
-            // Legacy/Single mode (Backend handles recurrence)
-            // We convert the legacy request into a single item to process, 
-            // BUT we must keep the recurrence logic if we want to support legacy calls.
-            // However, to fix DST, we strongly prefer the frontend to send the batch.
-            // For now, let's just handle the single item as a "seed" and generate the list locally if needed.
-            // actually, simpler: if backend recursion is needed, we do it here.
-
-            // ... (Existing legacy logic would go here, but for clarity let's refactor to use a helper or just support batch properly)
-            // To minimize risk, if 'availabilities' is NOT present, we assume standard single insertion 
-            // and we rely on the EXISTING logic.
-            // BUT, I will wrap the existing logic in an 'else' block or just return early.
-            // Let's refactor to support both cleanly.
+            
         }
 
         // Buscar ID do formador
@@ -107,7 +95,7 @@ export const addAvailability = async (req, res) => {
                 }
             }
         } else {
-            // LEGACY / BACKEND RECURRENCE MODE (Mantendo lógica original para compatibilidade)
+            //Mantendo lógica original para compatibilidade
             let { inicio, fim, tipo, repeatUntil, excludeWeekends } = req.body;
             if (excludeWeekends === undefined) excludeWeekends = false;
 
@@ -122,21 +110,18 @@ export const addAvailability = async (req, res) => {
             limitDate.setHours(23, 59, 59, 999);
 
             let currentStart = new Date(baseStart);
-            let currentEnd = new Date(baseEnd); // Note: currentEnd logic in legacy loop had issues with date math if not careful.
+            let currentEnd = new Date(baseEnd); 
 
-            // ... (Copying the Fixed Loop from previous step)
+            // Copia do loop original
             while (currentStart <= limitDate) {
                 const dayOfWeek = currentStart.getDay();
 
                 if (excludeWeekends && (dayOfWeek === 0 || dayOfWeek === 6)) {
                     currentStart.setDate(currentStart.getDate() + 1);
-                    // Legacy loop updated end by adding 1 day too. 
-                    // To be safe we should re-calculate end based on start each time to avoid drift, 
-                    // but the previous "fix" forced normalizedEnd calculation anyway.
-                    continue; // Wait, previous code incremented at end of loop. Here we need to be careful.
+                    continue; 
                 }
 
-                // Normalização (Logic from Step 1097 fix)
+                // Normalização
                 const thisStart = new Date(currentStart);
                 const thisEnd = new Date(currentStart);
                 thisEnd.setHours(baseEnd.getHours(), baseEnd.getMinutes(), 0, 0);
@@ -146,7 +131,7 @@ export const addAvailability = async (req, res) => {
                     thisEnd.setDate(thisEnd.getDate() + 1);
                 }
 
-                // Overlap Check...
+                // Verificação de sobreposição
                 const [overlapsSimple] = await connection.query(
                     `SELECT id FROM disponibilidade_formadores 
                      WHERE id_formador = ? 
@@ -163,7 +148,7 @@ export const addAvailability = async (req, res) => {
                     createdCount++;
                 }
 
-                // Increment
+                // Incrementação
                 currentStart.setDate(currentStart.getDate() + 1);
             }
         }
@@ -189,7 +174,7 @@ export const removeAvailability = async (req, res) => {
         const userId = req.user.id;
         const { id } = req.params;
 
-        // Garantir que a disponibilidade pertence ao formador logado
+        // Garantir que a disponibilidade pertence ao formador com a sessão iniciada
         const [result] = await db.query(
             `DELETE d FROM disponibilidade_formadores d
              JOIN formadores f ON d.id_formador = f.id
@@ -208,19 +193,19 @@ export const removeAvailability = async (req, res) => {
     }
 };
 
-// Remover TODA a disponibilidade do formador (Limpar Tudo)
+// Remover TODA a disponibilidade do formador (Limpa Tudo)
 export const deleteAllAvailability = async (req, res) => {
     try {
         const userId = req.user.id;
 
-        // Buscar ID do formador
+        // Procura o ID do formador
         const [formador] = await db.query('SELECT id FROM formadores WHERE utilizador_id = ?', [userId]);
         if (formador.length === 0) {
             return res.status(403).json({ message: 'Apenas formadores podem gerir disponibilidade.' });
         }
         const formadorId = formador[0].id;
 
-        // Remover tudo onde id_formador = formadorId
+        // Remove tudo onde id_formador = formadorId
         // Vamos assumir remover DO FUTURO (>= NOW) para não estragar relatórios passados.
         const now = new Date();
 

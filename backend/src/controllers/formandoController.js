@@ -118,7 +118,7 @@ export const getFormandoGrades = async (req, res) => {
     try {
         const { userId } = req.params;
 
-        // Buscar inscrição ativa (ou a última)
+        // Procura inscrição ativa (ou a última)
         const [inscricao] = await db.query(`
             SELECT i.id, c.nome_curso, t.codigo_turma 
             FROM inscricoes i
@@ -136,7 +136,7 @@ export const getFormandoGrades = async (req, res) => {
 
         const inscricaoId = inscricao[0].id;
 
-        // Buscar módulos do curso e notas correspondentes
+        // Procura módulos do curso e notas correspondentes
         const [grades] = await db.query(`
             SELECT 
                 m.id as modulo_id, 
@@ -174,13 +174,13 @@ export const assignTurma = async (req, res) => {
 
         if (!turmaId) return res.status(400).json({ message: 'ID da turma é obrigatório' });
 
-        // 1. Obter ID do Formando
+        // Obter ID do Formando
         const [formando] = await db.query('SELECT id FROM formandos WHERE utilizador_id = ?', [userId]);
         if (formando.length === 0) return res.status(404).json({ message: 'Formando não encontrado' });
 
         const idFormando = formando[0].id;
 
-        // 2. Verificar se já existe inscrição nessa turma
+        // Verifica se já existe inscrição nessa turma
         const [existing] = await db.query(
             'SELECT * FROM inscricoes WHERE id_formando = ? AND id_turma = ?',
             [idFormando, turmaId]
@@ -190,13 +190,13 @@ export const assignTurma = async (req, res) => {
             return res.status(400).json({ message: 'Formando já está inscrito nesta turma' });
         }
 
-        // 2.5 Obter o curso da turma para manter consistência
+        // Obter o curso da turma para manter consistência
         const [turmaInfo] = await db.query('SELECT id_curso FROM turmas WHERE id = ?', [turmaId]);
         if (turmaInfo.length === 0) return res.status(404).json({ message: 'Turma não encontrada' });
 
         const idCurso = turmaInfo[0].id_curso;
 
-        // 3. Criar inscrição
+        // Cria inscrição
         await db.query(
             'INSERT INTO inscricoes (id_formando, id_turma, id_curso, data_inscricao, estado) VALUES (?, ?, ?, NOW(), "APROVADO")',
             [idFormando, turmaId, idCurso]

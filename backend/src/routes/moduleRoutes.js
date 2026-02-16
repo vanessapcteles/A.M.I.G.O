@@ -12,16 +12,16 @@ import { authenticateToken, authorizeRole } from '../middleware/authMiddleware.j
 
 const router = express.Router();
 
-// Public routes (or protected if needed)
-router.use(authenticateToken); // All routes require login
+// Rotas públicas (apenas para ver módulos)
+router.use(authenticateToken); // Todas as rotas requerem login
 
-router.get('/areas', getModulesAreas); // New route for areas
-router.put('/areas/:currentName', authorizeRole(['ADMIN', 'SECRETARIA']), updateArea); // Update/Merge Area
-router.delete('/areas/:areaName', authorizeRole(['ADMIN', 'SECRETARIA']), deleteArea); // Delete Area (Cascade)
+router.get('/areas', getModulesAreas); // Nova rota para áreas
+router.put('/areas/:currentName', authorizeRole(['ADMIN', 'SECRETARIA']), updateArea); // Atualiza/Mescla área
+router.delete('/areas/:areaName', authorizeRole(['ADMIN', 'SECRETARIA']), deleteArea); // Apaga área
 
 router.get('/', getModules);
-router.post('/', authorizeRole(['ADMIN', 'SECRETARIA']), createModule);
-router.put('/:id', authorizeRole(['ADMIN', 'SECRETARIA']), updateModule);
-router.delete('/:id', authorizeRole(['ADMIN', 'SECRETARIA']), deleteModule);
+router.post('/', authorizeRole(['ADMIN', 'SECRETARIA']), createModule); // Cria módulo
+router.put('/:id', authorizeRole(['ADMIN', 'SECRETARIA']), updateModule); // Atualiza módulo
+router.delete('/:id', authorizeRole(['ADMIN', 'SECRETARIA']), deleteModule); // Apaga módulo
 
 export default router;

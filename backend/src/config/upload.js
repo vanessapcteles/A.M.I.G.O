@@ -1,4 +1,4 @@
-import multer from 'multer';
+import multer from 'multer'; // Importar o multer 
 
 // Guardar em memória para depois enviar para a Base de Dados (BLOB)
 const storage = multer.memoryStorage();
@@ -13,7 +13,7 @@ const fileFilter = (req, file, cb) => {
     }
 };
 
-export const upload = multer({
+export const upload = multer({ // Exportar o multer
     storage: storage,
     limits: {
         fileSize: 20 * 1024 * 1024 // Limite de 20MB

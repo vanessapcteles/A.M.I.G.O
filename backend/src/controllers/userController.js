@@ -85,18 +85,13 @@ export const updateUser = async (req, res) => {
             [nome_completo || existing[0].nome_completo, email || existing[0].email, role_id, id]
         );
 
-        // Gestão de Perfis
         // Gestão de Perfis - Apenas se a role mudar ou se não existir perfil
         if (tipo_utilizador) {
             const role = tipo_utilizador.toUpperCase();
             const oldRole = existing[0].tipo_utilizador?.toUpperCase();
 
             try {
-                // Se a role mudou, podemos limpar perfis antigos (opcional, dependendo da regra de negócio)
-                // Mas o mais importante é NÃO apagar se a role for a mesma
                 if (role !== oldRole) {
-                    // Só removemos se for uma mudança real de categoria
-                    // Nota: Admin e Secretaria partilham a mesma tabela 'secretaria'
                     const isNewSecretaria = (role === 'SECRETARIA' || role === 'ADMIN');
                     const isOldSecretaria = (oldRole === 'SECRETARIA' || oldRole === 'ADMIN');
 
