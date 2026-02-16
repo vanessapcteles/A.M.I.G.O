@@ -10,6 +10,7 @@ import 'react-big-calendar/lib/css/react-big-calendar.css';
 
 import { horarioService } from '../services/horarioService';
 import { turmaService } from '../services/turmaService'; // Para obter lista de módulos disponíveis
+import { authService } from '../services/authService';
 import { ArrowLeft, Plus, Trash2, X, Calendar as CalendarIcon, Search, ChevronLeft, ChevronRight, Wand2 } from 'lucide-react';
 import CalendarToolbar from '../components/ui/CalendarToolbar';
 import { useToast } from '../context/ToastContext';
@@ -53,11 +54,12 @@ function TurmaSchedulePage() {
     const [currentView, setCurrentView] = useState('week');
 
     const [formData, setFormData] = useState({
-        id_turma_detalhe: '',
-        data: '',
         hora_inicio: '',
         hora_fim: ''
     });
+
+    const currentUser = authService.getCurrentUser();
+    const canEdit = currentUser?.tipo_utilizador === 'ADMIN' || currentUser?.tipo_utilizador === 'SECRETARIA';
 
     useEffect(() => {
         loadData();
@@ -273,28 +275,30 @@ function TurmaSchedulePage() {
                     </button>
                     <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>Horário da Turma</h1>
                 </div>
-                <div className="schedule-header-actions">
-                    <button
-                        className="btn-glass"
-                        onClick={() => setShowAutoModal(true)}
-                        disabled={generating}
-                        style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--primary)', borderColor: 'var(--primary)' }}
-                    >
-                        <Wand2 size={20} />
-                        <span className="hidden-mobile">{generating ? 'A Gerar...' : 'Geração Automática'}</span>
-                        <span className="visible-mobile-inline">{generating ? 'Gerando...' : 'Auto'}</span>
-                    </button>
-                    <button
-                        className="btn-glass"
-                        onClick={() => { setEventToDelete(null); setConfirmOpen(true); }}
-                        style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#f87171', borderColor: '#f87171' }}
-                    >
-                        <Trash2 size={20} /> <span className="hidden-mobile">Limpar Tudo</span>
-                    </button>
-                    <button className="btn-primary" onClick={() => setShowModal(true)}>
-                        <Plus size={20} /> <span className="hidden-mobile">Nova Aula</span>
-                    </button>
-                </div>
+                {canEdit && (
+                    <div className="schedule-header-actions">
+                        <button
+                            className="btn-glass"
+                            onClick={() => setShowAutoModal(true)}
+                            disabled={generating}
+                            style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--primary)', borderColor: 'var(--primary)' }}
+                        >
+                            <Wand2 size={20} />
+                            <span className="hidden-mobile">{generating ? 'A Gerar...' : 'Geração Automática'}</span>
+                            <span className="visible-mobile-inline">{generating ? 'Gerando...' : 'Auto'}</span>
+                        </button>
+                        <button
+                            className="btn-glass"
+                            onClick={() => { setEventToDelete(null); setConfirmOpen(true); }}
+                            style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#f87171', borderColor: '#f87171' }}
+                        >
+                            <Trash2 size={20} /> <span className="hidden-mobile">Limpar Tudo</span>
+                        </button>
+                        <button className="btn-primary" onClick={() => setShowModal(true)}>
+                            <Plus size={20} /> <span className="hidden-mobile">Nova Aula</span>
+                        </button>
+                    </div>
+                )}
             </div>
 
             <div className="schedule-page-grid">
@@ -435,9 +439,9 @@ function TurmaSchedulePage() {
                         onNavigate={date => setCurrentDate(date)}
                         onView={view => setCurrentView(view)}
                         culture='pt'
-                        selectable
-                        onSelectSlot={handleSelectSlot}
-                        onSelectEvent={handleSelectEvent}
+                        selectable={canEdit}
+                        onSelectSlot={canEdit ? handleSelectSlot : undefined}
+                        onSelectEvent={canEdit ? handleSelectEvent : undefined}
                         components={{
                             toolbar: CalendarToolbar
                         }}
