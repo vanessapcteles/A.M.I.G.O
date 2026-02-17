@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { AuthContext } from '../context/AuthContext';
 import { useThemeColors } from '../theme/colors';
-import { LogOut, BookOpen, Users, User, MapPin, Calendar, GraduationCap } from 'lucide-react-native';
+import { LogOut, BookOpen, Users, User, MapPin, Calendar, GraduationCap, School } from 'lucide-react-native';
 import Logo from '../../assets/logo_website.png';
 
 const DashboardScreen = () => {
@@ -32,6 +32,47 @@ const DashboardScreen = () => {
                     icon: GraduationCap,
                     color: colors.cardBlue,
                     screen: 'Grades',
+                },
+            ];
+        }
+
+        if (user?.tipo_utilizador === 'FORMADOR') {
+            return [
+                {
+                    title: 'Minhas Turmas',
+                    icon: School,
+                    color: colors.cardBlue,
+                    screen: 'MyClasses',
+                },
+                {
+                    title: 'Cursos',
+                    icon: BookOpen,
+                    color: colors.cardBlue, // Keep consistent color or alternate
+                    screen: 'Courses',
+                },
+                {
+                    title: 'Horário',
+                    icon: Calendar,
+                    color: colors.cardPink,
+                    screen: 'Schedule',
+                },
+                {
+                    title: 'Equipa',
+                    icon: User,
+                    color: colors.cardPink,
+                    screen: 'Formadores',
+                },
+                {
+                    title: 'Formandos',
+                    icon: Users,
+                    color: colors.cardPink,
+                    screen: 'Formandos',
+                },
+                {
+                    title: 'Salas',
+                    icon: MapPin,
+                    color: colors.cardBlue,
+                    screen: 'Rooms',
                 },
             ];
         }
@@ -83,7 +124,6 @@ const DashboardScreen = () => {
 
             <ScrollView contentContainerStyle={styles.content}>
                 <View style={styles.logoContainer}>
-                    {/* Placeholder for Logo - Using Icon + Text as per design */}
                     <View style={styles.logoIcon}>
                         <Image source={Logo} style={styles.logo} resizeMode="contain" />
                     </View>
@@ -122,7 +162,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 24,
         paddingTop: 16,
         alignItems: 'flex-end',
-        borderBottomWidth: 0, // Removed border for cleaner look, or keep if desired
+        borderBottomWidth: 0,
     },
     logoutButton: {
         flexDirection: 'row',
@@ -130,7 +170,6 @@ const styles = StyleSheet.create({
         padding: 8,
     },
     logoutText: {
-        // Color is now handled inline
         marginLeft: 8,
         fontWeight: 'bold',
         fontSize: 16,
@@ -182,7 +221,7 @@ const styles = StyleSheet.create({
     },
     card: {
         width: '47%',
-        aspectRatio: 1.1, // make it slightly rectangular/square
+        aspectRatio: 1.1,
         borderRadius: 20,
         justifyContent: 'center',
         alignItems: 'center',
@@ -200,8 +239,7 @@ const styles = StyleSheet.create({
         marginBottom: 12,
     },
     cardTitle: {
-        // Color handled inline or passed
-        color: '#FFFFFF', // Constant white for card titles
+        color: '#FFFFFF',
         fontSize: 16,
         fontWeight: 'bold',
     },

@@ -12,6 +12,7 @@ import CourseDetailsScreen from './src/screens/CourseDetailsScreen';
 import GradesScreen from './src/screens/GradesScreen';
 import FormandosScreen from './src/screens/FormandosScreen';
 import FormadoresScreen from './src/screens/FormadoresScreen';
+import MyClassesScreen from './src/screens/MyClassesScreen';
 import RoomsScreen from './src/screens/RoomsScreen';
 import ScheduleScreen from './src/screens/ScheduleScreen';
 import { colors } from './src/theme/colors';
@@ -42,6 +43,7 @@ const AppNav = () => {
             <Stack.Screen name="Grades" component={GradesScreen} />
             <Stack.Screen name="Formandos" component={FormandosScreen} />
             <Stack.Screen name="Formadores" component={FormadoresScreen} />
+            <Stack.Screen name="MyClasses" component={MyClassesScreen} />
             <Stack.Screen name="Rooms" component={RoomsScreen} />
             <Stack.Screen name="Schedule" component={ScheduleScreen} />
           </>
