@@ -184,13 +184,7 @@ const LandingPage = () => {
                 boxShadow: '0 4px 30px rgba(0, 0, 0, 0.1)'
             }}>
                 <div style={{ fontSize: '1.4rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '0.6rem', fontFamily: 'Outfit, sans-serif' }}>
-                    <div style={{
-                        width: '40px', height: '40px', background: 'linear-gradient(135deg, var(--primary), var(--secondary))',
-                        borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        boxShadow: '0 8px 16px var(--primary-glow)'
-                    }}>
-                        <BookOpen size={22} color="white" />
-                    </div>
+                    <img src="/logo_website.png" alt="Logo" style={{ width: '45px', height: '45px', objectFit: 'cover', borderRadius: '50%' }} />
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
                         <span style={{ lineHeight: '1' }}>A.M.I.G.<span className="text-gradient">O</span></span>
                         <span className="logo-subtitle" style={{ fontSize: '0.6rem', fontWeight: '500', color: 'var(--text-muted)', letterSpacing: '0.5px', textTransform: 'uppercase', marginTop: '2px' }}>
@@ -316,17 +310,6 @@ const LandingPage = () => {
                     </p>
 
                     <div className="search-container" style={{ maxWidth: '700px', margin: '0 auto', display: 'flex', gap: '1rem', flexWrap: 'wrap', justifyContent: 'center' }}>
-                        <div style={{ flex: 1, minWidth: '300px', position: 'relative' }}>
-                            <Search size={20} style={{ position: 'absolute', left: '1.5rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-                            <input
-                                type="text"
-                                className="input-field"
-                                placeholder="Procura por área ou nome do curso..."
-                                style={{ padding: '1.2rem 1.5rem 1.2rem 4rem', borderRadius: '16px', fontSize: '1.05rem', boxShadow: '0 10px 40px -10px rgba(0,0,0,0.2)' }}
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                            />
-                        </div>
                         <a href="#cursos" className="btn-primary" style={{ padding: '1.2rem 2.5rem', borderRadius: '16px', fontSize: '1.05rem' }}>
                             Ver Cursos
                         </a>
@@ -641,9 +624,7 @@ const LandingPage = () => {
                 <div style={{ maxWidth: '1400px', margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '4rem', marginBottom: '6rem' }}>
                     <div>
                         <div style={{ fontSize: '1.5rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '2rem', fontFamily: 'Outfit, sans-serif' }}>
-                            <div style={{ width: '30px', height: '30px', background: 'var(--primary)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <BookOpen size={16} color="white" />
-                            </div>
+                            <img src="/logo_website.png" alt="Logo" style={{ width: '35px', height: '35px', objectFit: 'cover', borderRadius: '50%' }} />
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <span style={{ lineHeight: '1' }}>A.M.I.G.<span style={{ color: 'var(--primary)' }}>O</span></span>
                                 <span style={{ fontSize: '0.55rem', fontWeight: '600', color: 'var(--text-muted)', textTransform: 'uppercase', marginTop: '4px' }}>

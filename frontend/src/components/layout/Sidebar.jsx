@@ -123,8 +123,33 @@ const Sidebar = ({ isOpen, onClose }) => {
                 `}
             </style>
 
-            <div style={{ padding: '1rem 0 2rem 0', textAlign: 'center' }}>
-                <h1 className="text-gradient" style={{ fontSize: '1.8rem', fontWeight: '900', letterSpacing: '3px' }}>
+            <div style={{
+                padding: '1.5rem 0 2rem 0',
+                textAlign: 'center',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '0.75rem'
+            }}>
+                <img
+                    src="/logo_website.png"
+                    alt="Logo"
+                    style={{
+                        maxHeight: '70px',
+                        width: 'auto',
+                        objectFit: 'contain',
+                        borderRadius: '12px',
+                        boxShadow: '0 4px 15px rgba(0,0,0,0.3)'
+                    }}
+                />
+
+                <h1 className="text-gradient" style={{
+                    fontSize: '1.8rem',
+                    fontWeight: '900',
+                    letterSpacing: '3px',
+                    margin: 0,
+                    lineHeight: 1
+                }}>
                     A.M.I.G.<span style={{ color: 'var(--primary)' }}>O</span>
                 </h1>
             </div>

@@ -23,13 +23,13 @@ export const getFormadorProfile = async (req, res) => {
 export const updateFormadorProfile = async (req, res) => {
     try {
         const { userId } = req.params;
-        const { biografia } = req.body;
+        const { biografia, especialidade, telemovel, morada } = req.body;
 
         await db.query(`INSERT IGNORE INTO formadores (utilizador_id) VALUES (?)`, [userId]);
 
         await db.query(
-            `UPDATE formadores SET biografia = ? WHERE utilizador_id = ?`,
-            [biografia, userId]
+            `UPDATE formadores SET biografia = ?, especialidade = ?, telemovel = ?, morada = ? WHERE utilizador_id = ?`,
+            [biografia, especialidade, telemovel, morada, userId]
         );
 
         return res.json({ message: 'Perfil atualizado com sucesso' });

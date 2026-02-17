@@ -20,6 +20,7 @@ function FormandosPage() {
     const [uploading, setUploading] = useState(false);
     const [exporting, setExporting] = useState(false);
     const [profilePhoto, setProfilePhoto] = useState(null);
+    const [logoBase64, setLogoBase64] = useState(null);
     const [modalConfig, setModalConfig] = useState({ isOpen: false });
 
     // Form States
@@ -42,6 +43,20 @@ function FormandosPage() {
     useEffect(() => {
         fetchTurmas();
         fetchCourses();
+
+        // Carregar Logo
+        const loadLogo = async () => {
+            try {
+                const response = await fetch('/amigo_logo.png');
+                const blob = await response.blob();
+                const reader = new FileReader();
+                reader.onloadend = () => setLogoBase64(reader.result);
+                reader.readAsDataURL(blob);
+            } catch (error) {
+                console.error("Erro ao carregar logo:", error);
+            }
+        };
+        loadLogo();
     }, []);
 
     useEffect(() => {
@@ -188,9 +203,18 @@ function FormandosPage() {
             doc.setFillColor(30, 41, 59); // Slate-800
             doc.rect(0, 0, pageWidth, 40, 'F');
 
+            doc.rect(0, 0, pageWidth, 40, 'F');
+
+            // Logo
+            if (logoBase64) {
+                try {
+                    doc.addImage(logoBase64, 'PNG', 15, 5, 30, 30);
+                } catch (e) { console.warn('Erro logo', e); }
+            }
+
             doc.setTextColor(255, 255, 255);
             doc.setFontSize(22);
-            doc.text('FICHA DO FORMANDO', 15, 25);
+            doc.text('FICHA DO FORMANDO', 55, 25);
 
             doc.setFontSize(10);
             doc.text(`Gerado em: ${new Date().toLocaleDateString()}`, pageWidth - 15, 25, { align: 'right' });

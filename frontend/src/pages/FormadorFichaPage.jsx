@@ -11,6 +11,23 @@ function FormadorFichaPage() {
     const [teachingHistory, setTeachingHistory] = useState([]);
     const [loading, setLoading] = useState(true);
     const [profilePhoto, setProfilePhoto] = useState(null);
+    const [logoBase64, setLogoBase64] = useState(null);
+
+    useEffect(() => {
+        // Carregar Logo do projeto para Base64
+        const loadLogo = async () => {
+            try {
+                const response = await fetch('/amigo_logo.png');
+                const blob = await response.blob();
+                const reader = new FileReader();
+                reader.onloadend = () => setLogoBase64(reader.result);
+                reader.readAsDataURL(blob);
+            } catch (error) {
+                console.error("Erro ao carregar logo:", error);
+            }
+        };
+        loadLogo();
+    }, []);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -54,49 +71,97 @@ function FormadorFichaPage() {
     const exportPDF = async () => {
         const doc = new jsPDF();
         const pageWidth = doc.internal.pageSize.getWidth();
+        const pageHeight = doc.internal.pageSize.getHeight();
 
-        // Header Premium
-        doc.setFillColor(30, 41, 59);
-        doc.rect(0, 0, pageWidth, 40, 'F');
+        // --- HEADER ---
+        doc.setFillColor(15, 23, 42); // Slate-900 (Dark)
+        doc.rect(0, 0, pageWidth, 50, 'F');
 
-        doc.setTextColor(255, 255, 255);
-        doc.setFontSize(22);
-        doc.text('FICHA DO FORMADOR', 15, 25);
-
-        doc.setFontSize(10);
-        doc.text(`Gerado em: ${new Date().toLocaleDateString()}`, pageWidth - 15, 25, { align: 'right' });
-
-        // Usar a foto
-        let photoData = profilePhoto;
-
-        // Dados do Formador
-        doc.setTextColor(30, 41, 59);
-        doc.setFontSize(14);
-        doc.setFont('helvetica', 'bold');
-        doc.text('Dados do Formador', 15, 55);
-        doc.line(15, 58, 60, 58);
-
-        // Inserir Foto se existir
-        if (photoData) {
+        // Logo
+        if (logoBase64) {
             try {
-                doc.addImage(photoData, 'JPEG', pageWidth - 55, 50, 40, 40);
-                doc.setDrawColor(99, 102, 241); // Indigo color for Trainer
-                doc.rect(pageWidth - 56, 49, 42, 42); // Moldura
-            } catch (e) { console.warn('Erro ao inserir imagem no PDF', e); }
+                doc.addImage(logoBase64, 'PNG', 15, 10, 30, 30);
+            } catch (e) { console.warn('Erro logo PDF', e); }
         }
 
-        doc.setFontSize(11);
-        doc.setFont('helvetica', 'normal');
-        doc.text(`Nome: ${user.nome_completo}`, 15, 68);
-        doc.text(`Email: ${user.email}`, 15, 75);
-        doc.text(`Especialidade: ${extra?.especialidade || 'Informática'}`, 15, 82);
-        doc.text(`Telemóvel: ${extra?.telemovel || 'N/A'}`, 15, 89);
-
-        // Teaching History
-        doc.setFontSize(14);
+        // Títulos
+        doc.setTextColor(255, 255, 255);
         doc.setFont('helvetica', 'bold');
-        doc.text('Módulos Lecionados', 15, 110);
-        doc.line(15, 113, 60, 113);
+        doc.setFontSize(24);
+        doc.text('FICHA DO FORMADOR', 55, 25);
+
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(99, 102, 241); // Indigo-400 (Accent)
+        doc.text('ACADEMY MANAGEMENT INTERACTIVE GUIDE & ORGANIZER', 55, 32);
+
+        // Data
+        doc.setTextColor(148, 163, 184); // Slate-400
+        doc.setFontSize(9);
+        doc.text(`Gerado em: ${new Date().toLocaleDateString()}`, pageWidth - 15, 45, { align: 'right' });
+
+
+        // --- DADOS DO FORMADOR ---
+        let currentY = 70;
+
+        // Foto (Direita)
+        if (profilePhoto) {
+            try {
+                doc.addImage(profilePhoto, 'JPEG', pageWidth - 50, currentY, 30, 30);
+                doc.setDrawColor(99, 102, 241);
+                doc.setLineWidth(0.5);
+                doc.rect(pageWidth - 50, currentY, 30, 30);
+            } catch (e) { console.warn('Erro ao inserir imagem no PDF', e); }
+        } else {
+            doc.setFillColor(241, 245, 249);
+            doc.rect(pageWidth - 50, currentY, 30, 30, 'F');
+            doc.setTextColor(150);
+            doc.setFontSize(8);
+            doc.text('Sem Foto', pageWidth - 35, currentY + 15, { align: 'center' });
+        }
+
+
+        doc.setFontSize(16);
+        doc.setTextColor(15, 23, 42);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Dados do Formador', 15, currentY);
+        doc.setDrawColor(99, 102, 241);
+        doc.setLineWidth(1);
+        doc.line(15, currentY + 2, 70, currentY + 2);
+
+        currentY += 15;
+        doc.setFontSize(11);
+
+        const labelX = 15;
+        const valueX = 60;
+        const lineHeight = 8;
+
+        const addField = (label, value) => {
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(100, 116, 139);
+            doc.text(label, labelX, currentY);
+            doc.setFont('helvetica', 'normal');
+            doc.setTextColor(30, 41, 59);
+            doc.text(value || 'N/A', valueX, currentY);
+            currentY += lineHeight;
+        };
+
+        addField('Nome:', user.nome_completo);
+        addField('Email:', user.email);
+        addField('Especialidade:', extra?.especialidade || 'Geral');
+        addField('Telemóvel:', extra?.telemovel);
+        addField('Departamento:', 'Tecnologias de Informação');
+
+
+        // --- HISTÓRICO LECIONAÇÃO ---
+        currentY += 15;
+        doc.setFontSize(16);
+        doc.setTextColor(15, 23, 42);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Módulos Lecionados', 15, currentY);
+        doc.setDrawColor(99, 102, 241);
+        doc.line(15, currentY + 2, 70, currentY + 2);
+        currentY += 10;
 
         const tableRows = teachingHistory.map(rec => [
             rec.nome_modulo,
@@ -106,18 +171,32 @@ function FormadorFichaPage() {
         ]);
 
         autoTable(doc, {
-            startY: 115,
-            head: [['Módulo', 'Curso', 'Turma', 'Data Início']],
+            startY: currentY,
+            head: [['MÓDULO', 'CURSO', 'TURMA', 'DATA INÍCIO']],
             body: tableRows,
             theme: 'grid',
-            headStyles: { fillColor: [99, 102, 241] }
+            headStyles: {
+                fillColor: [15, 23, 42],
+                textColor: [255, 255, 255],
+                fontStyle: 'bold',
+                halign: 'center'
+            },
+            styles: { font: 'helvetica', fontSize: 10, cellPadding: 6 },
+            columnStyles: { 0: { fontStyle: 'bold' } },
+            alternateRowStyles: { fillColor: [241, 245, 249] }
         });
 
-        // Footer
-        const finalY = (doc.lastAutoTable ? doc.lastAutoTable.finalY : 250) + 20;
-        doc.setFontSize(9);
-        doc.setTextColor(150);
-        doc.text(`A.M.I.G.O System - Ficha Gerada em ${new Date().toLocaleDateString()}`, pageWidth / 2, Math.min(finalY, 285), { align: 'center' });
+        // --- FOOTER ---
+        const pageCount = doc.internal.getNumberOfPages();
+        for (let i = 1; i <= pageCount; i++) {
+            doc.setPage(i);
+            doc.setDrawColor(226, 232, 240);
+            doc.line(15, pageHeight - 20, pageWidth - 15, pageHeight - 20);
+            doc.setFontSize(8);
+            doc.setTextColor(148, 163, 184);
+            doc.text('A.M.I.G.O System - Ficha de Formador', 15, pageHeight - 12);
+            doc.text(`Página ${i} de ${pageCount}`, pageWidth - 15, pageHeight - 12, { align: 'right' });
+        }
 
         doc.save(`Ficha_Formador_${user.nome_completo.replace(/ /g, '_')}.pdf`);
     };

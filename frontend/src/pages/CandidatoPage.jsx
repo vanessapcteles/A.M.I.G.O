@@ -19,6 +19,7 @@ const CandidacyPage = () => {
     const [errors, setErrors] = useState({});
     const [candidacyStatus, setCandidacyStatus] = useState(null);
     const [existingCandidacy, setExistingCandidacy] = useState(null);
+    const [logoBase64, setLogoBase64] = useState(null);
 
     // Form Data
     const [formData, setFormData] = useState({
@@ -29,11 +30,22 @@ const CandidacyPage = () => {
     });
 
     useEffect(() => {
-        // Se vier do "Quero me candidatar", traz o ID do curso
         if (location.state?.interestedIn) {
             setCourseOfInterest(location.state.interestedIn);
         }
         checkExistingCandidacy();
+
+        // Carregar Logo
+        const loadLogo = async () => {
+            try {
+                const response = await fetch('/amigo_logo.png');
+                const blob = await response.blob();
+                const reader = new FileReader();
+                reader.onloadend = () => setLogoBase64(reader.result);
+                reader.readAsDataURL(blob);
+            } catch (error) { console.error("Erro logo", error); }
+        };
+        loadLogo();
     }, [location]);
 
     const checkExistingCandidacy = async () => {
@@ -115,17 +127,29 @@ const CandidacyPage = () => {
         // Cabeçalho
         doc.setFillColor(15, 23, 42);
         doc.rect(0, 0, 210, 40, 'F');
+
+        // Logo
+        if (logoBase64) {
+            try {
+                doc.addImage(logoBase64, 'PNG', 15, 5, 30, 30);
+            } catch (e) { }
+        }
+
         doc.setTextColor(255, 255, 255);
         doc.setFontSize(20);
-        doc.text('Ficha de Candidatura', 15, 25);
+        doc.text('Ficha de Candidatura', 55, 25);
         doc.setFontSize(10);
         doc.text(`Emitido a: ${new Date().toLocaleDateString()}`, 195, 25, { align: 'right' });
 
-        // Foto e Dados
+        // Foto (Direita)
         doc.setTextColor(30, 41, 59);
+        const pageWidth = doc.internal.pageSize.getWidth();
+
         if (profilePhoto) {
             try {
-                doc.addImage(profilePhoto, 'JPEG', 15, 50, 40, 40);
+                doc.addImage(profilePhoto, 'JPEG', pageWidth - 55, 50, 40, 40);
+                doc.setDrawColor(56, 189, 248);
+                doc.rect(pageWidth - 56, 49, 42, 42); // Moldura
             } catch (e) {
                 console.warn('Erro ao inserir foto no PDF', e);
             }
@@ -133,15 +157,15 @@ const CandidacyPage = () => {
 
         doc.setFontSize(12);
         doc.setFont('helvetica', 'bold');
-        doc.text('Dados Pessoais', 70, 55);
+        doc.text('Dados Pessoais', 15, 55);
 
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(10);
-        doc.text(`Nome: ${formData.nome_completo}`, 70, 65);
-        doc.text(`Email: ${user.email}`, 70, 72);
-        doc.text(`Telemóvel: ${formData.telemovel}`, 70, 79);
-        doc.text(`Data Nascimento: ${formData.data_nascimento}`, 70, 86);
-        doc.text(`Morada: ${formData.morada}`, 70, 93);
+        doc.text(`Nome: ${formData.nome_completo}`, 15, 65);
+        doc.text(`Email: ${user.email}`, 15, 72);
+        doc.text(`Telemóvel: ${formData.telemovel}`, 15, 79);
+        doc.text(`Data Nascimento: ${formData.data_nascimento}`, 15, 86);
+        doc.text(`Morada: ${formData.morada}`, 15, 93);
 
         const pdfBlob = doc.output('blob');
         const pdfFile = new File([pdfBlob], `Candidatura_${formData.nome_completo.replace(/\s+/g, '_')}.pdf`, { type: 'application/pdf' });

@@ -34,6 +34,7 @@ function FormadoresPage() {
     const [viewingSchedule, setViewingSchedule] = useState(false);
     const [formadorEvents, setFormadorEvents] = useState([]);
     const [profilePhoto, setProfilePhoto] = useState(null);
+    const [logoBase64, setLogoBase64] = useState(null);
     const [modalConfig, setModalConfig] = useState({ isOpen: false });
     const [currentDate, setCurrentDate] = useState(new Date());
     const [currentView, setCurrentView] = useState('week');
@@ -53,11 +54,28 @@ function FormadoresPage() {
 
     // Form States
     const [editData, setEditData] = useState({
-        biografia: ''
+        biografia: '',
+        especialidade: '',
+        telemovel: '',
+        morada: ''
     });
 
     useEffect(() => {
         fetchFormadores();
+
+        // Carregar Logo
+        const loadLogo = async () => {
+            try {
+                const response = await fetch('/amigo_logo.png');
+                const blob = await response.blob();
+                const reader = new FileReader();
+                reader.onloadend = () => setLogoBase64(reader.result);
+                reader.readAsDataURL(blob);
+            } catch (error) {
+                console.error("Erro ao carregar logo:", error);
+            }
+        };
+        loadLogo();
     }, []);
 
     const getAuthHeader = () => ({
@@ -88,7 +106,10 @@ function FormadoresPage() {
             setSelectedFormador({ ...profileData, id: userId });
             setFiles(filesData);
             setEditData({
-                biografia: profileData.biografia || ''
+                biografia: profileData.biografia || '',
+                especialidade: profileData.especialidade || '',
+                telemovel: profileData.telemovel || '',
+                morada: profileData.morada || ''
             });
 
             // Carregar Foto com Auth
@@ -146,9 +167,18 @@ function FormadoresPage() {
             doc.setFillColor(15, 23, 42);
             doc.rect(0, 0, pageWidth, 40, 'F');
 
+            doc.rect(0, 0, pageWidth, 40, 'F');
+
+            // Logo
+            if (logoBase64) {
+                try {
+                    doc.addImage(logoBase64, 'PNG', 15, 5, 30, 30);
+                } catch (e) { console.warn('Erro logo', e); }
+            }
+
             doc.setTextColor(255, 255, 255);
             doc.setFontSize(22);
-            doc.text('FICHA DO FORMADOR', 15, 25);
+            doc.text('FICHA DO FORMADOR', 55, 25);
 
             doc.setFontSize(10);
             doc.text(`Docente: ${selectedFormador.nome_completo}`, pageWidth - 15, 25, { align: 'right' });
@@ -571,6 +601,33 @@ function FormadoresPage() {
 
                                         {isEditing ? (
                                             <form onSubmit={handleUpdateProfile} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                                    <div>
+                                                        <label style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Telemóvel</label>
+                                                        <input
+                                                            className="input-field"
+                                                            value={editData.telemovel}
+                                                            onChange={e => setEditData({ ...editData, telemovel: e.target.value })}
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Especialidade</label>
+                                                        <input
+                                                            className="input-field"
+                                                            value={editData.especialidade}
+                                                            onChange={e => setEditData({ ...editData, especialidade: e.target.value })}
+                                                            placeholder="Ex: Cibersegurança"
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <label style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Morada</label>
+                                                    <input
+                                                        className="input-field"
+                                                        value={editData.morada}
+                                                        onChange={e => setEditData({ ...editData, morada: e.target.value })}
+                                                    />
+                                                </div>
                                                 <div>
                                                     <label style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Biografia / Notas</label>
                                                     <textarea
@@ -585,11 +642,28 @@ function FormadoresPage() {
                                                 </button>
                                             </form>
                                         ) : (
-                                            <div>
-                                                <h4 style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>Biografia</h4>
-                                                <p style={{ color: 'var(--text-muted)', lineHeight: '1.5' }}>
-                                                    {selectedFormador.biografia || 'Sem biografia definida.'}
-                                                </p>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+                                                    <div style={{ background: 'rgba(255,255,255,0.03)', padding: '1rem', borderRadius: '8px' }}>
+                                                        <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.25rem' }}>Telemóvel</label>
+                                                        <div style={{ fontSize: '0.95rem' }}>{selectedFormador.telemovel || 'Não definido'}</div>
+                                                    </div>
+                                                    <div style={{ background: 'rgba(255,255,255,0.03)', padding: '1rem', borderRadius: '8px' }}>
+                                                        <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.25rem' }}>Especialidade</label>
+                                                        <div style={{ fontSize: '0.95rem' }}>{selectedFormador.especialidade || 'Geral'}</div>
+                                                    </div>
+                                                    <div style={{ background: 'rgba(255,255,255,0.03)', padding: '1rem', borderRadius: '8px' }}>
+                                                        <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.25rem' }}>Morada</label>
+                                                        <div style={{ fontSize: '0.95rem' }}>{selectedFormador.morada || 'Não definida'}</div>
+                                                    </div>
+                                                </div>
+
+                                                <div>
+                                                    <h4 style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>Biografia</h4>
+                                                    <p style={{ color: 'var(--text-muted)', lineHeight: '1.5', whiteSpace: 'pre-wrap' }}>
+                                                        {selectedFormador.biografia || 'Sem biografia definida.'}
+                                                    </p>
+                                                </div>
                                             </div>
                                         )}
                                     </div>
@@ -723,7 +797,7 @@ function FormadoresPage() {
                         </motion.div>
                     )}
                 </AnimatePresence>
-            </div>
+            </div >
 
             <Modal
                 {...modalConfig}

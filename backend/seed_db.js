@@ -82,8 +82,24 @@ async function seedDatabase() {
             );
         }
 
+        // Atualizar esquema da tabela formadores se necessário
+        try {
+            await db.query(`ALTER TABLE formadores ADD COLUMN especialidade VARCHAR(255) DEFAULT 'Geral'`);
+        } catch (err) {
+            // Ignorar erro se a coluna já existir (ER_DUP_FIELDNAME - código 1060)
+            if (err.errno !== 1060) console.warn(`⚠️ Aviso ao alterar tabela formadores: ${err.message}`);
+        }
+
         // Criar formadores
         // Lista dos nossos formadores e as suas áreas de especialidade
+        const areaMap = {
+            'MECA': 'Mecatrónica',
+            'GCE': 'Gestão e Controlo de Energia',
+            'MIM': 'Manutenção Industrial',
+            'CISEG': 'Cibersegurança',
+            'TPSI': 'Tecnologias de Informação'
+        };
+
         const formadores = [
             { nome: 'Daniel Batista', email: 'daniel.batista@atec.pt', area: 'MECA' },
             { nome: 'Francisco Terra', email: 'francisco.terra@atec.pt', area: 'GCE' },
@@ -100,11 +116,12 @@ async function seedDatabase() {
                  VALUES (?, ?, ?, TRUE, (SELECT id FROM roles WHERE nome = 'FORMADOR'))`,
                 [formador.nome, formador.email, defaultPass]
             );
-            // Criar perfil de formador com biografia
+            // Criar perfil de formador com biografia e especialidade
+            const especialidade = areaMap[formador.area] || 'Geral';
             await db.query(
-                `INSERT INTO formadores (utilizador_id, biografia) 
-                 VALUES ((SELECT id FROM utilizadores WHERE email = ?), ?)`,
-                [formador.email, `Formador especialista da área ${formador.area}`]
+                `INSERT INTO formadores (utilizador_id, biografia, especialidade) 
+                 VALUES ((SELECT id FROM utilizadores WHERE email = ?), ?, ?)`,
+                [formador.email, `Formador especialista da área ${formador.area}`, especialidade]
             );
         }
 
