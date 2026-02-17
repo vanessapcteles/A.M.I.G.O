@@ -1,13 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { View, Text, FlatList, StyleSheet, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import axios from 'axios';
+import { AuthContext } from '../context/AuthContext';
 import { useThemeColors } from '../theme/colors';
 import { API_URL } from '../config/api';
 import { BookOpen } from 'lucide-react-native';
 import BackButton from '../components/BackButton';
 
 const CoursesScreen = ({ navigation }) => {
+    const { user } = useContext(AuthContext);
     const [courses, setCourses] = useState([]);
     const [loading, setLoading] = useState(true);
     const [errorMsg, setErrorMsg] = useState(null);
@@ -20,16 +22,33 @@ const CoursesScreen = ({ navigation }) => {
     const fetchCourses = async () => {
         try {
             setErrorMsg(null);
-            // Ensure we access the 'courses' property from the response object
-            // backend returns { courses: [...], total: ..., pages: ... }
-            const response = await axios.get(`${API_URL}/courses`);
 
-            if (response.data && response.data.courses) {
-                setCourses(response.data.courses);
-            } else if (Array.isArray(response.data)) {
-                setCourses(response.data);
+            if (user.tipo_utilizador === 'FORMANDO') {
+                // Fetch student profile to get enrolled course
+                const response = await axios.get(`${API_URL}/formandos/${user.id}/profile`);
+                if (response.data && response.data.id_curso) {
+                    setCourses([{
+                        id: response.data.id_curso,
+                        nome_curso: response.data.curso_atual,
+                        area: 'O teu curso',
+                        estado: 'a decorrer' // Assuming active if enrolled
+                    }]);
+                } else {
+                    setCourses([]);
+                }
             } else {
-                setCourses([]);
+                // Admin/Staff sees all courses
+                // Ensure we access the 'courses' property from the response object
+                // backend returns { courses: [...], total: ..., pages: ... }
+                const response = await axios.get(`${API_URL}/courses`);
+
+                if (response.data && response.data.courses) {
+                    setCourses(response.data.courses);
+                } else if (Array.isArray(response.data)) {
+                    setCourses(response.data);
+                } else {
+                    setCourses([]);
+                }
             }
 
         } catch (error) {

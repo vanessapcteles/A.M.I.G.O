@@ -9,6 +9,7 @@ import LoginScreen from './src/screens/LoginScreen';
 import DashboardScreen from './src/screens/DashboardScreen';
 import CoursesScreen from './src/screens/CoursesScreen';
 import CourseDetailsScreen from './src/screens/CourseDetailsScreen';
+import GradesScreen from './src/screens/GradesScreen';
 import FormandosScreen from './src/screens/FormandosScreen';
 import FormadoresScreen from './src/screens/FormadoresScreen';
 import RoomsScreen from './src/screens/RoomsScreen';
@@ -38,6 +39,7 @@ const AppNav = () => {
             <Stack.Screen name="Dashboard" component={DashboardScreen} />
             <Stack.Screen name="Courses" component={CoursesScreen} />
             <Stack.Screen name="CourseDetails" component={CourseDetailsScreen} />
+            <Stack.Screen name="Grades" component={GradesScreen} />
             <Stack.Screen name="Formandos" component={FormandosScreen} />
             <Stack.Screen name="Formadores" component={FormadoresScreen} />
             <Stack.Screen name="Rooms" component={RoomsScreen} />

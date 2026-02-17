@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { AuthContext } from '../context/AuthContext';
 import { useThemeColors } from '../theme/colors';
-import { LogOut, BookOpen, Users, User, MapPin, Calendar } from 'lucide-react-native';
+import { LogOut, BookOpen, Users, User, MapPin, Calendar, GraduationCap } from 'lucide-react-native';
 import Logo from '../../assets/logo_website.png';
 
 const DashboardScreen = () => {
@@ -12,38 +12,65 @@ const DashboardScreen = () => {
     const navigation = useNavigation();
     const colors = useThemeColors();
 
-    const menuItems = [
-        {
-            title: 'Cursos',
-            icon: BookOpen,
-            color: colors.cardBlue,
-            screen: 'Courses',
-        },
-        {
-            title: 'Horário',
-            icon: Calendar,
-            color: colors.cardPink,
-            screen: 'Schedule',
-        },
-        {
-            title: 'Formandos',
-            icon: Users,
-            color: colors.cardPink,
-            screen: 'Formandos',
-        },
-        {
-            title: 'Equipa',
-            icon: User,
-            color: colors.cardPink,
-            screen: 'Formadores',
-        },
-        {
-            title: 'Salas',
-            icon: MapPin,
-            color: colors.cardBlue,
-            screen: 'Rooms',
-        },
-    ];
+    const getMenuItems = () => {
+        if (user?.tipo_utilizador === 'FORMANDO') {
+            return [
+                {
+                    title: 'Meu Curso',
+                    icon: BookOpen,
+                    color: colors.cardBlue,
+                    screen: 'Courses',
+                },
+                {
+                    title: 'Horário',
+                    icon: Calendar,
+                    color: colors.cardPink,
+                    screen: 'Schedule',
+                },
+                {
+                    title: 'Notas',
+                    icon: GraduationCap,
+                    color: colors.cardBlue,
+                    screen: 'Grades',
+                },
+            ];
+        }
+
+        return [
+            {
+                title: 'Cursos',
+                icon: BookOpen,
+                color: colors.cardBlue,
+                screen: 'Courses',
+            },
+            {
+                title: 'Horário',
+                icon: Calendar,
+                color: colors.cardPink,
+                screen: 'Schedule',
+            },
+            {
+                title: 'Formandos',
+                icon: Users,
+                color: colors.cardPink,
+                screen: 'Formandos',
+            },
+            {
+                title: 'Equipa',
+                icon: User,
+                color: colors.cardPink,
+                screen: 'Formadores',
+            },
+            {
+                title: 'Salas',
+                icon: MapPin,
+                color: colors.cardBlue,
+                screen: 'Rooms',
+            },
+        ];
+    };
+
+    const menuItems = getMenuItems();
 
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
