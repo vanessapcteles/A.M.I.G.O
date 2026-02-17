@@ -142,8 +142,8 @@ function FormadoresPage() {
             const formatted = data.map(ev => ({
                 id: ev.id,
                 title: `${ev.nome_modulo} (${ev.codigo_turma}) - ${ev.nome_sala}`,
-                start: new Date(ev.inicio),
-                end: new Date(ev.fim)
+                start: new Date(ev.inicio.replace(' ', 'T')),
+                end: new Date(ev.fim.replace(' ', 'T'))
             }));
             setFormadorEvents(formatted);
             setViewingSchedule(true);
@@ -748,49 +748,51 @@ function FormadoresPage() {
                                             )}
                                         </div>
                                     </div>
-                                    <div style={{ height: '500px' }}>
-                                        <Calendar
-                                            localizer={localizer}
-                                            events={formadorEvents}
-                                            startAccessor="start"
-                                            endAccessor="end"
-                                            culture='pt'
-                                            date={currentDate}
-                                            view={currentView}
-                                            onNavigate={date => {
-                                                if (filterStart && filterEnd) {
-                                                    const start = new Date(filterStart);
-                                                    const end = new Date(filterEnd);
-                                                    if (date < start) setCurrentDate(start);
-                                                    else if (date > end) setCurrentDate(end);
-                                                    else setCurrentDate(date);
-                                                } else {
-                                                    setCurrentDate(date);
-                                                }
-                                            }}
-                                            onView={view => setCurrentView(view)}
-                                            components={{
-                                                toolbar: CalendarToolbar
-                                            }}
-                                            messages={{
-                                                next: "Seg.", previous: "Ant.", today: "Hoje",
-                                                month: "Mês", week: "Sem.", day: "Dia"
-                                            }}
-                                            eventPropGetter={() => ({
-                                                style: {
-                                                    backgroundColor: 'var(--secondary)',
-                                                    borderRadius: '8px',
-                                                    opacity: 0.9,
-                                                    color: 'var(--text-primary)',
-                                                    border: 'none',
-                                                    display: 'block',
-                                                    padding: '2px 8px',
-                                                    fontSize: '0.75rem',
-                                                    fontWeight: '600',
-                                                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                                                }
-                                            })}
-                                        />
+                                    <div style={{ height: '500px', overflowX: 'auto' }}>
+                                        <div style={{ minWidth: '600px', height: '100%' }}>
+                                            <Calendar
+                                                localizer={localizer}
+                                                events={formadorEvents}
+                                                startAccessor="start"
+                                                endAccessor="end"
+                                                culture='pt'
+                                                date={currentDate}
+                                                view={currentView}
+                                                onNavigate={date => {
+                                                    if (filterStart && filterEnd) {
+                                                        const start = new Date(filterStart);
+                                                        const end = new Date(filterEnd);
+                                                        if (date < start) setCurrentDate(start);
+                                                        else if (date > end) setCurrentDate(end);
+                                                        else setCurrentDate(date);
+                                                    } else {
+                                                        setCurrentDate(date);
+                                                    }
+                                                }}
+                                                onView={view => setCurrentView(view)}
+                                                components={{
+                                                    toolbar: CalendarToolbar
+                                                }}
+                                                messages={{
+                                                    next: "Seg.", previous: "Ant.", today: "Hoje",
+                                                    month: "Mês", week: "Sem.", day: "Dia"
+                                                }}
+                                                eventPropGetter={() => ({
+                                                    style: {
+                                                        backgroundColor: 'var(--secondary)',
+                                                        borderRadius: '8px',
+                                                        opacity: 0.9,
+                                                        color: 'var(--text-primary)',
+                                                        border: 'none',
+                                                        display: 'block',
+                                                        padding: '2px 8px',
+                                                        fontSize: '0.75rem',
+                                                        fontWeight: '600',
+                                                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                                                    }
+                                                })}
+                                            />
+                                        </div>
                                     </div>
                                 </>
                             )}

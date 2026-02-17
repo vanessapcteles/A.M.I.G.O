@@ -48,6 +48,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                 ] : []),
                 ...(isFormador ? [
                     { icon: FileText, label: 'Minha Ficha', path: '/formador-ficha' },
+                    { icon: Calendar, label: 'O Meu Horário', path: '/my-schedule' },
                     { icon: Clock, label: 'Disponibilidade', path: '/trainer-availability' },
                 ] : [])
             ]

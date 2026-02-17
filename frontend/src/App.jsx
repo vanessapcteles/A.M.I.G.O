@@ -20,6 +20,7 @@ import SchedulesPage from './pages/SchedulesPage';
 import CandidatoPage from './pages/CandidatoPage';
 import CandidaturasPage from './pages/CandidaturasPage';
 import MyCoursePage from './pages/MyCoursePage';
+import MySchedulePage from './pages/MySchedulePage';
 import GradesPage from './pages/GradesPage';
 import FormandoFichaPage from './pages/FormandoFichaPage';
 import FormadorFichaPage from './pages/FormadorFichaPage';
@@ -109,6 +110,7 @@ function App() {
 
               {/* Rotas de Formador */}
               <Route path="/formador-ficha" element={<RoleBasedRoute allowedRoles={['FORMADOR']}><FormadorFichaPage /></RoleBasedRoute>} />
+              <Route path="/my-schedule" element={<RoleBasedRoute allowedRoles={['FORMADOR']}><MySchedulePage /></RoleBasedRoute>} />
               <Route path="/trainer-availability" element={<RoleBasedRoute allowedRoles={['FORMADOR']}><TrainerAvailabilityPage /></RoleBasedRoute>} />
               <Route path="/trainer-grades" element={<RoleBasedRoute allowedRoles={['FORMADOR']}><TrainerGradesPage /></RoleBasedRoute>} />
 
