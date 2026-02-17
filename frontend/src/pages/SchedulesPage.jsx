@@ -71,10 +71,9 @@ function SchedulesPage() {
 
     const loadFiltersData = async () => {
         try {
-            // Use allSettled to prevent one failure from blocking everything
             const results = await Promise.allSettled([
                 formadorService.getAll(),
-                turmaService.getAllTurmas({ limit: 100 }) // Fetch more to fill dropdown
+                turmaService.getAllTurmas({ limit: 100 }) 
             ]);
 
             if (results[0].status === 'fulfilled') setFormadores(results[0].value || []);
@@ -110,7 +109,6 @@ function SchedulesPage() {
         setLoading(true);
         try {
             let data;
-            // Pass filters as object
             data = await horarioService.getAllSchedules({
                 start: startDate,
                 end: endDate,
@@ -126,8 +124,6 @@ function SchedulesPage() {
                 resource: lesson
             }));
 
-            // Alterado: Mostrar APENAS disponibilidades se o modo estiver ativo,
-            // ou APENAS aulas agendadas no modo normal, para evitar confusão visual.
             let finalEvents;
             if (showAvailabilities && canSeeAvailabilities) {
                 console.log('Filtrando disponibilidades:', { count: availabilities.length, filter: filterFormador });
@@ -155,11 +151,11 @@ function SchedulesPage() {
             const isOnline = event.tipo === 'online';
             return {
                 style: {
-                    backgroundColor: isOnline ? '#0ea5e9' : '#10b981', // Cores sólidas e vibrantes
+                    backgroundColor: isOnline ? '#0ea5e9' : '#10b981', 
                     border: 'none',
                     borderRadius: '8px',
-                    color: '#ffffff', // Texto sempre branco para contraste máximo
-                    fontSize: '0.85rem', // Aumentado para melhor leitura
+                    color: '#ffffff', 
+                    fontSize: '0.85rem', 
                     fontWeight: '700',
                     padding: '8px 12px',
                     pointerEvents: 'none',
@@ -173,7 +169,6 @@ function SchedulesPage() {
             };
         }
 
-        // Different style for Agenda view to avoid "cut" look
         if (currentView === 'agenda') {
             return {
                 style: {
@@ -205,7 +200,6 @@ function SchedulesPage() {
         };
     };
 
-    // Calculate length for Agenda view based on filters
     const getAgendaLength = () => {
         if (startDate && endDate) {
             const start = new Date(startDate);
@@ -213,7 +207,7 @@ function SchedulesPage() {
             const diff = differenceInDays(end, start) + 1;
             return diff > 0 ? diff : 30;
         }
-        return 30; // Default
+        return 30; 
     };
 
     const [selectedEvent, setSelectedEvent] = useState(null);

@@ -7,13 +7,13 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
 function FormandoFichaPage() {
-    const { id } = useParams(); // ID do utilizador vindo da URL (opcional)
+    const { id } = useParams(); // ID do utilizador vindo da URL
     const currentUser = authService.getCurrentUser();
 
     // Se houver ID na URL, usa esse. Senão, usa o do utilizador logado.
     const targetUserId = id || currentUser.id;
 
-    const [user, setUser] = useState(currentUser); // Começa com o logado, mas será atualizado
+    const [user, setUser] = useState(currentUser);
     const [extra, setExtra] = useState(null);
     const [academicRecords, setAcademicRecords] = useState([]);
     const [detailedGrades, setDetailedGrades] = useState({ grades: [] });
@@ -24,7 +24,7 @@ function FormandoFichaPage() {
 
 
     useEffect(() => {
-        // Carregar Logo do projeto para Base64
+        // Carregar Logo do projeto 
         const loadLogo = async () => {
             try {
                 const response = await fetch('/amigo_logo.png');
@@ -99,8 +99,7 @@ function FormandoFichaPage() {
         const pageWidth = doc.internal.pageSize.getWidth();
         const pageHeight = doc.internal.pageSize.getHeight();
 
-        // --- HEADER ---
-        // Fundo Escuro Moderno (Gradient simulated with rects or just solid dark blue)
+        // HEADER
         doc.setFillColor(15, 23, 42); // Slate-900 (Dark Blue)
         doc.rect(0, 0, pageWidth, 50, 'F');
 
@@ -128,7 +127,7 @@ function FormandoFichaPage() {
         doc.text(`Gerado em: ${new Date().toLocaleDateString()}`, pageWidth - 15, 45, { align: 'right' });
 
 
-        // --- DADOS PESSOAIS ---
+        // DADOS PESSOAIS
         let currentY = 70;
 
         // Foto de Perfil (Direita)
@@ -151,8 +150,6 @@ function FormandoFichaPage() {
             doc.text('Sem Foto', pageWidth - 35, currentY + 15, { align: 'center' });
         }
 
-        // Dados Pessoais (Título) starts at same Y
-        // Ajustar Y não é necessário somar photoSize pois a foto está ao lado
 
         // Título Secção
         doc.setFontSize(16);
@@ -192,7 +189,7 @@ function FormandoFichaPage() {
         addField('Nascimento:', extra?.data_nascimento ? new Date(extra.data_nascimento).toLocaleDateString() : 'N/A');
 
 
-        // --- HISTÓRICO ESCOLAR ---
+        // HISTÓRICO ESCOLAR
         currentY += 15;
         doc.setFontSize(16);
         doc.setTextColor(15, 23, 42);
@@ -215,7 +212,7 @@ function FormandoFichaPage() {
             body: tableRows,
             theme: 'grid',
             headStyles: {
-                fillColor: [15, 23, 42], // Header Dark Header
+                fillColor: [15, 23, 42], 
                 textColor: [255, 255, 255],
                 fontStyle: 'bold',
                 halign: 'center'
@@ -230,16 +227,16 @@ function FormandoFichaPage() {
                 3: { halign: 'center', fontStyle: 'bold' }
             },
             alternateRowStyles: {
-                fillColor: [241, 245, 249] // Light Gray alternating
+                fillColor: [241, 245, 249] 
             }
         });
 
 
-        // --- AVALIAÇÕES DETALHADAS ---
+        // AVALIAÇÕES DETALHADAS
         if (detailedGrades.grades && detailedGrades.grades.length > 0) {
             let finalY = doc.lastAutoTable.finalY + 20;
 
-            // Check page break
+            // verifica se vai caber na página
             if (finalY > pageHeight - 50) {
                 doc.addPage();
                 finalY = 30;
@@ -265,7 +262,7 @@ function FormandoFichaPage() {
                 body: gradesRows,
                 theme: 'grid',
                 headStyles: {
-                    fillColor: [56, 189, 248], // Light Blue Header for details
+                    fillColor: [56, 189, 248], 
                     textColor: [255, 255, 255],
                     fontStyle: 'bold'
                 },
@@ -279,7 +276,7 @@ function FormandoFichaPage() {
             });
         }
 
-        // --- FOOTER ---
+        // FOOTER
         const pageCount = doc.internal.getNumberOfPages();
         for (let i = 1; i <= pageCount; i++) {
             doc.setPage(i);

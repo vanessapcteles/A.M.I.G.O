@@ -17,14 +17,16 @@ function MyCoursePage() {
 
                 if (!token || !user) return;
 
-                // 1. Fetch Course Info (Candidatura/Inscrição)
+
+                // 1. Obter Informações do Curso (Candidatura/Inscrição)
+
                 const resInscricao = await fetch(`${API_URL}/api/candidatos/me`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 const dataInscricao = await resInscricao.json();
                 setInscricao(dataInscricao);
 
-                // 2. Fetch Grades (Módulos)
+                // 2. Obter Notas (Módulos)
                 const resGrades = await fetch(`${API_URL}/api/formandos/${user.id}/grades`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
@@ -34,7 +36,7 @@ function MyCoursePage() {
                     const gradesList = dataGrades.grades || [];
                     setGrades(gradesList);
 
-                    // Calculate Stats
+                    // Calcular Estatísticas
                     const total = gradesList.length;
                     const concluidos = gradesList.filter(g => g.nota && parseFloat(g.nota) >= 9.5).length;
 
@@ -60,7 +62,7 @@ function MyCoursePage() {
         </div>
     );
 
-    // Filter modules with defined grades for the list
+    // Filtrar módulos com notas definidas para a lista
     const completedModules = grades.filter(g => g.nota !== null);
 
     return (

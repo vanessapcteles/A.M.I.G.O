@@ -14,7 +14,7 @@ function FormadorFichaPage() {
     const [logoBase64, setLogoBase64] = useState(null);
 
     useEffect(() => {
-        // Carregar Logo do projeto para Base64
+        // Carregar Logo do projeto 
         const loadLogo = async () => {
             try {
                 const response = await fetch('/amigo_logo.png');
@@ -101,7 +101,7 @@ function FormadorFichaPage() {
         doc.text(`Gerado em: ${new Date().toLocaleDateString()}`, pageWidth - 15, 45, { align: 'right' });
 
 
-        // --- DADOS DO FORMADOR ---
+        // DADOS DO FORMADOR
         let currentY = 70;
 
         // Foto (Direita)
@@ -153,7 +153,7 @@ function FormadorFichaPage() {
         addField('Departamento:', 'Tecnologias de Informação');
 
 
-        // --- HISTÓRICO LECIONAÇÃO ---
+        // HISTÓRICO LECIONAÇÃO
         currentY += 15;
         doc.setFontSize(16);
         doc.setTextColor(15, 23, 42);
@@ -186,7 +186,7 @@ function FormadorFichaPage() {
             alternateRowStyles: { fillColor: [241, 245, 249] }
         });
 
-        // --- FOOTER ---
+        // FOOTER
         const pageCount = doc.internal.getNumberOfPages();
         for (let i = 1; i <= pageCount; i++) {
             doc.setPage(i);

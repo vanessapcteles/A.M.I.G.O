@@ -412,7 +412,7 @@ function UsersPage() {
                 )}
             </div>
 
-            {/* Feedback Toast */}
+            {/* Feedback */}
             <ConfirmDialog
                 isOpen={confirmOpen}
                 onClose={() => setConfirmOpen(false)}

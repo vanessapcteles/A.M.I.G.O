@@ -15,9 +15,9 @@ import {
     Mail,
     X,
     Clock,
-    Menu, // Added Menu icon for mobile
-    Sun, // Already present, but ensuring it's here
-    Moon // Already present, but ensuring it's here
+    Menu, 
+    Sun, 
+    Moon 
 } from 'lucide-react';
 import { publicService } from '../services/publicService';
 import { authService } from '../services/authService';
@@ -32,7 +32,7 @@ const LandingPage = () => {
     const [filteredCourses, setFilteredCourses] = useState([]);
     const [loading, setLoading] = useState(true);
     const [stats, setStats] = useState({ cursos: 0, formandos: 0, empregabilidade: '94%' });
-    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false); // Mobile menu state
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false); 
 
     // Estados para o Modal de Detalhes
     const [selectedCourse, setSelectedCourse] = useState(null);
@@ -111,7 +111,7 @@ const LandingPage = () => {
             c.area.toLowerCase().includes(searchTerm.toLowerCase())
         );
 
-        // Ordenar: 2026 primeiro, depois o resto pela data
+        // Ordenar
         const sorted = [...filtered].sort((a, b) => {
             const yearA = a.proxima_data_inicio ? new Date(a.proxima_data_inicio).getFullYear() : 0;
             const yearB = b.proxima_data_inicio ? new Date(b.proxima_data_inicio).getFullYear() : 0;
@@ -331,7 +331,7 @@ const LandingPage = () => {
                 </motion.div>
             </header>
 
-            {/* How it Works - Didactic Section */}
+            {/* Como funciona */}
             <section id="como-funciona" style={{ padding: '8rem 5%', background: isDarkMode ? 'rgba(0,0,0,0.2)' : 'rgba(255,255,255,0.4)' }}>
                 <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
                     <div style={{ textAlign: 'center', marginBottom: '5rem' }}>
@@ -360,7 +360,7 @@ const LandingPage = () => {
                 </div>
             </section>
 
-            {/* Courses Section */}
+            {/* Cursos */}
             <main id="cursos" style={{ padding: '8rem 5% 10rem', maxWidth: '1400px', margin: '0 auto' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '4rem' }}>
                     <div>
@@ -471,7 +471,7 @@ const LandingPage = () => {
                 )}
             </main>
 
-            {/* Course Details Modal */}
+            {/* Detalhes do Curso */}
             <AnimatePresence>
                 {selectedCourse && (
                     <div style={{

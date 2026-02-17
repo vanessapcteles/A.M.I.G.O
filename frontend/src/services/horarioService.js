@@ -77,10 +77,10 @@ export const horarioService = {
         let url = `${API_URL}/api/schedules/all`;
         const params = new URLSearchParams();
 
-        // Support legacy (start, end) arguments or object
+        // Suportar argumentos legados (start, end) ou objeto
         if (typeof filters === 'string') {
-            // arguments were (start, end)
-            // eslint-disable-next-line
+            // argumentos eram (start, end)
+            
             const [start, end] = arguments;
             if (start) params.append('start', start);
             if (end) params.append('end', end);

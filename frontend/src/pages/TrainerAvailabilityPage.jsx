@@ -69,7 +69,7 @@ function TrainerAvailabilityPage() {
                 const s = new Date(item.inicio);
                 const e = new Date(item.fim);
 
-                // FIX VISUAL: Se o evento cruzar a meia-noite (ex: acabar às 00:00 do dia seguinte devido a Timezones ou DST),
+                // Se o evento cruzar a meia-noite (ex: acabar às 00:00 do dia seguinte devido a Timezones ou DST),
                 // o Calendário assume que é "All Day" ou multi-dia.
                 // Forçamos o fim a ser 23:59:59 do mesmo dia se detetarmos mudança de dia.
                 if (s.getDate() !== e.getDate()) {
@@ -100,7 +100,7 @@ function TrainerAvailabilityPage() {
 
     const handleSelectSlot = ({ start, end }) => {
         setSelectedSlot({ start, end });
-        // Reset form states to safe defaults
+        // Reiniciar os estados do formulário para os valores predefinidos
         setIsRepeat(false);
         setRepeatUntil('');
         setExcludeWeekends(true);
@@ -131,8 +131,7 @@ function TrainerAvailabilityPage() {
                 finalRepeatUntil = format(originalEnd, 'yyyy-MM-dd');
             }
 
-            // NORMALIZAÇÃO DE DURAÇÃO (Crucial para evitar barras no topo)
-            // Forçamos o 'fim' a ser no mesmo dia do 'início' (ou dia seguinte se overnight)
+
             const normalizedEnd = new Date(start);
             normalizedEnd.setHours(end.getHours(), end.getMinutes(), 0, 0);
 
@@ -142,55 +141,54 @@ function TrainerAvailabilityPage() {
             }
             end = normalizedEnd;
 
-            // Start Generation Loop (Frontend-side to handle DST/Timezones correctly)
+
             const generatedSlots = [];
             const limitDate = finalIsRepeat && finalRepeatUntil ? new Date(finalRepeatUntil) : new Date(start);
             limitDate.setHours(23, 59, 59, 999);
 
             let currentStart = new Date(start);
 
-            // Capture target hours/minutes from the normalized inputs to enforce them on every repeat
+
             const targetStartH = start.getHours();
             const targetStartM = start.getMinutes();
             const targetEndH = end.getHours();
             const targetEndM = end.getMinutes();
 
-            // Detect overnight (if end time is next day relative to start component)
-            // Note: 'end' variable is already normalized to be start date or start date + 1
+
             const isOvernight = end.getDate() !== start.getDate();
 
             while (currentStart <= limitDate) {
                 const dayOfWeek = currentStart.getDay();
 
                 if (finalIsRepeat && finalExcludeWeekends && (dayOfWeek === 0 || dayOfWeek === 6)) {
-                    // Skip weekend
+
                     currentStart.setDate(currentStart.getDate() + 1);
                     continue;
                 }
 
-                // Explicitly set start time for this day (Forces 08:00 Stay 08:00)
+
                 const thisStart = new Date(currentStart);
                 thisStart.setHours(targetStartH, targetStartM, 0, 0);
 
-                // Explicitly set end time for this day
+                // Definir explicitamente a hora de fim para este dia
                 const thisEnd = new Date(thisStart);
                 if (isOvernight) {
                     thisEnd.setDate(thisEnd.getDate() + 1);
                 }
                 thisEnd.setHours(targetEndH, targetEndM, 0, 0);
 
-                // Add to list
+                // Adicionar à lista
                 generatedSlots.push({
                     inicio: thisStart,
                     fim: thisEnd,
                     tipo
                 });
 
-                // Next day
+                // Avançar para o dia seguinte
                 currentStart.setDate(currentStart.getDate() + 1);
             }
 
-            // Send BATCH to backend
+            // Enviar em lote (batch) para o backend
             await disponibilidadeService.addAvailability(generatedSlots);
             toast('Disponibilidade adicionada!', 'success');
             setModalOpen(false);
@@ -220,7 +218,7 @@ function TrainerAvailabilityPage() {
         const isOnline = event.tipo === 'online';
         return {
             style: {
-                backgroundColor: isOnline ? '#0ea5e9' : '#10b981', // Solid colors
+                backgroundColor: isOnline ? '#0ea5e9' : '#10b981', // Cores sólidas
                 color: '#fff',
                 borderLeft: `5px solid ${isOnline ? '#0369a1' : '#047857'}`,
                 borderRadius: '6px',

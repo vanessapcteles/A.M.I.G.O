@@ -22,16 +22,13 @@ function GradesPage() {
                 if (parseFloat(g.nota) >= 9.5) {
                     concluidos++;
                 } else {
-                    // Reprovada conta como não concluída, mas neste contexto 'abertos' seriam os sem nota
-                    // Se quisermos contar reprovadas como 'abertos' (para refazer), podemos ajustar.
-                    // Mas a lógica original era (sem nota) -> abertos.
                 }
             } else {
                 abertos++;
             }
         });
 
-        // Safe division
+        // divisão segura
         const mediaFinal = count > 0 ? (total / count).toFixed(1) : 0;
 
         setStats({

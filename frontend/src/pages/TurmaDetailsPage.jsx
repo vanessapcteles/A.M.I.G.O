@@ -19,7 +19,7 @@ function TurmaDetailsPage() {
     const [turmaModules, setTurmaModules] = useState([]);
     const [turmaFormandos, setTurmaFormandos] = useState([]);
 
-    // Confirmation State
+    // Estado de Confirmação
     const [confirmOpen, setConfirmOpen] = useState(false);
     const [moduleToRemove, setModuleToRemove] = useState(null);
     const [editingModule, setEditingModule] = useState(null);
@@ -29,7 +29,7 @@ function TurmaDetailsPage() {
     const [availableTrainers, setAvailableTrainers] = useState([]);
     const [availableRooms, setAvailableRooms] = useState([]);
 
-    // Form Stats
+    // Estados do Formulário
     const [formData, setFormData] = useState({
         id_modulo: '',
         id_formador: '',
@@ -51,11 +51,11 @@ function TurmaDetailsPage() {
 
     const loadData = async () => {
         try {
-            // 1. Fetch Turma Details FIRST to get Course ID
+            // 1. Obter detalhes da Turma PRIMEIRO para obter o ID do Curso
             const turmaDetails = await turmaService.getTurma(id);
             setTurmaInfo(turmaDetails);
 
-            // 2. Fetch dependencies with Course Context
+            // 2. Obter dependências com o Contexto do Curso
             const [modules, formandos, allModules, rooms, trainersRes] = await Promise.all([
                 turmaService.getTurmaModules(id),
                 turmaService.getTurmaFormandos(id),
@@ -67,7 +67,7 @@ function TurmaDetailsPage() {
             setTurmaModules(modules);
             setTurmaFormandos(formandos);
 
-            // Handle pagination response format for modules
+            // Tratar o formato de resposta da paginação para módulos
             const modulesList = Array.isArray(allModules) ? allModules : (allModules.data || []);
             setAvailableModules(modulesList);
 
@@ -88,20 +88,20 @@ function TurmaDetailsPage() {
         e.preventDefault();
         try {
             if (editingModule) {
-                // Update existing assignment
+                // Atualizar atribuição existente
                 await turmaService.updateTurmaModule(editingModule.id, formData);
                 toast('Atribuição atualizada!', 'success');
             } else {
-                // Add new module (extra)
+                // Adicionar novo módulo (extra)
                 await turmaService.addModuleToTurma(id, formData);
                 toast('Módulo adicionado com sucesso!', 'success');
             }
 
-            // Refresh
+            // Atualizar lista
             const updatedModules = await turmaService.getTurmaModules(id);
             setTurmaModules(updatedModules);
 
-            // Reset form
+            // Reiniciar formulário
             setEditingModule(null);
             setFormData({
                 id_modulo: '', id_formador: '', id_sala: '', horas_planeadas: '',
@@ -121,7 +121,7 @@ function TurmaDetailsPage() {
             horas_planeadas: module.horas_planeadas,
             sequencia: module.sequencia
         });
-        // Scroll to form (optional)
+        // Rolar para o formulário (opcional)
         document.getElementById('module-form')?.scrollIntoView({ behavior: 'smooth' });
     };
 
@@ -149,11 +149,11 @@ function TurmaDetailsPage() {
         }
     };
 
-    // Auto-fill hours when module is selected OR check if already exists
+    // Preencher horas automaticamente quando o módulo é selecionado OU verificar se já existe
     const handleModuleChange = (moduleId) => {
         const idInt = parseInt(moduleId);
 
-        // Check if module is already assigned to this class
+        // Verificar se o módulo já está atribuído a esta turma
         const existing = turmaModules.find(tm => tm.id_modulo === idInt);
         if (existing) {
             startEdit(existing);
@@ -161,7 +161,7 @@ function TurmaDetailsPage() {
             return;
         }
 
-        // New module logic
+        // Lógica para novo módulo
         const mod = availableModules.find(m => m.id === idInt);
         setFormData(prev => ({
             ...prev,

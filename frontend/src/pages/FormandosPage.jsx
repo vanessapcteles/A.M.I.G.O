@@ -36,7 +36,7 @@ function FormandosPage() {
     const [filterCourse, setFilterCourse] = useState('');
     const [courses, setCourses] = useState([]);
 
-    // Pagination
+    // Paginação
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 8;
 
@@ -89,7 +89,7 @@ function FormandosPage() {
             const response = await fetch(url, { headers: getAuthHeader() });
             const data = await response.json();
             setFormandos(data);
-            setCurrentPage(1); // Reset to first page on new search/filter
+            setCurrentPage(1); // Reset para a primeira página em nova pesquisa/filtro
         } catch (error) {
             console.error('Erro ao carregar formandos:', error);
         } finally {
@@ -97,7 +97,7 @@ function FormandosPage() {
         }
     };
 
-    // Paginated results
+    // Resultados paginados
     const totalPages = Math.ceil(formandos.length / itemsPerPage);
     const paginatedFormandos = formandos.slice(
         (currentPage - 1) * itemsPerPage,
@@ -108,7 +108,7 @@ function FormandosPage() {
         try {
             const response = await fetch(`${API_URL}/api/turmas`, { headers: getAuthHeader() });
             const data = await response.json();
-            // Handle pagination response format
+            // formato de resposta de paginação
             const turmasList = Array.isArray(data) ? data : (data.data || []);
             setTurmas(turmasList);
         } catch (error) {
@@ -199,8 +199,8 @@ function FormandosPage() {
             const doc = new jsPDF();
             const pageWidth = doc.internal.pageSize.getWidth();
 
-            // Cabeçalho Premium
-            doc.setFillColor(30, 41, 59); // Slate-800
+            // Cabeçalho
+            doc.setFillColor(30, 41, 59); 
             doc.rect(0, 0, pageWidth, 40, 'F');
 
             doc.rect(0, 0, pageWidth, 40, 'F');
@@ -274,7 +274,7 @@ function FormandosPage() {
                 startY: 125,
                 head: [['Curso', 'Turma', 'Data Início', 'Nota Final']],
                 body: tableRows,
-                headStyles: { fillColor: [56, 189, 248] }, // Primary color
+                headStyles: { fillColor: [56, 189, 248] }, 
                 theme: 'striped'
             });
 

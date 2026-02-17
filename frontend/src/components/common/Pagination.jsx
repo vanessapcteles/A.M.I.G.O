@@ -23,23 +23,17 @@ export default function Pagination({ currentPage, totalPages, onPageChange }) {
             <div style={{ display: 'flex', gap: '0.5rem' }}>
                 {[...Array(totalPages)].map((_, i) => {
                     const page = i + 1;
-                    // Lógica simples para não mostrar todas as páginas se forem muitas
-                    // (Pode ser melhorada depois, mas por agora mostra tudo se < 10, ou lógica completa)
-                    // Para simplificar, vou mostrar todas se total < 8. Se > 8, mostra current, first, last, e vizinhos.
+                    
 
                     let show = false;
                     if (totalPages <= 7) show = true;
                     else if (page === 1 || page === totalPages) show = true;
                     else if (page >= currentPage - 1 && page <= currentPage + 1) show = true;
 
-                    if (!show) {
-                        // Mostrar reticências se for o caso, mas para simplicidade inicial, 
-                        // vamos renderizar apenas os botões visíveis e ignorar os gaps visualmente ou renderizar null
+                    if (!show) 
+                    {
                         return null;
                     }
-
-                    // Tratamento básico para mostrar "..." (não implementado visualmente complexo aqui para manter consistência rápida)
-                    // Se quisermos ser perfeitos, precisaríamos de logica de "..."
 
                     return (
                         <button

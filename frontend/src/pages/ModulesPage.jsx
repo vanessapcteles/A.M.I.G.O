@@ -29,32 +29,32 @@ function ModulesPage() {
     const [showModal, setShowModal] = useState(false);
     const [editingModule, setEditingModule] = useState(null);
 
-    // Confirm Dialog State
+    // Confirmação de exclusão
     const [confirmOpen, setConfirmOpen] = useState(false);
     const [moduleToDelete, setModuleToDelete] = useState(null);
 
     const [formData, setFormData] = useState({
         nome_modulo: '',
         carga_horaria: 25,
-        area: '', // No default area
-        courseId: '' // Adicionar courseId ao state do form
+        area: '', 
+        courseId: '' 
     });
-    const [isNewArea, setIsNewArea] = useState(false); // Validar se é nova área (DEPRECATED: Now handled in Courses)
+    const [isNewArea, setIsNewArea] = useState(false); 
 
     // States para cursos
     const [courses, setCourses] = useState([]);
-    const [areas, setAreas] = useState([]); // Dynamic areas list
+    const [areas, setAreas] = useState([]); 
     const [filterCourseId, setFilterCourseId] = useState('');
-    const [filterArea, setFilterArea] = useState(''); // Estado para filtro de área na lista
+    const [filterArea, setFilterArea] = useState(''); 
 
     // States para Formulário
-    const [formArea, setFormArea] = useState(''); // Estado para filtro de área no modal
+    const [formArea, setFormArea] = useState(''); 
 
     useEffect(() => {
         loadCourses();
-        loadAreas(); // Load dynamic areas
+        loadAreas(); 
         loadModules();
-    }, [currentPage, searchTerm, filterCourseId, filterArea]); // Adicionar filterArea e filterCourseId como dependência
+    }, [currentPage, searchTerm, filterCourseId, filterArea]); 
 
     const loadAreas = async () => {
         try {
@@ -67,17 +67,12 @@ function ModulesPage() {
 
     const loadCourses = async () => {
         try {
-            // Fetch validation: backend returns { courses: [...], total, ... }
-            // Requesting larger limit to popuplate dropdown
             const data = await courseService.getAllCourses({ limit: 100 });
             setCourses(data.courses || (Array.isArray(data) ? data : []));
         } catch (error) {
             console.error('Erro ao carregar cursos', error);
         }
     };
-
-    // Extrair áreas únicas (deprecated logic, now using backend list but keeping this as backup or for course-derived logic if needed)
-    // const uniqueAreas = [...new Set(courses.map(c => c.area).filter(Boolean))];
 
     // Filtrar cursos para o dropdown principal
     const filteredCoursesForList = courses.filter(c => !filterArea || c.area === filterArea);
@@ -90,12 +85,11 @@ function ModulesPage() {
         try {
             const data = await moduleService.getAllModules({
                 page: currentPage,
-                limit: 12, // Um pouco mais, pois são cards pequenos
+                limit: 12, 
                 search: searchTerm,
-                courseId: filterCourseId, // Passar filtro de curso
-                area: filterArea // Passar filtro de área
+                courseId: filterCourseId, 
+                area: filterArea 
             });
-            // Fallback para backward compatibility caso o backend ainda não tenha atualizado
             const modulesList = Array.isArray(data) ? data : (data.data || []);
             setModules(modulesList);
             setTotalPages(data.pages || 1);
@@ -122,9 +116,9 @@ function ModulesPage() {
             setEditingModule(null);
             setFormData({ nome_modulo: '', carga_horaria: 25, area: '', courseId: '' });
             setIsNewArea(false);
-            setFormArea(''); // Reset form area
+            setFormArea(''); 
             loadModules();
-            loadAreas(); // Reload areas in case a new one was added
+            loadAreas(); 
         } catch (error) {
             toast(error.message || 'Erro ao guardar módulo', 'error');
         }
@@ -152,7 +146,7 @@ function ModulesPage() {
             nome_modulo: modulo.nome_modulo,
             carga_horaria: modulo.carga_horaria,
             area: modulo.area,
-            courseId: '' // Na edição não vamos permitir mudar a associação por enquanto, ou teria de carregar
+            courseId: '' 
         });
         setIsNewArea(false);
         setShowModal(true);
@@ -182,7 +176,7 @@ function ModulesPage() {
                         value={filterArea}
                         onChange={(e) => {
                             setFilterArea(e.target.value);
-                            setFilterCourseId(''); // Reset course selection when area changes
+                            setFilterCourseId(''); 
                             setCurrentPage(1);
                         }}
                     >

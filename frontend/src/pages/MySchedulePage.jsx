@@ -35,12 +35,11 @@ function MySchedulePage() {
         if (!user) return;
         setLoading(true);
         try {
-            // Reusing the getFormadorSchedule service since "My Schedule" is just the formador's schedule
+            // Reutilizar o serviço getFormadorSchedule já que "O Meu Horário" é apenas o horário do formador
             const data = await horarioService.getFormadorSchedule(user.id, filterStart, filterEnd);
             const formatted = data.map(ev => ({
                 id: ev.id,
                 title: `${ev.nome_modulo} (${ev.codigo_turma}) - ${ev.nome_sala}`,
-                // Fix for MySQL datetime strings (same as FormadoresPage)
                 start: new Date(ev.inicio.replace(' ', 'T')),
                 end: new Date(ev.fim.replace(' ', 'T')),
                 resource: ev

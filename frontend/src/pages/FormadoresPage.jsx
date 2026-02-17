@@ -41,18 +41,18 @@ function FormadoresPage() {
     const [filterStart, setFilterStart] = useState('');
     const [filterEnd, setFilterEnd] = useState('');
 
-    // Pagination
+    // Paginação
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 8;
 
-    // Reload schedule when filters change while viewing
+    // Recarregar horário quando os filtros mudam enquanto está a visualizar
     useEffect(() => {
         if (viewingSchedule && selectedFormador) {
             handleViewSchedule();
         }
     }, [filterStart, filterEnd]);
 
-    // Form States
+    // Estados do formulário
     const [editData, setEditData] = useState({
         biografia: '',
         especialidade: '',
@@ -87,7 +87,7 @@ function FormadoresPage() {
             const response = await fetch(`${API_URL}/api/formadores`, { headers: getAuthHeader() });
             const data = await response.json();
             setFormadores(data);
-            setCurrentPage(1); // Reset to first page on new search/filter
+            setCurrentPage(1);
         } catch (error) {
             console.error('Erro ao carregar formadores:', error);
         } finally {
@@ -163,7 +163,7 @@ function FormadoresPage() {
             const doc = new jsPDF();
             const pageWidth = doc.internal.pageSize.getWidth();
 
-            // Cabeçalho Premium
+            // Cabeçalho
             doc.setFillColor(15, 23, 42);
             doc.rect(0, 0, pageWidth, 40, 'F');
 
@@ -366,7 +366,7 @@ function FormadoresPage() {
         f.email.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    // Paginated results
+    // Resultados paginados
     const totalPages = Math.ceil(filteredFormadores.length / itemsPerPage);
     const paginatedFormadores = filteredFormadores.slice(
         (currentPage - 1) * itemsPerPage,

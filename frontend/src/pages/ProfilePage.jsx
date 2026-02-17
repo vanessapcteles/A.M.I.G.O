@@ -48,17 +48,17 @@ function ProfilePage() {
             const res = await fetch(`${API_URL}/api/formandos/${userId}/profile`, {
                 headers: getAuthHeader()
             });
-            if (!res.ok) { // Changed from uploadRes to res
-                const errorText = await res.text(); // Changed from uploadRes to res
-                throw new Error(`Erro ao carregar perfil do formando: ${res.status} - ${errorText}`); // Adjusted error message
+            if (!res.ok) { 
+                const errorText = await res.text(); 
+                throw new Error(`Erro ao carregar perfil do formando: ${res.status} - ${errorText}`); 
             }
-            const data = await res.json(); // Changed from result to data, and uploadRes to res
-            setExtraProfile(data); // Kept original logic for setting state
-            console.log('Perfil do formando carregado:', data); // Added log
-            return data; // Return data instead of result.id or result.insertId
+            const data = await res.json(); 
+            setExtraProfile(data); 
+            console.log('Perfil do formando carregado:', data); 
+            return data; 
         } catch (e) {
-            console.error('Erro detalhado ao carregar perfil do formando:', e); // Added detailed error log
-            setMessage({ text: `Erro ao carregar perfil: ${e.message}`, type: 'error' }); // Set message for UI
+            console.error('Erro detalhado ao carregar perfil do formando:', e); 
+            setMessage({ text: `Erro ao carregar perfil: ${e.message}`, type: 'error' }); 
         }
     };
 
@@ -101,7 +101,6 @@ function ProfilePage() {
             if (response.ok) {
                 loadProfilePhoto(user.id);
                 setMessage({ text: 'Foto de perfil atualizada!', type: 'success' });
-                // Trigger refresh in potential other components (like DashboardLayout)
                 window.dispatchEvent(new Event('storage'));
             }
         } catch (error) {

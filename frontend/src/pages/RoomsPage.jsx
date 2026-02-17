@@ -50,7 +50,7 @@ function RoomsPage() {
         localizacao: 'Edifício Principal'
     });
 
-    // Pagination
+    // Paginação
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 8;
 
@@ -131,7 +131,7 @@ function RoomsPage() {
     const openEdit = (room) => {
         setEditingRoom(room);
         setFormData({
-            nome: room.nome_sala, // Corrigido para nome_sala
+            nome: room.nome_sala, 
             capacidade: room.capacidade,
             localizacao: room.localizacao
         });
@@ -143,14 +143,14 @@ function RoomsPage() {
         room.localizacao?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    // Pagination Logic
+    // Lógica de Paginação
     const totalPages = Math.ceil(filteredRooms.length / itemsPerPage);
     const paginatedRooms = filteredRooms.slice(
         (currentPage - 1) * itemsPerPage,
         currentPage * itemsPerPage
     );
 
-    // Reset page when search changes
+    // Resetar página quando a pesquisa muda
     useEffect(() => {
         setCurrentPage(1);
     }, [searchTerm]);
@@ -268,7 +268,7 @@ function RoomsPage() {
                 </div>
             )}
 
-            {/* Modal de Ocupação da Sala */}
+            {/* Ocupação da Sala */}
             <AnimatePresence>
                 {viewingSchedule && (
                     <div style={{
@@ -319,7 +319,7 @@ function RoomsPage() {
                 )}
             </AnimatePresence>
 
-            {/* Modal de Criação/Edição */}
+            {/* Criação/Edição */}
             {
                 showModal && (
                     <div style={{

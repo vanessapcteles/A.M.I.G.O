@@ -41,12 +41,12 @@ function TurmaSchedulePage() {
     const [autoStartDate, setAutoStartDate] = useState(format(new Date(), 'yyyy-MM-dd'));
     const [autoRegime, setAutoRegime] = useState('diurno');
 
-    // Module List Pagination & Search
+    // Paginação e Pesquisa da Lista de Módulos
     const [moduleSearch, setModuleSearch] = useState('');
     const [modulePage, setModulePage] = useState(1);
     const ITEMS_PER_PAGE = 5;
 
-    // Confirmation State
+    // Estado de Confirmação
     const [confirmOpen, setConfirmOpen] = useState(false);
     const [eventToDelete, setEventToDelete] = useState(null);
 
@@ -90,7 +90,7 @@ function TurmaSchedulePage() {
     };
 
     const handleSelectSlot = ({ start }) => {
-        // Always default to 3 hours duration on click/select
+        // Predefinir sempre 3 horas de duração ao clicar/selecionar
         const dateStr = format(start, 'yyyy-MM-dd');
         const startStr = format(start, 'HH:mm');
 
@@ -119,7 +119,7 @@ function TurmaSchedulePage() {
             date.setHours(hours);
             date.setMinutes(minutes);
 
-            // Add 3 hours
+            // Adicionar 3 horas
             date.setHours(date.getHours() + 3);
 
             const newEnd = format(date, 'HH:mm');
@@ -130,7 +130,7 @@ function TurmaSchedulePage() {
                 hora_fim: newEnd
             });
         } catch (error) {
-            // Fallback if parsing fails
+            // Recurso se a análise falhar
             setFormData({ ...formData, hora_inicio: newStart });
         }
     };
@@ -144,11 +144,11 @@ function TurmaSchedulePage() {
     const confirmDeleteEvent = async () => {
         try {
             if (eventToDelete) {
-                // Delete single event
+                // Apagar evento único
                 await horarioService.deleteLesson(eventToDelete.id);
                 toast('Aula removida com sucesso!', 'success');
             } else {
-                // Delete ALL events (Clear Schedule)
+                // Apagar TODOS os eventos (Limpar Horário)
                 await horarioService.deleteTurmaSchedule(id);
                 toast('Horário da turma limpo com sucesso!', 'success');
             }
@@ -210,8 +210,8 @@ function TurmaSchedulePage() {
         }
     });
 
-    // Filter and Pagination Logic
-    // Filter and Pagination Logic
+    // Lógica de Filtro e Paginação
+    // Lógica de Filtro e Paginação
     const filteredModules = turmaModules.filter(m => {
         if (!moduleSearch) return true;
         const searchTerms = moduleSearch.toLowerCase().split(' ').filter(t => t);
@@ -308,7 +308,7 @@ function TurmaSchedulePage() {
                         <CalendarIcon size={18} color="var(--primary)" /> Monitorização
                     </h3>
 
-                    {/* Search Bar */}
+                    {/* Barra de Pesquisa */}
                     <div style={{ position: 'relative', marginBottom: '1rem' }}>
                         <Search size={16} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} />
                         <input
@@ -326,7 +326,7 @@ function TurmaSchedulePage() {
                             const percent = Math.min((m.horas_agendadas / m.horas_planeadas) * 100, 100);
                             const isFull = m.horas_agendadas >= m.horas_planeadas;
 
-                            // Format number
+                            // Formatar número
                             const formatH = (n) => Number(n).toFixed(n % 1 === 0 ? 0 : 1);
 
                             return (
@@ -359,7 +359,7 @@ function TurmaSchedulePage() {
                         {currentModules.length === 0 && <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', textAlign: 'center', marginTop: '1rem' }}>Nenhum módulo encontrado.</p>}
                     </div>
 
-                    {/* Pagination Controls */}
+                    {/* Controlos de Paginação */}
                     {totalPages > 1 && (
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1rem', borderTop: '1px solid var(--border-glass)', paddingTop: '0.75rem' }}>
                             <button

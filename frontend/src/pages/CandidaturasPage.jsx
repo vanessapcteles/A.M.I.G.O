@@ -14,7 +14,7 @@ const CandidaciesListPage = () => {
     const [filter, setFilter] = useState('ALL'); // ALL, PENDENTE, APROVADO, REJEITADO
     const [searchTerm, setSearchTerm] = useState('');
 
-    // Pagination
+    // Paginação
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 8;
 
@@ -137,14 +137,14 @@ const CandidaciesListPage = () => {
         return matchesFilter && matchesSearch;
     });
 
-    // Pagination Logic
+    // Logica de paginação
     const totalPages = Math.ceil(filteredCandidacies.length / itemsPerPage);
     const paginatedCandidacies = filteredCandidacies.slice(
         (currentPage - 1) * itemsPerPage,
         currentPage * itemsPerPage
     );
 
-    // Reset pagination when filters change
+    // Resetar paginação quando filtros mudam
     useEffect(() => {
         setCurrentPage(1);
     }, [filter, searchTerm]);
