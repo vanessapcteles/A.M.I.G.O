@@ -8,11 +8,13 @@ import {
     ActivityIndicator,
     KeyboardAvoidingView,
     Platform,
+    Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AuthContext } from '../context/AuthContext';
 import { useThemeColors } from '../theme/colors';
 import { LogIn, Lock, User, Eye, EyeOff, Shield, ChevronLeft } from 'lucide-react-native';
+import Logo from '../../assets/logo_website.png';
 
 const LoginScreen = ({ navigation }) => {
     const [email, setEmail] = useState('');
@@ -162,7 +164,11 @@ const LoginScreen = ({ navigation }) => {
                 style={styles.keyboardView}
             >
                 <View style={styles.header}>
+                    <Image source={Logo} style={styles.logo} resizeMode="contain" />
                     <Text style={[styles.brand, { color: colors.primary }]}>A.M.I.G.O</Text>
+                    <Text style={[styles.brandSubtitle, { color: colors.textLight }]}>
+                        Academy Management Interactive Guide & Organizer
+                    </Text>
                     <Text style={[styles.title, { color: colors.text }]}>
                         {show2FA ? 'Verificação 2FA' : 'Bem-vindo'}
                     </Text>
@@ -193,10 +199,24 @@ const styles = StyleSheet.create({
         marginBottom: 40,
         alignItems: 'center', // Center align header for better OTP look
     },
+    logo: {
+        width: 120,
+        height: 120,
+        marginBottom: 16,
+    },
     brand: {
         fontSize: 48,
         fontWeight: '900',
-        marginBottom: 8,
+        marginBottom: 4,
+    },
+    brandSubtitle: {
+        fontSize: 12,
+        fontWeight: '600',
+        textAlign: 'center',
+        marginBottom: 32,
+        textTransform: 'uppercase',
+        letterSpacing: 1,
+        maxWidth: '80%',
     },
     title: {
         fontSize: 32,
