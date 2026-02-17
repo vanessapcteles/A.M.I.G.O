@@ -117,17 +117,23 @@ export const AuthProvider = ({ children }) => {
 
 
 
-    const logout = () => {
+    const logout = async () => {
         setIsLoading(true);
-        axios.post(`${API_URL}/auth/logout`, {}, {
-            headers: { Authorization: `Bearer ${user.token}` }
-        }).catch(e => console.log('Logout error', e))
-            .finally(() => {
-                AsyncStorage.removeItem('userInfo');
-                AsyncStorage.removeItem('userToken');
-                setUser(null);
-                setIsLoading(false);
-            });
+        try {
+            if (user && user.token) {
+                await axios.post(`${API_URL}/auth/logout`, {}, {
+                    headers: { Authorization: `Bearer ${user.token}` }
+                });
+            }
+        } catch (e) {
+            console.log('Logout error', e);
+        } finally {
+            await AsyncStorage.removeItem('userInfo');
+            await AsyncStorage.removeItem('userToken');
+            delete axios.defaults.headers.common['Authorization'];
+            setUser(null);
+            setIsLoading(false);
+        }
     };
 
     return (

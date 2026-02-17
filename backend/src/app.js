@@ -49,6 +49,6 @@ app.use('/api/evaluations', evaluationRoutes); // Notas e avaliações
 // Iniciar o Servidor
 // Ele fica à escuta na porta 3001
 app.listen(3001, () => {
-  console.log('🚀 Servidor a correr a todo o vapor em http://localhost:3001');
+  console.log('Servidor a correr em http://localhost:3001');
 });
 
