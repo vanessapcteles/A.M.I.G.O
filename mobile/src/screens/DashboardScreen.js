@@ -5,6 +5,7 @@ import { useNavigation } from '@react-navigation/native';
 import { AuthContext } from '../context/AuthContext';
 import { useThemeColors } from '../theme/colors';
 import { LogOut, BookOpen, Users, User, MapPin, Calendar } from 'lucide-react-native';
+import Logo from '../../assets/logo_website.png';
 
 const DashboardScreen = () => {
     const { user, logout } = useContext(AuthContext);
@@ -57,7 +58,7 @@ const DashboardScreen = () => {
                 <View style={styles.logoContainer}>
                     {/* Placeholder for Logo - Using Icon + Text as per design */}
                     <View style={styles.logoIcon}>
-                        <BookOpen color={colors.cardBlue} size={40} />
+                        <Image source={Logo} style={styles.logo} resizeMode="contain" />
                     </View>
                     <Text style={[styles.logoText, { color: colors.cardBlue }]}>A.M.I.G.O</Text>
                     <Text style={[styles.logoSubtext, { color: colors.cardPink }]}>Academy Management Interactive Guide & Organizer</Text>
@@ -118,6 +119,11 @@ const styles = StyleSheet.create({
     },
     logoIcon: {
         marginBottom: 16,
+        alignItems: 'center',
+    },
+    logo: {
+        width: 100,
+        height: 100,
     },
     logoText: {
         fontSize: 28,
