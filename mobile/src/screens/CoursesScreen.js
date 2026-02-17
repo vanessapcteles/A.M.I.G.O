@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, FlatList, StyleSheet, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import axios from 'axios';
 import { useThemeColors } from '../theme/colors';
@@ -7,7 +7,7 @@ import { API_URL } from '../config/api';
 import { BookOpen } from 'lucide-react-native';
 import BackButton from '../components/BackButton';
 
-const CoursesScreen = () => {
+const CoursesScreen = ({ navigation }) => {
     const [courses, setCourses] = useState([]);
     const [loading, setLoading] = useState(true);
     const [errorMsg, setErrorMsg] = useState(null);
@@ -41,7 +41,13 @@ const CoursesScreen = () => {
     };
 
     const renderItem = ({ item }) => (
-        <View style={[styles.card, { backgroundColor: colors.surface }]}>
+        <TouchableOpacity
+            style={[styles.card, { backgroundColor: colors.surface }]}
+            onPress={() => navigation.navigate('CourseDetails', {
+                courseId: item.id,
+                courseName: item.nome_curso
+            })}
+        >
             <View style={[styles.iconContainer, { backgroundColor: colors.iconBgPrimary }]}>
                 <BookOpen color={colors.primary} size={24} />
             </View>
@@ -52,7 +58,7 @@ const CoursesScreen = () => {
                     {item.estado}
                 </Text>
             </View>
-        </View>
+        </TouchableOpacity>
     );
 
     return (
