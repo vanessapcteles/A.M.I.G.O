@@ -22,7 +22,7 @@ function Disable2FAPage() {
         const disable = async () => {
             try {
                 await authService.disable2FA(token);
-                // LIMPEZA CRÍTICA: Garantir que não fica lixo de sessões antigas
+                // Garantir que não fica lixo de sessões antigas
                 localStorage.removeItem('user');
                 localStorage.removeItem('auth_token');
 

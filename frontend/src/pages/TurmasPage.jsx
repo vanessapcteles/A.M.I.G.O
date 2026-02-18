@@ -36,7 +36,7 @@ function TurmasPage() {
     const [showModal, setShowModal] = useState(false);
     const [editingTurma, setEditingTurma] = useState(null);
 
-    // Confirm Dialog State
+    // Estado do Diálogo de Confirmação
     const [confirmOpen, setConfirmOpen] = useState(false);
     const [turmaToDelete, setTurmaToDelete] = useState(null);
 
@@ -60,12 +60,7 @@ function TurmasPage() {
     const loadData = async () => {
         setLoading(true);
         try {
-            // Primeiro carregar cursos para ter a lista de filtros disponível mesmo se a query de turmas falhar ou depender dela
-            // Mas idealmente carregamos tudo em paralelo. Se courses variar muito, maybe separar.
-            // Para simplificar e garantir que temos cursos para o filtro, chamamos getCursos sempre ou apenas uma vez?
-            // getCursos retorna apenas cursos ativos para criar turma, mas para filtro queremos todos? 
-            // O endpoint getCursosParaTurma (usado aqui) filtra por estado != terminado. 
-            // Para filtro de pesquisa, talvez quiséssemos todos. Mas por agora usamos o mesmo.
+            // Carregar cursos para o filtro
 
             const cursosData = await turmaService.getCursos();
             setCursos(cursosData);
@@ -77,7 +72,7 @@ function TurmasPage() {
                 courseId: filterCourse
             });
 
-            // Fallback para backward compatibility
+            // Compatibilidade com versões anteriores
             const turmasList = Array.isArray(turmasData) ? turmasData : (turmasData.data || []);
             setTurmas(turmasList);
             setTotalPages(turmasData.pages || 1);

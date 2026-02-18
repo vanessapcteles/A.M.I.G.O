@@ -41,7 +41,7 @@ function SchedulesPage() {
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
     const [currentDate, setCurrentDate] = useState(new Date());
-    const [currentView, setCurrentView] = useState('week');
+    const [currentView, setCurrentView] = useState(window.innerWidth < 768 ? 'agenda' : 'week');
 
     // Filter States
     const [filterFormador, setFilterFormador] = useState('');
@@ -71,10 +71,9 @@ function SchedulesPage() {
 
     const loadFiltersData = async () => {
         try {
-            // Use allSettled to prevent one failure from blocking everything
             const results = await Promise.allSettled([
                 formadorService.getAll(),
-                turmaService.getAllTurmas({ limit: 100 }) // Fetch more to fill dropdown
+                turmaService.getAllTurmas({ limit: 100 }) 
             ]);
 
             if (results[0].status === 'fulfilled') setFormadores(results[0].value || []);
@@ -110,7 +109,6 @@ function SchedulesPage() {
         setLoading(true);
         try {
             let data;
-            // Pass filters as object
             data = await horarioService.getAllSchedules({
                 start: startDate,
                 end: endDate,
@@ -126,8 +124,6 @@ function SchedulesPage() {
                 resource: lesson
             }));
 
-            // Alterado: Mostrar APENAS disponibilidades se o modo estiver ativo,
-            // ou APENAS aulas agendadas no modo normal, para evitar confusão visual.
             let finalEvents;
             if (showAvailabilities && canSeeAvailabilities) {
                 console.log('Filtrando disponibilidades:', { count: availabilities.length, filter: filterFormador });
@@ -155,11 +151,11 @@ function SchedulesPage() {
             const isOnline = event.tipo === 'online';
             return {
                 style: {
-                    backgroundColor: isOnline ? '#0ea5e9' : '#10b981', // Cores sólidas e vibrantes
+                    backgroundColor: isOnline ? '#0ea5e9' : '#10b981', 
                     border: 'none',
                     borderRadius: '8px',
-                    color: '#ffffff', // Texto sempre branco para contraste máximo
-                    fontSize: '0.85rem', // Aumentado para melhor leitura
+                    color: '#ffffff', 
+                    fontSize: '0.85rem', 
                     fontWeight: '700',
                     padding: '8px 12px',
                     pointerEvents: 'none',
@@ -173,7 +169,6 @@ function SchedulesPage() {
             };
         }
 
-        // Different style for Agenda view to avoid "cut" look
         if (currentView === 'agenda') {
             return {
                 style: {
@@ -205,7 +200,6 @@ function SchedulesPage() {
         };
     };
 
-    // Calculate length for Agenda view based on filters
     const getAgendaLength = () => {
         if (startDate && endDate) {
             const start = new Date(startDate);
@@ -213,7 +207,7 @@ function SchedulesPage() {
             const diff = differenceInDays(end, start) + 1;
             return diff > 0 ? diff : 30;
         }
-        return 30; // Default
+        return 30; 
     };
 
     const [selectedEvent, setSelectedEvent] = useState(null);
@@ -245,7 +239,9 @@ function SchedulesPage() {
                             .btn-availability { width: 100% !important; justify-content: center !important; }
                         }
                         @media (max-width: 480px) {
-                            .filter-group { grid-template-columns: 1fr !important; }
+                            .filter-group { display: flex !important; flex-direction: column !important; }
+                            .filter-item { width: 100% !important; }
+                            .schedules-header-actions { gap: 1rem !important; }
                         }
                     `}
                 </style>
@@ -380,9 +376,9 @@ function SchedulesPage() {
                 </div>
             </div>
 
-            <div className="glass-card" style={{ padding: '1.5rem', minHeight: '750px' }}>
+            <div className="glass-card" style={{ padding: '1.5rem', minHeight: '750px', overflowX: 'auto' }}>
                 <style>{`
-                    .rbc-calendar { font-family: inherit; }
+                    .rbc-calendar { font-family: inherit; min-width: 700px; /* Force minimum width for scroll */ }
                     .rbc-off-range-bg { background: var(--card-hover-bg); }
                     .rbc-header { 
                         color: var(--text-secondary); 
@@ -416,6 +412,36 @@ function SchedulesPage() {
                     .rbc-agenda-view table.rbc-agenda-table { border: none !important; color: var(--text-primary); }
                     .rbc-agenda-view table.rbc-agenda-table thead > tr > th { border-bottom: 2px solid var(--border-glass) !important; color: var(--text-secondary); }
                     .rbc-agenda-event-cell { color: var(--text-primary) !important; }
+                    
+                    /* Mobile Calendar Adjustments */
+                    @media (max-width: 768px) {
+                        .rbc-toolbar {
+                            flex-direction: column;
+                            gap: 0.5rem;
+                            align-items: stretch !important;
+                            padding-bottom: 0.5rem;
+                            position: sticky;
+                            left: 0;
+                        }
+                        .rbc-toolbar-label {
+                            margin: 0.25rem 0 !important;
+                            text-align: center;
+                            font-size: 1rem;
+                            font-weight: 700;
+                        }
+                        .rbc-btn-group {
+                            display: flex;
+                            justify-content: space-between;
+                            width: 100%;
+                            gap: 0.25rem;
+                        }
+                        .rbc-btn-group button {
+                            flex: 1;
+                            font-size: 0.75rem;
+                            padding: 0.4rem 0.2rem;
+                            white-space: nowrap;
+                        }
+                    }
                 `}</style>
 
                 {loading ? (
@@ -455,6 +481,7 @@ function SchedulesPage() {
             </div>
 
             <div style={{ marginTop: '1.5rem' }}>
+
                 <div className="glass-card" style={{ padding: '1rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                     <Info size={20} style={{ color: 'var(--primary)' }} />
                     <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>

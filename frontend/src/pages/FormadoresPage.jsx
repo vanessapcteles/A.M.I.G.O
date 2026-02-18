@@ -34,30 +34,48 @@ function FormadoresPage() {
     const [viewingSchedule, setViewingSchedule] = useState(false);
     const [formadorEvents, setFormadorEvents] = useState([]);
     const [profilePhoto, setProfilePhoto] = useState(null);
+    const [logoBase64, setLogoBase64] = useState(null);
     const [modalConfig, setModalConfig] = useState({ isOpen: false });
     const [currentDate, setCurrentDate] = useState(new Date());
     const [currentView, setCurrentView] = useState('week');
     const [filterStart, setFilterStart] = useState('');
     const [filterEnd, setFilterEnd] = useState('');
 
-    // Pagination
+    // Paginação
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 8;
 
-    // Reload schedule when filters change while viewing
+    // Recarregar horário quando os filtros mudam enquanto está a visualizar
     useEffect(() => {
         if (viewingSchedule && selectedFormador) {
             handleViewSchedule();
         }
     }, [filterStart, filterEnd]);
 
-    // Form States
+    // Estados do formulário
     const [editData, setEditData] = useState({
-        biografia: ''
+        biografia: '',
+        especialidade: '',
+        telemovel: '',
+        morada: ''
     });
 
     useEffect(() => {
         fetchFormadores();
+
+        // Carregar Logo
+        const loadLogo = async () => {
+            try {
+                const response = await fetch('/amigo_logo.png');
+                const blob = await response.blob();
+                const reader = new FileReader();
+                reader.onloadend = () => setLogoBase64(reader.result);
+                reader.readAsDataURL(blob);
+            } catch (error) {
+                console.error("Erro ao carregar logo:", error);
+            }
+        };
+        loadLogo();
     }, []);
 
     const getAuthHeader = () => ({
@@ -69,7 +87,7 @@ function FormadoresPage() {
             const response = await fetch(`${API_URL}/api/formadores`, { headers: getAuthHeader() });
             const data = await response.json();
             setFormadores(data);
-            setCurrentPage(1); // Reset to first page on new search/filter
+            setCurrentPage(1);
         } catch (error) {
             console.error('Erro ao carregar formadores:', error);
         } finally {
@@ -88,7 +106,10 @@ function FormadoresPage() {
             setSelectedFormador({ ...profileData, id: userId });
             setFiles(filesData);
             setEditData({
-                biografia: profileData.biografia || ''
+                biografia: profileData.biografia || '',
+                especialidade: profileData.especialidade || '',
+                telemovel: profileData.telemovel || '',
+                morada: profileData.morada || ''
             });
 
             // Carregar Foto com Auth
@@ -121,8 +142,8 @@ function FormadoresPage() {
             const formatted = data.map(ev => ({
                 id: ev.id,
                 title: `${ev.nome_modulo} (${ev.codigo_turma}) - ${ev.nome_sala}`,
-                start: new Date(ev.inicio),
-                end: new Date(ev.fim)
+                start: new Date(ev.inicio.replace(' ', 'T')),
+                end: new Date(ev.fim.replace(' ', 'T'))
             }));
             setFormadorEvents(formatted);
             setViewingSchedule(true);
@@ -142,13 +163,22 @@ function FormadoresPage() {
             const doc = new jsPDF();
             const pageWidth = doc.internal.pageSize.getWidth();
 
-            // Cabeçalho Premium
+            // Cabeçalho
             doc.setFillColor(15, 23, 42);
             doc.rect(0, 0, pageWidth, 40, 'F');
 
+            doc.rect(0, 0, pageWidth, 40, 'F');
+
+            // Logo
+            if (logoBase64) {
+                try {
+                    doc.addImage(logoBase64, 'PNG', 15, 5, 30, 30);
+                } catch (e) { console.warn('Erro logo', e); }
+            }
+
             doc.setTextColor(255, 255, 255);
             doc.setFontSize(22);
-            doc.text('FICHA DO FORMADOR', 15, 25);
+            doc.text('FICHA DO FORMADOR', 55, 25);
 
             doc.setFontSize(10);
             doc.text(`Docente: ${selectedFormador.nome_completo}`, pageWidth - 15, 25, { align: 'right' });
@@ -336,7 +366,7 @@ function FormadoresPage() {
         f.email.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    // Paginated results
+    // Resultados paginados
     const totalPages = Math.ceil(filteredFormadores.length / itemsPerPage);
     const paginatedFormadores = filteredFormadores.slice(
         (currentPage - 1) * itemsPerPage,
@@ -353,6 +383,10 @@ function FormadoresPage() {
                             .formadores-header-actions { justify-content: flex-start !important; width: 100% !important; }
                             .search-bar { flex: 1; max-width: none !important; }
                             .hidden-tablet { display: none !important; }
+                        }
+                        @media (max-width: 640px) {
+                            .formadores-header-actions { flex-direction: column !important; align-items: stretch !important; gap: 1rem !important; }
+                            .search-bar { width: 100% !important; }
                         }
                     `}
                 </style>
@@ -410,6 +444,15 @@ function FormadoresPage() {
                     {`
                         @media (max-width: 1400px) {
                             .responsive-grid { grid-template-columns: 1fr !important; gap: 2rem !important; }
+                        }
+                        @media (max-width: 768px) {
+                             /* Force Table to Card View */
+                             table, thead, tbody, th, td, tr { display: block; }
+                             thead tr { position: absolute; top: -9999px; left: -9999px; }
+                             tr { border: 1px solid var(--border-glass); border-radius: 12px; margin-bottom: 1rem; background: var(--bg-card); padding: 1rem; }
+                             td { border: none; position: relative; padding-left: 50% !important; margin-bottom: 0.5rem; text-align: right; display: flex; justify-content: flex-end; align-items: center; }
+                             td:before { position: absolute; top: 50%; left: 0; transform: translateY(-50%); width: 45%; padding-right: 10px; white-space: nowrap; content: attr(data-label); font-weight: bold; text-align: left; color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; }
+                             td:last-child { margin-bottom: 0; border-bottom: 0; }
                         }
                     `}
                 </style>
@@ -558,6 +601,33 @@ function FormadoresPage() {
 
                                         {isEditing ? (
                                             <form onSubmit={handleUpdateProfile} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                                    <div>
+                                                        <label style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Telemóvel</label>
+                                                        <input
+                                                            className="input-field"
+                                                            value={editData.telemovel}
+                                                            onChange={e => setEditData({ ...editData, telemovel: e.target.value })}
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Especialidade</label>
+                                                        <input
+                                                            className="input-field"
+                                                            value={editData.especialidade}
+                                                            onChange={e => setEditData({ ...editData, especialidade: e.target.value })}
+                                                            placeholder="Ex: Cibersegurança"
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <label style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Morada</label>
+                                                    <input
+                                                        className="input-field"
+                                                        value={editData.morada}
+                                                        onChange={e => setEditData({ ...editData, morada: e.target.value })}
+                                                    />
+                                                </div>
                                                 <div>
                                                     <label style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Biografia / Notas</label>
                                                     <textarea
@@ -572,11 +642,28 @@ function FormadoresPage() {
                                                 </button>
                                             </form>
                                         ) : (
-                                            <div>
-                                                <h4 style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>Biografia</h4>
-                                                <p style={{ color: 'var(--text-muted)', lineHeight: '1.5' }}>
-                                                    {selectedFormador.biografia || 'Sem biografia definida.'}
-                                                </p>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+                                                    <div style={{ background: 'rgba(255,255,255,0.03)', padding: '1rem', borderRadius: '8px' }}>
+                                                        <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.25rem' }}>Telemóvel</label>
+                                                        <div style={{ fontSize: '0.95rem' }}>{selectedFormador.telemovel || 'Não definido'}</div>
+                                                    </div>
+                                                    <div style={{ background: 'rgba(255,255,255,0.03)', padding: '1rem', borderRadius: '8px' }}>
+                                                        <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.25rem' }}>Especialidade</label>
+                                                        <div style={{ fontSize: '0.95rem' }}>{selectedFormador.especialidade || 'Geral'}</div>
+                                                    </div>
+                                                    <div style={{ background: 'rgba(255,255,255,0.03)', padding: '1rem', borderRadius: '8px' }}>
+                                                        <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.25rem' }}>Morada</label>
+                                                        <div style={{ fontSize: '0.95rem' }}>{selectedFormador.morada || 'Não definida'}</div>
+                                                    </div>
+                                                </div>
+
+                                                <div>
+                                                    <h4 style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>Biografia</h4>
+                                                    <p style={{ color: 'var(--text-muted)', lineHeight: '1.5', whiteSpace: 'pre-wrap' }}>
+                                                        {selectedFormador.biografia || 'Sem biografia definida.'}
+                                                    </p>
+                                                </div>
                                             </div>
                                         )}
                                     </div>
@@ -661,56 +748,58 @@ function FormadoresPage() {
                                             )}
                                         </div>
                                     </div>
-                                    <div style={{ height: '500px' }}>
-                                        <Calendar
-                                            localizer={localizer}
-                                            events={formadorEvents}
-                                            startAccessor="start"
-                                            endAccessor="end"
-                                            culture='pt'
-                                            date={currentDate}
-                                            view={currentView}
-                                            onNavigate={date => {
-                                                if (filterStart && filterEnd) {
-                                                    const start = new Date(filterStart);
-                                                    const end = new Date(filterEnd);
-                                                    if (date < start) setCurrentDate(start);
-                                                    else if (date > end) setCurrentDate(end);
-                                                    else setCurrentDate(date);
-                                                } else {
-                                                    setCurrentDate(date);
-                                                }
-                                            }}
-                                            onView={view => setCurrentView(view)}
-                                            components={{
-                                                toolbar: CalendarToolbar
-                                            }}
-                                            messages={{
-                                                next: "Seg.", previous: "Ant.", today: "Hoje",
-                                                month: "Mês", week: "Sem.", day: "Dia"
-                                            }}
-                                            eventPropGetter={() => ({
-                                                style: {
-                                                    backgroundColor: 'var(--secondary)',
-                                                    borderRadius: '8px',
-                                                    opacity: 0.9,
-                                                    color: 'var(--text-primary)',
-                                                    border: 'none',
-                                                    display: 'block',
-                                                    padding: '2px 8px',
-                                                    fontSize: '0.75rem',
-                                                    fontWeight: '600',
-                                                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                                                }
-                                            })}
-                                        />
+                                    <div style={{ height: '500px', overflowX: 'auto' }}>
+                                        <div style={{ minWidth: '600px', height: '100%' }}>
+                                            <Calendar
+                                                localizer={localizer}
+                                                events={formadorEvents}
+                                                startAccessor="start"
+                                                endAccessor="end"
+                                                culture='pt'
+                                                date={currentDate}
+                                                view={currentView}
+                                                onNavigate={date => {
+                                                    if (filterStart && filterEnd) {
+                                                        const start = new Date(filterStart);
+                                                        const end = new Date(filterEnd);
+                                                        if (date < start) setCurrentDate(start);
+                                                        else if (date > end) setCurrentDate(end);
+                                                        else setCurrentDate(date);
+                                                    } else {
+                                                        setCurrentDate(date);
+                                                    }
+                                                }}
+                                                onView={view => setCurrentView(view)}
+                                                components={{
+                                                    toolbar: CalendarToolbar
+                                                }}
+                                                messages={{
+                                                    next: "Seg.", previous: "Ant.", today: "Hoje",
+                                                    month: "Mês", week: "Sem.", day: "Dia"
+                                                }}
+                                                eventPropGetter={() => ({
+                                                    style: {
+                                                        backgroundColor: 'var(--secondary)',
+                                                        borderRadius: '8px',
+                                                        opacity: 0.9,
+                                                        color: 'var(--text-primary)',
+                                                        border: 'none',
+                                                        display: 'block',
+                                                        padding: '2px 8px',
+                                                        fontSize: '0.75rem',
+                                                        fontWeight: '600',
+                                                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                                                    }
+                                                })}
+                                            />
+                                        </div>
                                     </div>
                                 </>
                             )}
                         </motion.div>
                     )}
                 </AnimatePresence>
-            </div>
+            </div >
 
             <Modal
                 {...modalConfig}

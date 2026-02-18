@@ -7,7 +7,7 @@ const ChatWidget = () => {
         const TAWK_WIDGET_ID = '1jgsae490';
 
         if (document.getElementById('tawkToScript')) {
-            console.log('⚠️ Tawk.to já está carregado');
+            console.log('Tawk.to já está carregado');
             return;
         }
 
@@ -28,7 +28,7 @@ const ChatWidget = () => {
 
         // Configuração quando o widget carregar
         window.Tawk_API.onLoad = function () {
-            console.log('✅ Tawk.to chat carregado com sucesso!');
+            console.log('Tawk.to chat carregado com sucesso!');
 
             // Integra dados do usuário logado (se disponível)
             try {
@@ -41,20 +41,20 @@ const ChatWidget = () => {
                         'userId': user.id_utilizador || ''
                     }, function (error) {
                         if (error) {
-                            console.error('❌ Erro ao definir atributos do Tawk.to:', error);
+                            console.error('Erro ao definir atributos do Tawk.to:', error);
                         } else {
-                            console.log('✅ Dados do usuário enviados ao Tawk.to');
+                            console.log('Dados do usuário enviados ao Tawk.to');
                         }
                     });
                 }
             } catch (error) {
-                console.warn('⚠️ Não foi possível obter dados do usuário:', error);
+                console.warn('Não foi possível obter dados do usuário:', error);
             }
         };
 
         // Tratamento de erros
         window.Tawk_API.onError = function (error) {
-            console.error('❌ Erro no Tawk.to:', error);
+            console.error('Erro no Tawk.to:', error);
         };
 
         // Cleanup quando o componente for desmontado

@@ -1,18 +1,14 @@
 import { db } from '../config/db.js';
 
-// Listar todos os modulos
-// Listar todos os modulos com paginação
 // Listar todos os modulos com paginação
 export const getModules = async (req, res) => {
     try {
         const { page = 1, limit = 10, search, courseId, area } = req.query;
         const offset = (page - 1) * limit;
 
-        // Base query
-        let query = 'SELECT DISTINCT m.* FROM modulos m';
+        let query = 'SELECT DISTINCT m.* FROM modulos m'; 
         const params = [];
 
-        // Join if filtering by course
         if (courseId) {
             query += ' JOIN curso_modulos cm ON m.id = cm.id_modulo';
         }
@@ -25,7 +21,7 @@ export const getModules = async (req, res) => {
         }
 
         if (area) {
-            whereClauses.push('m.area = ?'); // Filter by explicit module area
+            whereClauses.push('m.area = ?'); 
             params.push(area);
         }
 
@@ -43,14 +39,13 @@ export const getModules = async (req, res) => {
 
         const [modules] = await db.query(query, params);
 
-        // Count for pagination
+        // Contagem para paginação
         let countQuery = 'SELECT COUNT(DISTINCT m.id) as total FROM modulos m';
 
         if (courseId) {
             countQuery += ' JOIN curso_modulos cm ON m.id = cm.id_modulo';
         }
 
-        // Reuse calculated where clauses, but reconstruct params for count
         const countWhereParams = [];
         if (courseId) countWhereParams.push(courseId);
         if (area) countWhereParams.push(area);
@@ -92,9 +87,9 @@ export const createModule = async (req, res) => {
         // Se veio courseId, associar de imediato
         if (courseId) {
             // Verificar se o curso existe (opcional, mas bom pra evitar FK error cru)
-            // Aqui vamos direto no try/catch da FK
+            // Aqui vamos direto ao try/catch da FK
 
-            // Calculate next sequence
+            // Calcular próxima sequência
             const [rows] = await db.query('SELECT MAX(sequencia) as maxSeq FROM curso_modulos WHERE id_curso = ?', [courseId]);
             const nextSeq = (rows[0].maxSeq !== null) ? rows[0].maxSeq + 1 : 0;
 
@@ -166,7 +161,7 @@ export const getModulesAreas = async (req, res) => {
             ORDER BY area ASC
         `);
         const areasSet = new Set(rows.map(r => r.area));
-        areasSet.add('Outra'); // Ensure default area exists
+        areasSet.add('Outra'); 
         const areas = Array.from(areasSet).sort();
         return res.json(areas);
     } catch (error) {
@@ -206,10 +201,10 @@ export const deleteArea = async (req, res) => {
             return res.status(400).json({ message: 'Nome da área inválido' });
         }
 
-        // 1. Set modules area to NULL (preserve modules)
+        // Preserva modulos caso sejam usados em cursos
         await db.query('UPDATE modulos SET area = NULL WHERE area = ?', [areaName]);
 
-        // 2. Delete courses associated with this area
+        // Elimina cursos associados a esta área
         await db.query('DELETE FROM cursos WHERE area = ?', [areaName]);
 
         return res.status(200).json({ message: 'Área eliminada com sucesso' });

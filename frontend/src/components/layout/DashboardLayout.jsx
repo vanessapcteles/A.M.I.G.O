@@ -148,6 +148,10 @@ const DashboardLayout = ({ children }) => {
                             .hidden-mobile { display: none !important; }
                             .profile-pill { padding: 0.4rem !important; }
                         }
+                        @media (max-width: 480px) {
+                             h1 { font-size: 1.2rem !important; }
+                             .profile-pill { padding: 0.25rem !important; gap: 0.5rem !important; }
+                        }
                     `}
                 </style>
 

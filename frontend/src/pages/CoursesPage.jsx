@@ -46,20 +46,19 @@ function CoursesPage() {
     const [areas, setAreas] = useState([]);
 
 
-    // Area Management State
+    // Gestão de áreas
     const [showAreaManager, setShowAreaManager] = useState(false);
-    const [editingArea, setEditingArea] = useState(null); // The area being renamed { original: 'A', current: 'A' }
-    const [deletingArea, setDeletingArea] = useState(null); // The area being deleted 'A'
-    // removed mergeTargetArea as it is no longer used
+    const [editingArea, setEditingArea] = useState(null); 
+    const [deletingArea, setDeletingArea] = useState(null); 
 
-    // Module Management State
+    // Gestão de módulos
     const [showModuleModal, setShowModuleModal] = useState(false);
     const [currentCourse, setCurrentCourse] = useState(null);
     const [courseModules, setCourseModules] = useState([]);
     const [availableModules, setAvailableModules] = useState([]);
 
     const [moduleForm, setModuleForm] = useState({ id_modulo: '', horas_padrao: '', sequencia: '' });
-    const [modalFilterArea, setModalFilterArea] = useState(''); // New state for modal area filter
+    const [modalFilterArea, setModalFilterArea] = useState(''); 
 
     const user = authService.getCurrentUser();
     const role = user?.tipo_utilizador?.toUpperCase();
@@ -143,7 +142,7 @@ function CoursesPage() {
             setCourseToDelete(null);
         } catch (error) {
             toast(error.message, 'error');
-            setShowDeleteConfirm(false); // Close even if error to prevent stuck state
+            setShowDeleteConfirm(false); 
         }
     };
 
@@ -162,12 +161,12 @@ function CoursesPage() {
     const openModuleModal = async (course) => {
         setCurrentCourse(course);
         setShowModuleModal(true);
-        setModalFilterArea(''); // Reset area filter
-        // Load course modules
+        setModalFilterArea(''); 
+        // Carregar módulos do curso
         try {
             const cModules = await courseService.getCourseModules(course.id);
             setCourseModules(cModules);
-            // Load all modules for dropdown initially
+            // Carregar todos os módulos para o dropdown inicialmente
             loadAvailableModules('');
         } catch (error) {
             toast('Erro ao carregar detalhes do curso', 'error');
@@ -176,7 +175,7 @@ function CoursesPage() {
 
     const loadAvailableModules = async (area) => {
         try {
-            // Apply area filter if present, otherwise fetch large list
+            // Aplicar filtro de área se presente, caso contrário buscar lista grande
             const params = { limit: 1000 };
             if (area) params.area = area;
 
@@ -192,12 +191,12 @@ function CoursesPage() {
         try {
             await courseService.addModuleToCourse(currentCourse.id, moduleForm);
 
-            // Refresh list
+            // Atualizar lista
             const updated = await courseService.getCourseModules(currentCourse.id);
             setCourseModules(updated);
 
             toast('Módulo adicionado ao currículo', 'success');
-            // Suggest next sequence
+            // Sugerir próxima sequência
             const lastSeq = updated.length > 0 ? Math.max(...updated.map(m => m.sequencia)) : 0;
             setModuleForm({ id_modulo: '', horas_padrao: '', sequencia: String(lastSeq + 1) });
         } catch (error) {
@@ -216,7 +215,7 @@ function CoursesPage() {
     };
 
 
-    // Area Management Handlers
+    // Handlers de gestão de áreas
     const handleUpdateArea = async (originalName, newName) => {
         try {
             await moduleService.updateArea(originalName, newName);
@@ -369,7 +368,7 @@ function CoursesPage() {
                                     </div>
 
                                     <h3 style={{ fontSize: '1.4rem', fontWeight: '700', marginBottom: '1.5rem', lineHeight: '1.2' }}>{course.nome_curso}</h3>
-                                    {/* Removed old area display */}
+                                    {/* Removida a área */}
                                 </div>
 
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '1.5rem', borderTop: '1px solid var(--border-glass)' }}>
@@ -409,7 +408,7 @@ function CoursesPage() {
                         </div>
                     )}
 
-                    {/* Pagination */}
+                    {/* Paginação */}
                     <Pagination
                         currentPage={currentPage}
                         totalPages={totalPages}
@@ -732,7 +731,7 @@ function CoursesPage() {
                 </div>
             )}
 
-            {/* Delete Confirmation Dialog - Bottom Center */}
+            {/* Delete Confirmation Dialog */}
             <AnimatePresence>
                 {showDeleteConfirm && (
                     <motion.div

@@ -63,6 +63,17 @@ export const updateUser = async (req, res) => {
         );
         if (existing.length === 0) return res.status(404).json({ message: 'Utilizador não encontrado' });
 
+        // Verificar permissões: SECRETARIA não pode mudar roles
+        if (req.user.role === 'SECRETARIA' && tipo_utilizador) {
+            // Se tentar mudar a role, ignoramos ou lançamos erro? 
+            // O requisito diz "não poderá mudar a função". Vamos ignorar o campo ou lançar erro.
+            // Vamos optar por ignorar silenciosamente ou garantir que não muda.
+            // Melhor: Se for secretaria, forçamos que a role seja a mesma que já existe, ou removemos do body.
+            if (tipo_utilizador.toUpperCase() !== existing[0].tipo_utilizador.toUpperCase()) {
+                return res.status(403).json({ message: 'A secretaria não tem permissão para alterar funções.' });
+            }
+        }
+
         let role_id = existing[0].role_id;
         if (tipo_utilizador) {
             const [roles] = await db.query('SELECT id FROM roles WHERE nome = ?', [tipo_utilizador.toUpperCase()]);
@@ -74,18 +85,13 @@ export const updateUser = async (req, res) => {
             [nome_completo || existing[0].nome_completo, email || existing[0].email, role_id, id]
         );
 
-        // Gestão de Perfis
         // Gestão de Perfis - Apenas se a role mudar ou se não existir perfil
         if (tipo_utilizador) {
             const role = tipo_utilizador.toUpperCase();
             const oldRole = existing[0].tipo_utilizador?.toUpperCase();
 
             try {
-                // Se a role mudou, podemos limpar perfis antigos (opcional, dependendo da regra de negócio)
-                // Mas o mais importante é NÃO apagar se a role for a mesma
                 if (role !== oldRole) {
-                    // Só removemos se for uma mudança real de categoria
-                    // Nota: Admin e Secretaria partilham a mesma tabela 'secretaria'
                     const isNewSecretaria = (role === 'SECRETARIA' || role === 'ADMIN');
                     const isOldSecretaria = (oldRole === 'SECRETARIA' || oldRole === 'ADMIN');
 

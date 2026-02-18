@@ -44,49 +44,127 @@ export const getMyAvailability = async (req, res) => {
     }
 };
 
-// Adicionar um novo bloco de disponibilidade
+// Adicionar disponibilidade (com suporte a repetição OU batch)
 export const addAvailability = async (req, res) => {
+    const connection = await db.getConnection();
     try {
+        await connection.beginTransaction();
+
         const userId = req.user.id;
-        const { inicio, fim, tipo } = req.body;
+        // Verificar se o utilizador é formador
+        let itemsToProcess = [];
 
-        console.log('📝 Tentativa de adicionar disponibilidade:', { userId, inicio, fim, tipo });
-
-        if (!inicio || !fim) {
-            return res.status(400).json({ message: 'Início e Fim são obrigatórios.' });
+        if (req.body.availabilities && Array.isArray(req.body.availabilities)) {
+            itemsToProcess = req.body.availabilities;
+        } else {
+            
         }
 
         // Buscar ID do formador
-        const [formador] = await db.query('SELECT id FROM formadores WHERE utilizador_id = ?', [userId]);
+        const [formador] = await connection.query('SELECT id FROM formadores WHERE utilizador_id = ?', [userId]);
         if (formador.length === 0) {
-            console.warn(`⚠️ Utilizador ${userId} não é um formador registado.`);
+            await connection.rollback();
             return res.status(403).json({ message: 'Apenas formadores podem definir disponibilidade.' });
         }
         const formadorId = formador[0].id;
-        console.log('✅ ID do Formador encontrado:', formadorId);
 
-        // Converter para objeto Date para garantir compatibilidade com o driver mysql2
-        const dateInicio = new Date(inicio);
-        const dateFim = new Date(fim);
+        let createdCount = 0;
 
-        const [result] = await db.query(
-            `INSERT INTO disponibilidade_formadores (id_formador, inicio, fim, tipo) 
-             VALUES (?, ?, ?, ?)`,
-            [formadorId, dateInicio, dateFim, tipo || 'presencial']
-        );
+        // BATCH MODE
+        if (itemsToProcess.length > 0) {
+            for (const item of itemsToProcess) {
+                const { inicio, fim, tipo } = item;
+                const start = new Date(inicio);
+                const end = new Date(fim);
 
-        console.log('🚀 Disponibilidade inserida com sucesso! ID:', result.insertId);
+                // Simple overlap check
+                const [overlaps] = await connection.query(
+                    `SELECT id FROM disponibilidade_formadores 
+                     WHERE id_formador = ? 
+                     AND inicio < ? AND fim > ?`,
+                    [formadorId, end, start]
+                );
 
+                if (overlaps.length === 0) {
+                    await connection.query(
+                        `INSERT INTO disponibilidade_formadores (id_formador, inicio, fim, tipo) 
+                         VALUES (?, ?, ?, ?)`,
+                        [formadorId, start, end, tipo || 'presencial']
+                    );
+                    createdCount++;
+                }
+            }
+        } else {
+            //Mantendo lógica original para compatibilidade
+            let { inicio, fim, tipo, repeatUntil, excludeWeekends } = req.body;
+            if (excludeWeekends === undefined) excludeWeekends = false;
+
+            if (!inicio || !fim) {
+                await connection.rollback();
+                return res.status(400).json({ message: 'Início e Fim são obrigatórios.' });
+            }
+
+            const baseStart = new Date(inicio);
+            const baseEnd = new Date(fim);
+            const limitDate = repeatUntil ? new Date(repeatUntil) : new Date(baseStart);
+            limitDate.setHours(23, 59, 59, 999);
+
+            let currentStart = new Date(baseStart);
+            let currentEnd = new Date(baseEnd); 
+
+            // Copia do loop original
+            while (currentStart <= limitDate) {
+                const dayOfWeek = currentStart.getDay();
+
+                if (excludeWeekends && (dayOfWeek === 0 || dayOfWeek === 6)) {
+                    currentStart.setDate(currentStart.getDate() + 1);
+                    continue; 
+                }
+
+                // Normalização
+                const thisStart = new Date(currentStart);
+                const thisEnd = new Date(currentStart);
+                thisEnd.setHours(baseEnd.getHours(), baseEnd.getMinutes(), 0, 0);
+
+                if (baseEnd.getHours() < baseStart.getHours() ||
+                    (baseEnd.getHours() === baseStart.getHours() && baseEnd.getMinutes() < baseStart.getMinutes())) {
+                    thisEnd.setDate(thisEnd.getDate() + 1);
+                }
+
+                // Verificação de sobreposição
+                const [overlapsSimple] = await connection.query(
+                    `SELECT id FROM disponibilidade_formadores 
+                     WHERE id_formador = ? 
+                     AND inicio < ? AND fim > ?`,
+                    [formadorId, thisEnd, thisStart]
+                );
+
+                if (overlapsSimple.length === 0) {
+                    await connection.query(
+                        `INSERT INTO disponibilidade_formadores (id_formador, inicio, fim, tipo) 
+                         VALUES (?, ?, ?, ?)`,
+                        [formadorId, thisStart, thisEnd, tipo || 'presencial']
+                    );
+                    createdCount++;
+                }
+
+                // Incrementação
+                currentStart.setDate(currentStart.getDate() + 1);
+            }
+        }
+
+        await connection.commit();
         res.status(201).json({
-            id: result.insertId,
-            inicio,
-            fim,
-            tipo: tipo || 'presencial',
-            message: 'Disponibilidade adicionada.'
+            message: `Sucesso! Foram criados ${createdCount} blocos de disponibilidade.`,
+            count: createdCount
         });
+
     } catch (error) {
-        console.error('❌ Erro crítico ao adicionar disponibilidade:', error);
+        await connection.rollback();
+        console.error('Erro ao adicionar disponibilidade:', error);
         res.status(500).json({ message: 'Erro ao adicionar disponibilidade: ' + error.message });
+    } finally {
+        connection.release();
     }
 };
 
@@ -96,7 +174,7 @@ export const removeAvailability = async (req, res) => {
         const userId = req.user.id;
         const { id } = req.params;
 
-        // Garantir que a disponibilidade pertence ao formador logado
+        // Garantir que a disponibilidade pertence ao formador com a sessão iniciada
         const [result] = await db.query(
             `DELETE d FROM disponibilidade_formadores d
              JOIN formadores f ON d.id_formador = f.id
@@ -112,5 +190,40 @@ export const removeAvailability = async (req, res) => {
     } catch (error) {
         console.error('Erro ao remover disponibilidade:', error);
         res.status(500).json({ message: 'Erro ao remover disponibilidade.' });
+    }
+};
+
+// Remover TODA a disponibilidade do formador (Limpa Tudo)
+export const deleteAllAvailability = async (req, res) => {
+    try {
+        const userId = req.user.id;
+
+        // Procura o ID do formador
+        const [formador] = await db.query('SELECT id FROM formadores WHERE utilizador_id = ?', [userId]);
+        if (formador.length === 0) {
+            return res.status(403).json({ message: 'Apenas formadores podem gerir disponibilidade.' });
+        }
+        const formadorId = formador[0].id;
+
+        // Remove tudo onde id_formador = formadorId
+        // Vamos assumir remover DO FUTURO (>= NOW) para não estragar relatórios passados.
+        const now = new Date();
+
+        const [result] = await db.query(
+            `DELETE FROM disponibilidade_formadores 
+             WHERE id_formador = ? AND inicio >= ?`,
+            [formadorId, now]
+        );
+
+        console.log(`Disponibilidade limpa para formador ${formadorId}. ${result.affectedRows} registos removidos.`);
+
+        res.json({
+            message: 'Toda a disponibilidade futura foi removida com sucesso.',
+            count: result.affectedRows
+        });
+
+    } catch (error) {
+        console.error('Erro ao limpar disponibilidade:', error);
+        res.status(500).json({ message: 'Erro ao limpar disponibilidade.' });
     }
 };

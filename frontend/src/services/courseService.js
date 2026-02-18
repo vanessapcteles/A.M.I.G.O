@@ -56,7 +56,7 @@ export const courseService = {
         return response.json();
     },
 
-    // Curriculum Methods
+    // Métodos do Currículo
     getCourseModules: async (courseId) => {
         const response = await fetch(`${API_URL}/api/courses/${courseId}/modules`, {
             headers: getAuthHeader()
@@ -66,7 +66,7 @@ export const courseService = {
     },
 
     addModuleToCourse: async (courseId, data) => {
-        // data: { id_modulo, sequencia, horas_padrao, ... }
+        // dados: { id_modulo, sequencia, horas_padrao, ... }
         const response = await fetch(`${API_URL}/api/courses/${courseId}/modules`, {
             method: 'POST',
             headers: getAuthHeader(),
@@ -80,7 +80,7 @@ export const courseService = {
     },
 
     removeModuleFromCourse: async (moduleId) => {
-        // moduleId here is the ID from curso_modulos table (the connection id)
+        
         const response = await fetch(`${API_URL}/api/courses/modules/${moduleId}`, {
             method: 'DELETE',
             headers: getAuthHeader()

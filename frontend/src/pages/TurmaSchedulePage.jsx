@@ -10,6 +10,7 @@ import 'react-big-calendar/lib/css/react-big-calendar.css';
 
 import { horarioService } from '../services/horarioService';
 import { turmaService } from '../services/turmaService'; // Para obter lista de módulos disponíveis
+import { authService } from '../services/authService';
 import { ArrowLeft, Plus, Trash2, X, Calendar as CalendarIcon, Search, ChevronLeft, ChevronRight, Wand2 } from 'lucide-react';
 import CalendarToolbar from '../components/ui/CalendarToolbar';
 import { useToast } from '../context/ToastContext';
@@ -38,13 +39,14 @@ function TurmaSchedulePage() {
     const [showAutoModal, setShowAutoModal] = useState(false);
     const [generating, setGenerating] = useState(false);
     const [autoStartDate, setAutoStartDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+    const [autoRegime, setAutoRegime] = useState('diurno');
 
-    // Module List Pagination & Search
+    // Paginação e Pesquisa da Lista de Módulos
     const [moduleSearch, setModuleSearch] = useState('');
     const [modulePage, setModulePage] = useState(1);
     const ITEMS_PER_PAGE = 5;
 
-    // Confirmation State
+    // Estado de Confirmação
     const [confirmOpen, setConfirmOpen] = useState(false);
     const [eventToDelete, setEventToDelete] = useState(null);
 
@@ -52,11 +54,12 @@ function TurmaSchedulePage() {
     const [currentView, setCurrentView] = useState('week');
 
     const [formData, setFormData] = useState({
-        id_turma_detalhe: '',
-        data: '',
         hora_inicio: '',
         hora_fim: ''
     });
+
+    const currentUser = authService.getCurrentUser();
+    const canEdit = currentUser?.tipo_utilizador === 'ADMIN' || currentUser?.tipo_utilizador === 'SECRETARIA';
 
     useEffect(() => {
         loadData();
@@ -87,7 +90,7 @@ function TurmaSchedulePage() {
     };
 
     const handleSelectSlot = ({ start }) => {
-        // Always default to 3 hours duration on click/select
+        // Predefinir sempre 3 horas de duração ao clicar/selecionar
         const dateStr = format(start, 'yyyy-MM-dd');
         const startStr = format(start, 'HH:mm');
 
@@ -116,7 +119,7 @@ function TurmaSchedulePage() {
             date.setHours(hours);
             date.setMinutes(minutes);
 
-            // Add 3 hours
+            // Adicionar 3 horas
             date.setHours(date.getHours() + 3);
 
             const newEnd = format(date, 'HH:mm');
@@ -127,7 +130,7 @@ function TurmaSchedulePage() {
                 hora_fim: newEnd
             });
         } catch (error) {
-            // Fallback if parsing fails
+            // Recurso se a análise falhar
             setFormData({ ...formData, hora_inicio: newStart });
         }
     };
@@ -139,20 +142,29 @@ function TurmaSchedulePage() {
     };
 
     const confirmDeleteEvent = async () => {
-        if (!eventToDelete) return;
         try {
-            await horarioService.deleteLesson(eventToDelete.id);
-            toast('Aula removida com sucesso!', 'success');
+            if (eventToDelete) {
+                // Apagar evento único
+                await horarioService.deleteLesson(eventToDelete.id);
+                toast('Aula removida com sucesso!', 'success');
+            } else {
+                // Apagar TODOS os eventos (Limpar Horário)
+                await horarioService.deleteTurmaSchedule(id);
+                toast('Horário da turma limpo com sucesso!', 'success');
+            }
             loadData();
         } catch (error) {
             toast(error.message, 'error');
+        } finally {
+            setConfirmOpen(false);
+            setEventToDelete(null);
         }
     };
 
     const handleAutoGenerate = async () => {
         setGenerating(true);
         try {
-            const res = await horarioService.generateAutoSchedule(id, autoStartDate);
+            const res = await horarioService.generateAutoSchedule(id, autoStartDate, autoRegime);
             toast(res.message, 'success');
             setShowAutoModal(false);
             loadData();
@@ -198,8 +210,8 @@ function TurmaSchedulePage() {
         }
     });
 
-    // Filter and Pagination Logic
-    // Filter and Pagination Logic
+    // Lógica de Filtro e Paginação
+    // Lógica de Filtro e Paginação
     const filteredModules = turmaModules.filter(m => {
         if (!moduleSearch) return true;
         const searchTerms = moduleSearch.toLowerCase().split(' ').filter(t => t);
@@ -218,7 +230,42 @@ function TurmaSchedulePage() {
 
     return (
         <>
-            <div style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <style>
+                {`
+                    .schedule-page-grid {
+                        display: grid;
+                        grid-template-columns: 300px 1fr;
+                        gap: 1.5rem;
+                        align-items: start;
+                    }
+                    .schedule-header-actions {
+                        display: flex;
+                        gap: 1rem;
+                    }
+                    @media (max-width: 1024px) {
+                        .schedule-page-grid {
+                            grid-template-columns: 1fr;
+                        }
+                    }
+                    @media (max-width: 640px) {
+                        .schedule-header-container {
+                            flex-direction: column;
+                            align-items: stretch !important;
+                            gap: 1rem;
+                        }
+                        .schedule-header-actions {
+                            flex-direction: column;
+                            width: 100%;
+                        }
+                        .schedule-header-actions button {
+                            justify-content: center;
+                            width: 100%;
+                        }
+                    }
+                `}
+            </style>
+
+            <div className="schedule-header-container" style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
                     <button
                         onClick={() => navigate('/turmas')}
@@ -228,30 +275,40 @@ function TurmaSchedulePage() {
                     </button>
                     <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>Horário da Turma</h1>
                 </div>
-                <div style={{ display: 'flex', gap: '1rem' }}>
-                    <button
-                        className="btn-glass"
-                        onClick={() => setShowAutoModal(true)}
-                        disabled={generating}
-                        style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--primary)', borderColor: 'var(--primary)' }}
-                    >
-                        <Wand2 size={20} />
-                        {generating ? 'A Gerar...' : 'Geração Automática'}
-                    </button>
-                    <button className="btn-primary" onClick={() => setShowModal(true)}>
-                        <Plus size={20} /> Nova Aula
-                    </button>
-                </div>
+                {canEdit && (
+                    <div className="schedule-header-actions">
+                        <button
+                            className="btn-glass"
+                            onClick={() => setShowAutoModal(true)}
+                            disabled={generating}
+                            style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--primary)', borderColor: 'var(--primary)' }}
+                        >
+                            <Wand2 size={20} />
+                            <span className="hidden-mobile">{generating ? 'A Gerar...' : 'Geração Automática'}</span>
+                            <span className="visible-mobile-inline">{generating ? 'Gerando...' : 'Auto'}</span>
+                        </button>
+                        <button
+                            className="btn-glass"
+                            onClick={() => { setEventToDelete(null); setConfirmOpen(true); }}
+                            style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#f87171', borderColor: '#f87171' }}
+                        >
+                            <Trash2 size={20} /> <span className="hidden-mobile">Limpar Tudo</span>
+                        </button>
+                        <button className="btn-primary" onClick={() => setShowModal(true)}>
+                            <Plus size={20} /> <span className="hidden-mobile">Nova Aula</span>
+                        </button>
+                    </div>
+                )}
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: '1.5rem', alignItems: 'start' }}>
+            <div className="schedule-page-grid">
                 {/* Painel Lateral de Módulos */}
                 <div className="glass-card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', height: '100%' }}>
                     <h3 style={{ fontSize: '1.1rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                         <CalendarIcon size={18} color="var(--primary)" /> Monitorização
                     </h3>
 
-                    {/* Search Bar */}
+                    {/* Barra de Pesquisa */}
                     <div style={{ position: 'relative', marginBottom: '1rem' }}>
                         <Search size={16} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} />
                         <input
@@ -269,7 +326,7 @@ function TurmaSchedulePage() {
                             const percent = Math.min((m.horas_agendadas / m.horas_planeadas) * 100, 100);
                             const isFull = m.horas_agendadas >= m.horas_planeadas;
 
-                            // Format number
+                            // Formatar número
                             const formatH = (n) => Number(n).toFixed(n % 1 === 0 ? 0 : 1);
 
                             return (
@@ -302,7 +359,7 @@ function TurmaSchedulePage() {
                         {currentModules.length === 0 && <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', textAlign: 'center', marginTop: '1rem' }}>Nenhum módulo encontrado.</p>}
                     </div>
 
-                    {/* Pagination Controls */}
+                    {/* Controlos de Paginação */}
                     {totalPages > 1 && (
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1rem', borderTop: '1px solid var(--border-glass)', paddingTop: '0.75rem' }}>
                             <button
@@ -327,9 +384,9 @@ function TurmaSchedulePage() {
                 </div>
 
                 {/* Calendário */}
-                <div className="glass-card" style={{ padding: '1.5rem', minHeight: '750px' }}>
+                <div className="glass-card" style={{ padding: '1.5rem', minHeight: '750px', overflowX: 'auto' }}>
                     <style>{`
-                        .rbc-calendar { font-family: inherit; }
+                        .rbc-calendar { font-family: inherit; min-width: 700px; /* Force minimum width for scroll */ }
                         .rbc-off-range-bg { background: rgba(0,0,0,0.1); }
                         .rbc-header { 
                             color: var(--text-secondary); 
@@ -357,6 +414,18 @@ function TurmaSchedulePage() {
                         .rbc-agenda-view table.rbc-agenda-table { border: none !important; color: white; }
                         .rbc-agenda-view table.rbc-agenda-table thead > tr > th { border-bottom: 2px solid var(--border-glass) !important; color: var(--text-secondary); }
                         .rbc-agenda-event-cell { color: white !important; }
+                        
+                        @media (max-width: 640px) {
+                            .hidden-mobile { display: none !important; }
+                            .visible-mobile-inline { display: inline !important; }
+                            .rbc-toolbar {
+                                position: sticky;
+                                left: 0;
+                            }
+                        }
+                        @media (min-width: 641px) {
+                            .visible-mobile-inline { display: none !important; }
+                        }
                     `}</style>
                     <Calendar
                         localizer={localizer}
@@ -370,9 +439,9 @@ function TurmaSchedulePage() {
                         onNavigate={date => setCurrentDate(date)}
                         onView={view => setCurrentView(view)}
                         culture='pt'
-                        selectable
-                        onSelectSlot={handleSelectSlot}
-                        onSelectEvent={handleSelectEvent}
+                        selectable={canEdit}
+                        onSelectSlot={canEdit ? handleSelectSlot : undefined}
+                        onSelectEvent={canEdit ? handleSelectEvent : undefined}
                         components={{
                             toolbar: CalendarToolbar
                         }}
@@ -484,6 +553,18 @@ function TurmaSchedulePage() {
                             />
                         </div>
 
+                        <div style={{ marginBottom: '2rem' }}>
+                            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem' }}>Regime:</label>
+                            <select
+                                className="input-field"
+                                value={autoRegime}
+                                onChange={e => setAutoRegime(e.target.value)}
+                            >
+                                <option value="diurno">Diurno (08:00 - 15:00)</option>
+                                <option value="pos_laboral">Pós-Laboral (16:00 - 23:00)</option>
+                            </select>
+                        </div>
+
                         <div style={{ display: 'flex', gap: '1rem' }}>
                             <button onClick={() => setShowAutoModal(false)} className="btn-glass" style={{ flex: 1 }}>Cancelar</button>
                             <button
@@ -503,8 +584,11 @@ function TurmaSchedulePage() {
                 isOpen={confirmOpen}
                 onClose={() => setConfirmOpen(false)}
                 onConfirm={confirmDeleteEvent}
-                title="Remover Aula"
-                message={`Tem a certeza que deseja remover a aula de ${eventToDelete?.title}?`}
+                title={eventToDelete ? "Remover Aula" : "Limpar Todo o Horário"}
+                message={eventToDelete
+                    ? `Tem a certeza que deseja remover a aula de ${eventToDelete?.title}?`
+                    : "Tem a certeza que deseja apagar TODAS as aulas desta turma? Esta ação é irreversível."
+                }
                 isDestructive={true}
             />
         </>

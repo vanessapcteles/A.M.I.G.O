@@ -7,20 +7,37 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
 function FormandoFichaPage() {
-    const { id } = useParams(); // ID do utilizador vindo da URL (opcional)
+    const { id } = useParams(); // ID do utilizador vindo da URL
     const currentUser = authService.getCurrentUser();
 
     // Se houver ID na URL, usa esse. Senão, usa o do utilizador logado.
     const targetUserId = id || currentUser.id;
 
-    const [user, setUser] = useState(currentUser); // Começa com o logado, mas será atualizado
+    const [user, setUser] = useState(currentUser);
     const [extra, setExtra] = useState(null);
     const [academicRecords, setAcademicRecords] = useState([]);
     const [detailedGrades, setDetailedGrades] = useState({ grades: [] });
     const [loading, setLoading] = useState(true);
     const [profilePhoto, setProfilePhoto] = useState(null);
+    const [logoBase64, setLogoBase64] = useState(null);
+
+
 
     useEffect(() => {
+        // Carregar Logo do projeto 
+        const loadLogo = async () => {
+            try {
+                const response = await fetch('/amigo_logo.png');
+                const blob = await response.blob();
+                const reader = new FileReader();
+                reader.onloadend = () => setLogoBase64(reader.result);
+                reader.readAsDataURL(blob);
+            } catch (error) {
+                console.error("Erro ao carregar logo:", error);
+            }
+        };
+        loadLogo();
+
         const fetchData = async () => {
             try {
                 const token = localStorage.getItem('auth_token');
@@ -80,51 +97,107 @@ function FormandoFichaPage() {
     const exportPDF = async () => {
         const doc = new jsPDF();
         const pageWidth = doc.internal.pageSize.getWidth();
+        const pageHeight = doc.internal.pageSize.getHeight();
 
-        // Cabeçalho Premium
-        doc.setFillColor(30, 41, 59); // Slate-800
-        doc.rect(0, 0, pageWidth, 40, 'F');
+        // HEADER
+        doc.setFillColor(15, 23, 42); // Slate-900 (Dark Blue)
+        doc.rect(0, 0, pageWidth, 50, 'F');
 
-        doc.setTextColor(255, 255, 255);
-        doc.setFontSize(22);
-        doc.text('FICHA DO FORMANDO', 15, 25);
-
-        doc.setFontSize(10);
-        doc.text(`Gerado em: ${new Date().toLocaleDateString()}`, pageWidth - 15, 25, { align: 'right' });
-
-        // Usar a foto já carregada em memória
-        let photoData = profilePhoto;
-
-        // Dados Pessoais
-        doc.setTextColor(30, 41, 59);
-        doc.setFontSize(14);
-        doc.setFont('helvetica', 'bold');
-        doc.text('Dados Pessoais', 15, 55);
-        doc.line(15, 58, 60, 58);
-
-        // Inserir Foto se existir
-        if (photoData) {
+        // Logo
+        if (logoBase64) {
             try {
-                doc.addImage(photoData, 'JPEG', pageWidth - 55, 50, 40, 40);
-                doc.setDrawColor(56, 189, 248);
-                doc.rect(pageWidth - 56, 49, 42, 42); // Moldura
-            } catch (e) { console.warn('Erro ao inserir imagem no PDF', e); }
+                doc.addImage(logoBase64, 'PNG', 15, 10, 30, 30); // Logo à esquerda
+            } catch (e) { console.warn('Erro logo PDF', e); }
         }
 
-        doc.setFontSize(11);
-        doc.setFont('helvetica', 'normal');
-        doc.text(`Nome: ${user.nome_completo}`, 15, 68);
-        doc.text(`Email: ${user.email}`, 15, 75);
-        doc.text(`Curso Atual: ${extra?.curso_atual || 'Não inscrito'}`, 15, 82);
-        doc.text(`Telemóvel: ${extra?.telemovel || 'N/A'}`, 15, 89);
-        doc.text(`Morada: ${extra?.morada || 'N/A'}`, 15, 96);
-        doc.text(`Data de Nascimento: ${extra?.data_nascimento ? new Date(extra.data_nascimento).toLocaleDateString() : 'N/A'}`, 15, 103);
-
-        // Academic History
-        doc.setFontSize(14);
+        // Título e Subtítulo
+        doc.setTextColor(255, 255, 255);
         doc.setFont('helvetica', 'bold');
-        doc.text('Histórico Escolar', 15, 120);
-        doc.line(15, 123, 60, 123);
+        doc.setFontSize(24);
+        doc.text('FICHA DO FORMANDO', 55, 25);
+
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(56, 189, 248); // Sky-400 (Light Blue Accent)
+        doc.text('ACADEMY MANAGEMENT INTERACTIVE GUIDE & ORGANIZER', 55, 32);
+
+        // Data de Geração
+        doc.setTextColor(148, 163, 184); // Slate-400
+        doc.setFontSize(9);
+        doc.text(`Gerado em: ${new Date().toLocaleDateString()}`, pageWidth - 15, 45, { align: 'right' });
+
+
+        // DADOS PESSOAIS
+        let currentY = 70;
+
+        // Foto de Perfil (Direita)
+        if (profilePhoto) {
+            try {
+                // Foto
+                doc.addImage(profilePhoto, 'JPEG', pageWidth - 50, currentY, 30, 30);
+
+                // Moldura
+                doc.setDrawColor(56, 189, 248);
+                doc.setLineWidth(0.5);
+                doc.rect(pageWidth - 50, currentY, 30, 30);
+            } catch (e) { console.warn('Erro foto PDF', e); }
+        } else {
+            // Placeholder se não houver foto
+            doc.setFillColor(241, 245, 249);
+            doc.rect(pageWidth - 50, currentY, 30, 30, 'F');
+            doc.setTextColor(150);
+            doc.setFontSize(8);
+            doc.text('Sem Foto', pageWidth - 35, currentY + 15, { align: 'center' });
+        }
+
+
+        // Título Secção
+        doc.setFontSize(16);
+        doc.setTextColor(15, 23, 42); // Dark Text
+        doc.setFont('helvetica', 'bold');
+        doc.text('Dados Pessoais', 15, currentY);
+
+        // Linha debaixo do título
+        doc.setDrawColor(56, 189, 248); // Accent Color
+        doc.setLineWidth(1);
+        doc.line(15, currentY + 2, 60, currentY + 2);
+
+        // Grid de Dados
+        currentY += 15;
+        doc.setFontSize(11);
+
+        const labelX = 15;
+        const valueX = 60;
+        const lineHeight = 8;
+
+        const addField = (label, value) => {
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(100, 116, 139); // Slate-500 (Label)
+            doc.text(label, labelX, currentY);
+
+            doc.setFont('helvetica', 'normal');
+            doc.setTextColor(30, 41, 59); // Slate-800 (Value)
+            doc.text(value || 'N/A', valueX, currentY);
+            currentY += lineHeight;
+        };
+
+        addField('Nome Completo:', user.nome_completo);
+        addField('Email:', user.email);
+        addField('Curso Atual:', extra?.curso_atual);
+        addField('Telemóvel:', extra?.telemovel);
+        addField('Morada:', extra?.morada);
+        addField('Nascimento:', extra?.data_nascimento ? new Date(extra.data_nascimento).toLocaleDateString() : 'N/A');
+
+
+        // HISTÓRICO ESCOLAR
+        currentY += 15;
+        doc.setFontSize(16);
+        doc.setTextColor(15, 23, 42);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Histórico Escolar', 15, currentY);
+        doc.setDrawColor(56, 189, 248);
+        doc.line(15, currentY + 2, 60, currentY + 2);
+        currentY += 10;
 
         const tableRows = academicRecords.map(rec => [
             rec.nome_curso,
@@ -134,21 +207,47 @@ function FormandoFichaPage() {
         ]);
 
         autoTable(doc, {
-            startY: 125,
-            head: [['Curso', 'Turma', 'Ano Letivo', 'Nota/Estado']],
+            startY: currentY,
+            head: [['CURSO', 'TURMA', 'ANO LETIVO', 'ESTADO/NOTA']],
             body: tableRows,
-            theme: 'striped',
-            headStyles: { fillColor: [56, 189, 248] }
+            theme: 'grid',
+            headStyles: {
+                fillColor: [15, 23, 42], 
+                textColor: [255, 255, 255],
+                fontStyle: 'bold',
+                halign: 'center'
+            },
+            styles: {
+                font: 'helvetica',
+                fontSize: 10,
+                cellPadding: 6,
+                overflow: 'linebreak'
+            },
+            columnStyles: {
+                3: { halign: 'center', fontStyle: 'bold' }
+            },
+            alternateRowStyles: {
+                fillColor: [241, 245, 249] 
+            }
         });
 
-        // Avaliações Detalhadas
-        if (detailedGrades.grades && detailedGrades.grades.length > 0) {
-            const finalY = doc.lastAutoTable.finalY + 15;
 
-            doc.setFontSize(14);
+        // AVALIAÇÕES DETALHADAS
+        if (detailedGrades.grades && detailedGrades.grades.length > 0) {
+            let finalY = doc.lastAutoTable.finalY + 20;
+
+            // verifica se vai caber na página
+            if (finalY > pageHeight - 50) {
+                doc.addPage();
+                finalY = 30;
+            }
+
+            doc.setFontSize(16);
+            doc.setTextColor(15, 23, 42);
             doc.setFont('helvetica', 'bold');
             doc.text(`Avaliações: ${detailedGrades.curso} (${detailedGrades.turma})`, 15, finalY);
-            doc.line(15, finalY + 3, 60, finalY + 3);
+            doc.setDrawColor(56, 189, 248);
+            doc.line(15, finalY + 2, 100, finalY + 2);
 
             const gradesRows = detailedGrades.grades.map(g => [
                 g.nome_modulo,
@@ -159,18 +258,40 @@ function FormandoFichaPage() {
 
             autoTable(doc, {
                 startY: finalY + 10,
-                head: [['Módulo', 'Carga', 'Nota', 'Data']],
+                head: [['MÓDULO', 'CARGA', 'NOTA', 'DATA AVALIAÇÃO']],
                 body: gradesRows,
                 theme: 'grid',
-                headStyles: { fillColor: [71, 85, 105] } // Slate-600
+                headStyles: {
+                    fillColor: [56, 189, 248], 
+                    textColor: [255, 255, 255],
+                    fontStyle: 'bold'
+                },
+                styles: {
+                    fontSize: 9,
+                    cellPadding: 4
+                },
+                columnStyles: {
+                    2: { halign: 'center', fontStyle: 'bold', textColor: [22, 163, 74] } // Green text for grades
+                }
             });
         }
 
-        // Footer
-        const finalY = (doc.lastAutoTable ? doc.lastAutoTable.finalY : 250) + 20;
-        doc.setFontSize(9);
-        doc.setTextColor(150);
-        doc.text('Este documento é um comprovativo interno gerado pelo A.M.I.G.O.', pageWidth / 2, Math.min(finalY, 285), { align: 'center' });
+        // FOOTER
+        const pageCount = doc.internal.getNumberOfPages();
+        for (let i = 1; i <= pageCount; i++) {
+            doc.setPage(i);
+
+            // Footer Background Line
+            doc.setDrawColor(226, 232, 240);
+            doc.line(15, pageHeight - 20, pageWidth - 15, pageHeight - 20);
+
+            doc.setFontSize(8);
+            doc.setTextColor(148, 163, 184); // Slate-400
+
+            // Texto Footer
+            doc.text('A.M.I.G.O - Academy Management Interactive Guide & Organizer', 15, pageHeight - 12);
+            doc.text(`Página ${i} de ${pageCount}`, pageWidth - 15, pageHeight - 12, { align: 'right' });
+        }
 
         doc.save(`Ficha_Formando_${user.nome_completo.replace(/ /g, '_')}.pdf`);
     };
@@ -217,11 +338,16 @@ function FormandoFichaPage() {
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                                 <span style={{ color: 'var(--text-secondary)' }}>Média Global</span>
-                                <span style={{ fontWeight: 'bold', color: 'var(--primary)' }}>16.2</span>
+                                <span style={{ fontWeight: 'bold', color: 'var(--primary)' }}>
+                                    {detailedGrades.grades && detailedGrades.grades.filter(g => g.nota).length > 0
+                                        ? (detailedGrades.grades.filter(g => g.nota).reduce((acc, curr) => acc + parseFloat(curr.nota), 0) / detailedGrades.grades.filter(g => g.nota).length).toFixed(1)
+                                        : '0.0'
+                                    } med.
+                                </span>
                             </div>
                             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                                 <span style={{ color: 'var(--text-secondary)' }}>Faltas</span>
-                                <span style={{ fontWeight: 'bold', color: '#f87171' }}>2h</span>
+                                <span style={{ fontWeight: 'bold', color: '#10b981' }}>0h</span>
                             </div>
                         </div>
                     </div>

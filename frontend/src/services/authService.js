@@ -114,7 +114,7 @@ export const authService = {
         return response.json();
     },
 
-    // Metodo 2FA 
+    // Método 2FA 
     setup2FA: async (userId) => {
         const response = await fetch(`${API_URL}/api/auth/2fa/setup`, {
             method: 'POST',

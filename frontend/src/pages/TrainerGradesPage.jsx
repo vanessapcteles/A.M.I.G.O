@@ -13,13 +13,13 @@ function TrainerGradesPage() {
     const user = authService.getCurrentUser();
 
     const [history, setHistory] = useState([]);
-    const [selectedAssignment, setSelectedAssignment] = useState(null); // { turmaId, moduloId, nome_modulo, codigo_turma }
+    const [selectedAssignment, setSelectedAssignment] = useState(null); // Estrutura: { turmaId, moduloId, nome_modulo, codigo_turma }
     const [students, setStudents] = useState([]);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
 
-    // Pagination
+    // Configuração da Paginação
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 9;
 
@@ -30,9 +30,7 @@ function TrainerGradesPage() {
     const loadHistory = async () => {
         try {
             const data = await formadorService.getHistory(user.id);
-            // The history usually has id_turma, id_modulo, etc.
-            // Let's check the backend query in formadorController
-            // Need to make sure it returns enough IDs.
+            // O endpoint deve retornar id_turma, id_modulo e detalhes da turma
             setHistory(data);
         } catch (error) {
             toast('Erro ao carregar os seus módulos.', 'error');
@@ -45,8 +43,7 @@ function TrainerGradesPage() {
         setLoading(true);
         setSelectedAssignment(item);
         try {
-            // Need to make sure item has id_turma and id_modulo
-            // Let's verify the query in getFormadorHistory
+            // Carregar estudantes associados à turma e módulo selecionados
             const data = await evaluationService.getStudentsForEvaluation(item.id_turma, item.id_modulo);
             setStudents(data.map(s => ({
                 ...s,
@@ -61,6 +58,7 @@ function TrainerGradesPage() {
         }
     };
 
+    // Atualiza a nota de um estudante no estado local
     const handleGradeChange = (index, value) => {
         const newStudents = [...students];
         newStudents[index].nota = value;
@@ -73,6 +71,7 @@ function TrainerGradesPage() {
         setStudents(newStudents);
     };
 
+    // Envia as notas e observações para a base de dados
     const handleSave = async () => {
         setSaving(true);
         try {

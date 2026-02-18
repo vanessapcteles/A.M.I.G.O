@@ -7,8 +7,8 @@ export const getTurmas = async (req, res) => {
         const { page = 1, limit = 10, search, courseId } = req.query;
         const offset = (page - 1) * limit;
 
-        // --- Automated Status Update ---
-        // 1. Planeado -> A Decorrer: if start date reached and still running
+        // Atualiza estado automatico 
+        // Planeado -> A Decorrer: se data de inicio chegou e ainda está a decorrer
         await db.query(`
             UPDATE turmas 
             SET estado = 'a decorrer' 
@@ -17,14 +17,13 @@ export const getTurmas = async (req, res) => {
             AND DATE(data_fim) >= CURDATE()
         `);
 
-        // 2. Mark as Terminado: if end date passed
+        // Marca com terminado caso a data de fim tenha passado
         await db.query(`
             UPDATE turmas 
             SET estado = 'terminado' 
             WHERE estado != 'terminado' 
             AND DATE(data_fim) < CURDATE()
         `);
-        // -------------------------------
 
         let query = `
             SELECT t.*, c.nome_curso 
@@ -39,6 +38,18 @@ export const getTurmas = async (req, res) => {
             params.push(`%${search}%`, `%${search}%`);
         }
 
+        if (req.user && req.user.role === 'FORMADOR') {
+            query += `
+                AND t.id IN (
+                    SELECT td.id_turma 
+                    FROM turma_detalhes td 
+                    JOIN formadores f ON td.id_formador = f.id 
+                    WHERE f.utilizador_id = ?
+                )
+            `;
+            params.push(req.user.id);
+        }
+
         if (courseId) {
             query += ' AND t.id_curso = ?';
             params.push(courseId);
@@ -49,7 +60,7 @@ export const getTurmas = async (req, res) => {
 
         const [turmas] = await db.query(query, params);
 
-        // Count for pagination
+        // Contagem para paginação
         let countQuery = `
             SELECT COUNT(*) as total 
             FROM turmas t 
@@ -66,6 +77,18 @@ export const getTurmas = async (req, res) => {
         if (courseId) {
             countQuery += ' AND t.id_curso = ?';
             countParams.push(courseId);
+        }
+
+        if (req.user && req.user.role === 'FORMADOR') {
+            countQuery += `
+                AND t.id IN (
+                    SELECT td.id_turma 
+                    FROM turma_detalhes td 
+                    JOIN formadores f ON td.id_formador = f.id 
+                    WHERE f.utilizador_id = ?
+                )
+            `;
+            countParams.push(req.user.id);
         }
 
         const [totalCount] = await db.query(countQuery, countParams);
@@ -107,22 +130,16 @@ export const createTurma = async (req, res) => {
         );
 
         const turmaId = result.insertId;
-
-        // Auto-inherit modules from Course Curriculum
-        // Fetch course modules
         const [courseModules] = await db.query('SELECT * FROM curso_modulos WHERE id_curso = ?', [id_curso]);
 
         if (courseModules.length > 0) {
             for (const cm of courseModules) {
-                // Get default hours from module if horas_padrao is null
                 let horas = cm.horas_padrao;
                 if (!horas) {
                     const [mod] = await db.query('SELECT carga_horaria FROM modulos WHERE id = ?', [cm.id_modulo]);
                     horas = mod[0]?.carga_horaria || 0;
                 }
 
-                // Insert into turma_detalhes
-                // NOTE: id_formador and id_sala MUST be nullable in DB for this to work.
                 await db.query(`
                     INSERT INTO turma_detalhes (id_turma, id_modulo, id_formador, id_sala, horas_planeadas, sequencia)
                     VALUES (?, ?, NULL, NULL, ?, ?)
@@ -165,8 +182,7 @@ export const deleteTurma = async (req, res) => {
     try {
         const { id } = req.params;
 
-        // Verificar se existem alunos ou horários associados (opcional, mas recomendado)
-        // Por agora vamos permitir eliminar se não houver restrições de FK
+        // Verificar se existem alunos ou horários associados 
         await db.query('DELETE FROM turmas WHERE id = ?', [id]);
         return res.status(200).json({ message: 'Turma eliminada com sucesso' });
     } catch (error) {
@@ -174,7 +190,7 @@ export const deleteTurma = async (req, res) => {
         return res.status(500).json({ message: 'Erro ao eliminar turma' });
     }
 };
-// Obter turma por ID (com detalhes do curso)
+// Obter turma por ID com detalhes do curso
 export const getTurmaById = async (req, res) => {
     try {
         const { id } = req.params;
@@ -199,20 +215,20 @@ export const importCurriculum = async (req, res) => {
     try {
         const { id } = req.params; // Turma ID
 
-        // 1. Obter o id_curso da turma
+        // Obter o id_curso da turma
         const [turmas] = await db.query('SELECT id_curso FROM turmas WHERE id = ?', [id]);
         if (turmas.length === 0) return res.status(404).json({ message: 'Turma não encontrada' });
 
         const id_curso = turmas[0].id_curso;
 
-        // 2. Obter os módulos do curso
+        // Obter os módulos do curso
         const [courseModules] = await db.query('SELECT * FROM curso_modulos WHERE id_curso = ?', [id_curso]);
 
         if (courseModules.length === 0) {
             return res.status(400).json({ message: 'Este curso não tem módulos definidos no currículo.' });
         }
 
-        // 2.5 Obter sequências já usadas na turma
+        // Obter sequências já usadas na turma
         const [existingDetails] = await db.query('SELECT sequencia FROM turma_detalhes WHERE id_turma = ?', [id]);
         const usedSequences = new Set(existingDetails.map(d => d.sequencia));
 
@@ -223,7 +239,7 @@ export const importCurriculum = async (req, res) => {
 
         let addedCount = 0;
 
-        // 3. Inserir na turma (verificar duplicados)
+        // Inserir na turma (verificar duplicados)
         for (const cm of courseModules) {
             // Verificar se já existe na turma
             const [exists] = await db.query(
@@ -248,7 +264,6 @@ export const importCurriculum = async (req, res) => {
                 }
 
                 // Adicionar a nova sequência ao conjunto para evitar conflitos dentro do próprio loop de importação
-                // (embora curso_modulos devesse ter sequências únicas, é uma boa defesa)
                 usedSequences.add(targetSeq);
                 if (targetSeq > maxSeq) maxSeq = targetSeq;
 

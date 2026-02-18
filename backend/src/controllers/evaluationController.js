@@ -1,11 +1,11 @@
 
 import { db } from '../config/db.js';
 
-// Listar alunos de uma turma/módulo para avaliação
+// Procura alunos de uma turma/módulo para avaliação
 export const getStudentsForEvaluation = async (req, res) => {
     try {
         const { turmaId, moduloId } = req.params;
-        const userId = req.user.id; // Formador logado
+        const userId = req.user.id; // Formador com sessão iniciada
 
         // Verificar se o formador tem permissão para esta turma/módulo
         const [permission] = await db.query(
@@ -21,11 +21,18 @@ export const getStudentsForEvaluation = async (req, res) => {
             return res.status(403).json({ message: 'Não tem permissão para avaliar este módulo nesta turma.' });
         }
 
-        // Buscar alunos inscritos na turma e as suas notas atuais (se existirem)
+        // Procura alunos inscritos na turma e as suas notas atuais (se existirem)
         const [students] = await db.query(
-            `SELECT i.id as id_inscricao, u.nome_completo, u.email, a.nota, a.observacoes, a.id as id_avaliacao
+            `SELECT 
+                i.id as id_inscricao, 
+                u.nome_completo, 
+                u.email, 
+                a.nota, 
+                a.observacoes, 
+                a.id as id_avaliacao
              FROM inscricoes i
-             JOIN utilizadores u ON i.user_id = u.id
+             JOIN formandos f ON i.id_formando = f.id
+             JOIN utilizadores u ON f.utilizador_id = u.id
              LEFT JOIN avaliacoes a ON a.id_inscricao = i.id AND a.id_modulo = ?
              WHERE i.id_turma = ? AND i.estado = 'APROVADO'
              ORDER BY u.nome_completo ASC`,
@@ -39,7 +46,7 @@ export const getStudentsForEvaluation = async (req, res) => {
     }
 };
 
-// Lançar/Atualizar notas em lote
+// Lançar/Atualizar notas
 export const submitGrades = async (req, res) => {
     try {
         const { moduloId, grades } = req.body; // grades: [{ id_inscricao, nota, observacoes }]
@@ -53,11 +60,10 @@ export const submitGrades = async (req, res) => {
         for (const g of grades) {
             const { id_inscricao, nota, observacoes } = g;
 
-            // Validar nota (0-20)
+            // Valida nota (0-20)
             const numNota = parseFloat(nota);
             if (isNaN(numNota) || numNota < 0 || numNota > 20) continue;
 
-            // INSERT ... ON DUPLICATE KEY UPDATE
             await db.query(
                 `INSERT INTO avaliacoes (id_inscricao, id_modulo, nota, observacoes, data_avaliacao)
                  VALUES (?, ?, ?, ?, NOW())

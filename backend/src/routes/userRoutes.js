@@ -4,10 +4,10 @@ import { authenticateToken, authorizeRole } from '../middleware/authMiddleware.j
 
 const router = express.Router();
 
-// USER MANAGEMENT 
+// Gestão de utilizadores
 router.get('/', authenticateToken, authorizeRole(['ADMIN', 'SECRETARIA']), getUsers);
 router.get('/:id', authenticateToken, authorizeRole(['ADMIN', 'SECRETARIA']), getUserById);
-router.put('/:id', authenticateToken, authorizeRole(['ADMIN']), updateUser);
+router.put('/:id', authenticateToken, authorizeRole(['ADMIN', 'SECRETARIA']), updateUser);
 router.delete('/:id', authenticateToken, authorizeRole(['ADMIN']), deleteUser);
 
 export default router;

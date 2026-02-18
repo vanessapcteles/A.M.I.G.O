@@ -27,10 +27,14 @@ export const disponibilidadeService = {
     },
 
     addAvailability: async (data) => {
+        let payload = data;
+        if (Array.isArray(data)) {
+            payload = { availabilities: data };
+        }
         const response = await fetch(`${API_URL}/api/availability`, {
             method: 'POST',
             headers: getAuthHeader(),
-            body: JSON.stringify(data)
+            body: JSON.stringify(payload)
         });
         if (!response.ok) throw new Error('Erro ao adicionar disponibilidade');
         return response.json();
@@ -41,7 +45,14 @@ export const disponibilidadeService = {
             method: 'DELETE',
             headers: getAuthHeader()
         });
-        if (!response.ok) throw new Error('Erro ao remover disponibilidade');
+    },
+
+    clearAllAvailability: async () => {
+        const response = await fetch(`${API_URL}/api/availability/all`, {
+            method: 'DELETE',
+            headers: getAuthHeader()
+        });
+        if (!response.ok) throw new Error('Erro ao limpar disponibilidade');
         return response.json();
     }
 };

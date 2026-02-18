@@ -38,6 +38,16 @@ export const horarioService = {
         return response.json();
     },
 
+    // Limpar horário da turma
+    deleteTurmaSchedule: async (turmaId) => {
+        const response = await fetch(`${API_URL}/api/schedules/turma/${turmaId}`, {
+            method: 'DELETE',
+            headers: getAuthHeader()
+        });
+        if (!response.ok) throw new Error('Erro ao limpar horário da turma');
+        return response.json();
+    },
+
     getFormadorSchedule: async (userId, start, end) => {
         let url = `${API_URL}/api/schedules/formador/${userId}`;
         const params = new URLSearchParams();
@@ -67,10 +77,10 @@ export const horarioService = {
         let url = `${API_URL}/api/schedules/all`;
         const params = new URLSearchParams();
 
-        // Support legacy (start, end) arguments or object
+        // Suportar argumentos legados (start, end) ou objeto
         if (typeof filters === 'string') {
-            // arguments were (start, end)
-            // eslint-disable-next-line
+            // argumentos eram (start, end)
+            
             const [start, end] = arguments;
             if (start) params.append('start', start);
             if (end) params.append('end', end);
@@ -89,11 +99,11 @@ export const horarioService = {
         return response.json();
     },
 
-    generateAutoSchedule: async (turmaId, dataInicio) => {
+    generateAutoSchedule: async (turmaId, dataInicio, regime) => {
         const response = await fetch(`${API_URL}/api/schedules/generate/${turmaId}`, {
             method: 'POST',
             headers: getAuthHeader(),
-            body: JSON.stringify({ dataInicio })
+            body: JSON.stringify({ dataInicio, regime })
         });
         const data = await response.json();
         if (!response.ok) throw new Error(data.message || 'Erro ao gerar horário');

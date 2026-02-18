@@ -23,13 +23,13 @@ export const getFormadorProfile = async (req, res) => {
 export const updateFormadorProfile = async (req, res) => {
     try {
         const { userId } = req.params;
-        const { biografia } = req.body;
+        const { biografia, especialidade, telemovel, morada } = req.body;
 
         await db.query(`INSERT IGNORE INTO formadores (utilizador_id) VALUES (?)`, [userId]);
 
         await db.query(
-            `UPDATE formadores SET biografia = ? WHERE utilizador_id = ?`,
-            [biografia, userId]
+            `UPDATE formadores SET biografia = ?, especialidade = ?, telemovel = ?, morada = ? WHERE utilizador_id = ?`,
+            [biografia, especialidade, telemovel, morada, userId]
         );
 
         return res.json({ message: 'Perfil atualizado com sucesso' });
@@ -41,7 +41,7 @@ export const updateFormadorProfile = async (req, res) => {
 // Listar todos os formadores
 export const listFormadores = async (req, res) => {
     try {
-        // Self-repair: Garantir que todos com role FORMADOR têm perfil na tabela formadores
+        // Garantir que todos com role de FORMADOR têm perfil na tabela formadores
         await db.query(`
             INSERT INTO formadores (utilizador_id)
             SELECT u.id FROM utilizadores u
@@ -49,7 +49,7 @@ export const listFormadores = async (req, res) => {
             WHERE r.nome = 'FORMADOR'
             AND u.id NOT IN (SELECT utilizador_id FROM formadores)
         `);
-
+        // Procura todos os formadores
         const [formadores] = await db.query(`
             SELECT u.id, u.nome_completo, u.email, u.is_active, f.biografia, f.id as id_formador_perfil
             FROM utilizadores u
@@ -63,7 +63,7 @@ export const listFormadores = async (req, res) => {
         return res.status(500).json({ message: 'Erro ao listar formadores' });
     }
 };
-// Obter histórico de lecionação
+// Obter histórico do formador
 export const getFormadorHistory = async (req, res) => {
     try {
         const { userId } = req.params;

@@ -5,24 +5,52 @@ import { authService, API_URL } from '../services/authService';
 
 function MyCoursePage() {
     const [inscricao, setInscricao] = useState(null);
+    const [grades, setGrades] = useState([]);
+    const [stats, setStats] = useState({ concluidos: 0, total: 0 });
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const fetchMyCourse = async () => {
+        const fetchData = async () => {
             try {
                 const token = localStorage.getItem('auth_token');
-                const res = await fetch(`${API_URL}/api/candidatos/me`, {
+                const user = authService.getCurrentUser();
+
+                if (!token || !user) return;
+
+
+                // 1. Obter Informações do Curso (Candidatura/Inscrição)
+
+                const resInscricao = await fetch(`${API_URL}/api/candidatos/me`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
-                const data = await res.json();
-                setInscricao(data);
+                const dataInscricao = await resInscricao.json();
+                setInscricao(dataInscricao);
+
+                // 2. Obter Notas (Módulos)
+                const resGrades = await fetch(`${API_URL}/api/formandos/${user.id}/grades`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (resGrades.ok) {
+                    const dataGrades = await resGrades.json();
+                    const gradesList = dataGrades.grades || [];
+                    setGrades(gradesList);
+
+                    // Calcular Estatísticas
+                    const total = gradesList.length;
+                    const concluidos = gradesList.filter(g => g.nota && parseFloat(g.nota) >= 9.5).length;
+
+                    setStats({ concluidos, total });
+                }
+
             } catch (error) {
-                console.error("Erro ao carregar curso:", error);
+                console.error("Erro ao carregar dados:", error);
             } finally {
                 setLoading(false);
             }
         };
-        fetchMyCourse();
+
+        fetchData();
     }, []);
 
     if (loading) return <div style={{ padding: '2rem', textAlign: 'center' }}>Carregando dados do curso...</div>;
@@ -33,6 +61,9 @@ function MyCoursePage() {
             <h3>Ainda não está inscrito em nenhum curso.</h3>
         </div>
     );
+
+    // Filtrar módulos com notas definidas para a lista
+    const completedModules = grades.filter(g => g.nota !== null);
 
     return (
         <div style={{ maxWidth: '800px', margin: '0 auto' }}>
@@ -52,7 +83,12 @@ function MyCoursePage() {
                     </div>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                <div className="course-info-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                    <style>{`
+                        @media (max-width: 768px) {
+                            .course-info-grid { grid-template-columns: 1fr !important; gap: 1rem !important; }
+                        }
+                    `}</style>
                     <div className="glass-card" style={{ background: 'rgba(255,255,255,0.02)' }}>
                         <h4 style={{ marginBottom: '1rem' }}>Duração da Turma</h4>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
@@ -68,34 +104,52 @@ function MyCoursePage() {
                     </div>
                     <div className="glass-card" style={{ background: 'rgba(255,255,255,0.02)' }}>
                         <h4 style={{ marginBottom: '1rem' }}>Módulos Concluídos</h4>
-                        <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>12 / 24</div>
+                        <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>
+                            {stats.concluidos} <span style={{ fontSize: '1rem', color: 'var(--text-secondary)', fontWeight: 'normal' }}>/ {stats.total}</span>
+                        </div>
                     </div>
                 </div>
             </motion.div>
 
-            <h3 style={{ marginBottom: '1.5rem' }}>Próximas Atividades</h3>
+            <h3 style={{ marginBottom: '1.5rem' }}>Módulos Concluídos</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                {[1, 2, 3].map(i => (
-                    <motion.div
-                        key={i}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: i * 0.1 }}
-                        className="glass-card"
-                        style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
-                    >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                            <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <Calendar size={20} color="var(--primary)" />
+                {completedModules.length === 0 ? (
+                    <div className="glass-card" style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>
+                        Ainda não concluiu nenhuma unidade curricular.
+                    </div>
+                ) : (
+                    completedModules.map((modulo, i) => (
+                        <motion.div
+                            key={i}
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: i * 0.05 }}
+                            className="glass-card"
+                            style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.2rem' }}
+                        >
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'rgba(16, 185, 129, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <CheckCircle size={20} color="#10b981" />
+                                </div>
+                                <div>
+                                    <h5 style={{ fontWeight: '600', marginBottom: '0.2rem' }}>{modulo.nome_modulo}</h5>
+                                    <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                                        Concluído em: {modulo.data_avaliacao ? new Date(modulo.data_avaliacao).toLocaleDateString() : 'N/A'}
+                                    </p>
+                                </div>
                             </div>
-                            <div>
-                                <h5 style={{ fontWeight: '600' }}>Teste Prático - Módulo {i + 5}</h5>
-                                <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Sexta-feira, às 09:00</p>
+                            <div style={{ textAlign: 'right' }}>
+                                <span style={{
+                                    fontSize: '1.1rem',
+                                    fontWeight: 'bold',
+                                    color: parseFloat(modulo.nota) >= 9.5 ? '#10b981' : '#f87171'
+                                }}>
+                                    {modulo.nota} val
+                                </span>
                             </div>
-                        </div>
-                        <span style={{ fontSize: '0.8rem', padding: '0.25rem 0.5rem', background: 'rgba(56, 189, 248, 0.1)', color: 'var(--primary)', borderRadius: '5px' }}>Agendado</span>
-                    </motion.div>
-                ))}
+                        </motion.div>
+                    ))
+                )}
             </div>
         </div>
     );

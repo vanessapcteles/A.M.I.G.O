@@ -6,45 +6,59 @@ import { db } from '../config/db.js';
 import redis from '../config/redis.js';
 import { sendActivationEmail, sendPasswordResetEmail } from '../config/mailer.js';
 import { generateToken } from '../utils/token.js';
+import { OAuth2Client } from 'google-auth-library';
 
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
+// Registo de novos utilizadores
+// O ponto de entrada de novos membros na plataforma
 export const register = async (req, res) => {
   try {
     const { nome_completo, email, password, tipo_utilizador } = req.body;
 
-    // Validar dados
+    // Garantir que temos tudo o que precisamos
     if (!nome_completo || !email || !password || !tipo_utilizador) {
-      return res.status(400).json({ message: 'Dados em falta' });
+      return res.status(400).json({ message: 'Faltam dados essenciais!' });
     }
 
+    // Converter o tipo de utilizador (string) para o ID correto na BD
+    // Ex: "formador" -> ID 2
     const [roles] = await db.query('SELECT id FROM roles WHERE nome = ?', [tipo_utilizador.toUpperCase()]);
-    if (roles.length === 0) return res.status(400).json({ message: 'Tipo de utilizador inválido' });
+    if (roles.length === 0) return res.status(400).json({ message: 'Esse tipo de utilizador não existe.' });
     const role_id = roles[0].id;
 
+    // Verificar duplicados (Ninguém quer dois users com o mesmo email!)
     const [existingUser] = await db.query('SELECT id FROM utilizadores WHERE email = ?', [email]);
-    if (existingUser.length > 0) return res.status(409).json({ message: 'Email já registado' });
+    if (existingUser.length > 0) return res.status(409).json({ message: 'Esse email já está registado.' });
 
+    // Segurança Primeiro: Encriptar a password (Hashing)
+    // O '10' é o custo do processamento (salt rounds), bom equilíbrio entre segurança e velocidade.
     const password_hash = await bcrypt.hash(password, 10);
+
+    // Gerar token único para link de ativação por email
     const activation_token = uuidv4();
 
+    // Guardar na Base de Dados
+    // Reparem que guardamos o password_hash, NUNCA a password original!
     await db.query(
       `INSERT INTO utilizadores (nome_completo, email, password_hash, role_id, activation_token, is_active, auth_provider)
       VALUES (?, ?, ?, ?, ?, false, 'local')`,
       [nome_completo, email, password_hash, role_id, activation_token]
     );
 
-    // Enviar email de ativação
+    // Enviar Email (Assíncrono para não prender a resposta)
     try {
       await sendActivationEmail(email, activation_token);
     } catch (mailError) {
-      console.error('Erro ao enviar email:', mailError.message);
+      console.warn('Alerta: User criado, mas falhou o envio de email:', mailError.message);
     }
 
-    // Limpar cache depois de inserir novo utilizador
+    // Limpar cache Global se necessário (para listas de users atualizadas)
     await redis.del('users:all');
 
-    return res.status(201).json({ message: 'Utilizador registado com sucesso. Verifica o teu email para ativar a conta.' });
+    return res.status(201).json({ message: 'Bem-vindo! Verifica o teu email para ativar a conta.' });
   } catch (error) {
-    return res.status(500).json({ message: 'Erro no servidor', error: error.message });
+    return res.status(500).json({ message: 'Ops! Algo correu mal no servidor.', error: error.message });
   }
 };
 
@@ -174,7 +188,7 @@ export const forgotPassword = async (req, res) => {
       await sendPasswordResetEmail(email, resetToken);
     }
 
-    //Resposta dada independentemente se o email existe ou não (segurança)
+    //Resposta dada independentemente se o email existe ou não (por questões de segurança)
     return res.status(200).json({ message: 'Se o email existir, enviámos instruções para a recuperação.' });
   } catch (error) {
     return res.status(500).json({ message: 'Erro no servidor' });
@@ -205,16 +219,19 @@ export const resetPassword = async (req, res) => {
   }
 };
 
-// Login
+// Função principal de Login
+// É aqui que verificamos se quem está a tentar entrar é quem diz ser!
 export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
+    // Validação básica de entrada
     if (!email || !password) {
-      return res.status(400).json({ message: 'Dados em falta' });
+      return res.status(400).json({ message: 'Epa, esqueceste-te de preencher os dados!' });
     }
 
-    // Join com a tabela roles para ter o nome da role
+    // Procura o utilizador na Base de Dados
+    // Fazemos um JOIN com a tabela 'roles' para saber logo se é Admin, Formador, etc.
     const [users] = await db.query(
       `SELECT u.*, r.nome as tipo_utilizador 
        FROM utilizadores u 
@@ -223,22 +240,28 @@ export const login = async (req, res) => {
       [email]
     );
 
+    // Se não encontrou ninguém com este email...
     if (users.length === 0) {
-      return res.status(401).json({ message: 'Credenciais inválidas' });
+      return res.status(401).json({ message: 'Credenciais inválidas (Email não existe)' });
     }
 
     const user = users[0];
 
+    // Verificar a Password
+    // Usamos o bcrypt.compare porque a password na BD está encriptada (hash).
+    // Nunca comparamos strings diretamente! (password === user.password seria GRAVE erro de segurança)
     const passwordMatch = await bcrypt.compare(password, user.password_hash);
+
     if (!passwordMatch) {
-      return res.status(401).json({ message: 'Credenciais inválidas' });
+      return res.status(401).json({ message: 'Password incorreta, tenta outra vez.' });
     }
 
+    // Verificar se a conta está ativa (confirmação por email)
     if (!user.is_active) {
-      return res.status(403).json({ message: 'Conta ainda não ativada. Verifica o teu email.' });
+      return res.status(403).json({ message: 'Ainda não ativaste a tua conta. Vai ver o email!' });
     }
 
-    // User Object para Token e Resposta
+    // Objeto limpo do utilizador (sem password/segredos) para por no token
     const userObj = {
       id: user.id,
       nome_completo: user.nome_completo,
@@ -246,18 +269,20 @@ export const login = async (req, res) => {
       tipo_utilizador: user.tipo_utilizador
     };
 
+    // Gestão de 2FA (Autenticação de Dois Fatores)
+    // Se o user tiver 2FA ativo, NÃO mandamos o token já. Mandamos um sinal a dizer "pede o código OTP"
     const token = user.two_fa_enabled === 1 ? null : generateToken(userObj);
 
     return res.status(200).json({
       success: true,
-      requires2FA: user.two_fa_enabled === 1,
+      requires2FA: user.two_fa_enabled === 1, // Frontend lê isto e abre o ecrã de código
       user: user.two_fa_enabled === 1 ? null : userObj,
-      token: token
+      token: token // JWT para sessões futuras
     });
 
   } catch (error) {
-    console.error('Erro no login:', error);
-    return res.status(500).json({ message: 'Erro no servidor' });
+    console.error('Erro no login:', error); // Log para nós (devs)
+    return res.status(500).json({ message: 'Erro no servidor, desculpa!' }); // Mensagem para o user
   }
 };
 
@@ -421,3 +446,92 @@ export const disable2FA = async (req, res) => {
 
 
 
+// Google Login Mobile (Token Based)
+export const googleLoginMobile = async (req, res) => {
+  try {
+    const { idToken } = req.body;
+
+    if (!idToken) {
+      return res.status(400).json({ message: 'Token ID em falta.' });
+    }
+
+    // Verificar o token com a Google
+    const ticket = await client.verifyIdToken({
+      idToken: idToken,
+      audience: process.env.GOOGLE_CLIENT_ID, // Specify the CLIENT_ID of the app that accesses the backend
+    });
+    const payload = ticket.getPayload();
+    const { email, name, sub: googleId } = payload;
+
+    // Verificar se user existe por Google ID
+    const [users] = await db.query(
+      `SELECT u.*, r.nome as tipo_utilizador 
+       FROM utilizadores u 
+       JOIN roles r ON u.role_id = r.id 
+       WHERE provider_id = ? AND auth_provider = ?`,
+      [googleId, 'google']
+    );
+
+    let user = users[0];
+
+    // Se não existe por Google ID, verificar por email
+    if (!user) {
+      const [existingEmail] = await db.query(
+        `SELECT u.*, r.nome as tipo_utilizador 
+         FROM utilizadores u 
+         JOIN roles r ON u.role_id = r.id 
+         WHERE email = ?`,
+        [email]
+      );
+
+      if (existingEmail.length > 0) {
+        // Atualizar user existente para suportar Google
+        await db.query(
+          'UPDATE utilizadores SET provider_id = ?, auth_provider = ? WHERE email = ?',
+          [googleId, 'google', email]
+        );
+        user = existingEmail[0];
+      } else {
+        // Criar novo user
+        const activation_token = uuidv4();
+        const [roles] = await db.query("SELECT id FROM roles WHERE nome = 'CANDIDATO'"); // Default role
+        const role_id = roles[0].id;
+
+        await db.query(
+          `INSERT INTO utilizadores 
+          (nome_completo, email, role_id, auth_provider, provider_id, is_active, activation_token)
+          VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          [name, email, role_id, 'google', googleId, true, activation_token]
+        );
+
+        const [newUser] = await db.query(
+          `SELECT u.*, r.nome as tipo_utilizador 
+           FROM utilizadores u 
+           JOIN roles r ON u.role_id = r.id 
+           WHERE email = ?`,
+          [email]
+        );
+        user = newUser[0];
+      }
+    }
+
+    // Gerar JWT e devolver
+    const userObj = {
+      id: user.id,
+      nome_completo: user.nome_completo,
+      email: user.email,
+      tipo_utilizador: user.tipo_utilizador
+    };
+    const token = generateToken(userObj);
+
+    return res.status(200).json({
+      success: true,
+      user: userObj,
+      token: token
+    });
+
+  } catch (error) {
+    console.error('Erro no Google Login Mobile:', error);
+    return res.status(401).json({ message: 'Token Google inválido.' });
+  }
+};

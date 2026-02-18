@@ -4,7 +4,7 @@
   --font-main: 'Inter', system-ui, sans-serif;
   --font-title: 'Outfit', sans-serif;
 
-  /* Dark Theme (Default) */
+  /* Tema Escuro (Padrão) */
   --bg-main: #020617;
   --bg-sidebar: #0f172a;
   --bg-card: rgba(30, 41, 59, 0.5);
@@ -23,7 +23,7 @@
   --table-header-bg: rgba(255, 255, 255, 0.02);
   --sidebar-item-hover: rgba(255, 255, 255, 0.05);
 
-  /* Layout Constants */
+  /* Constantes de Layout */
   --sidebar-width: 280px;
   --sidebar-collapsed-width: 80px;
   --header-height: 72px;
@@ -92,7 +92,7 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Custom Scrollbar */
+/* Barra de Rolagem Personalizada */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -112,7 +112,7 @@ body {
   background: var(--text-muted);
 }
 
-/* Typography */
+/* Tipografia */
 h1,
 h2,
 h3,
@@ -124,7 +124,7 @@ h5 {
   color: var(--text-primary);
 }
 
-/* Layout Structures */
+/* Estruturas de Layout */
 .app-container {
   display: flex;
   min-height: 100vh;
@@ -141,7 +141,7 @@ h5 {
   position: relative;
   overflow-x: hidden;
   min-width: 0;
-  /* CRITICAL: Prevent flex item from expanding past viewport */
+  /* CRÍTICO: Prevenir que o item flexível se expanda para além da janela de visualização */
 }
 
 @media (max-width: 1024px) {
@@ -161,7 +161,14 @@ h5 {
   }
 }
 
-/* Glassmorphism Cards */
+@media (max-width: 480px) {
+  .main-content {
+    padding: 0.5rem;
+    padding-top: calc(var(--header-height) + 0.5rem);
+  }
+}
+
+/* Cartões Glassmorphism */
 .glass-card {
   background: var(--bg-card);
   backdrop-filter: blur(12px);
@@ -174,8 +181,14 @@ h5 {
 
 @media (max-width: 768px) {
   .glass-card {
-    padding: 1rem;
+    padding: 1.25rem;
     border-radius: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .glass-card {
+    padding: 1rem;
   }
 }
 
@@ -184,7 +197,7 @@ h5 {
   box-shadow: 0 0 20px var(--primary-glow);
 }
 
-/* Interactive Elements */
+/* Elementos Interativos */
 .btn-primary {
   background: linear-gradient(135deg, var(--primary), var(--secondary));
   color: white;
@@ -217,7 +230,7 @@ h5 {
   transition: var(--transition);
 }
 
-/* Fix for unreadable dropdown options on some systems */
+/* Correção para opções de dropdown ilegíveis em alguns sistemas */
 select.input-field option {
   background-color: var(--bg-sidebar);
   color: var(--text-primary);
@@ -238,7 +251,7 @@ select.input-field {
   border: 1px solid var(--border-glass);
 }
 
-/* More visible scrollbar for tables */
+/* Barra de rolagem mais visível para tabelas */
 .table-container::-webkit-scrollbar {
   height: 8px;
 }
@@ -259,7 +272,7 @@ table {
   table-layout: auto;
 }
 
-/* Responsive Table: Stacked Layout for Mobile */
+/* Tabela Responsiva: Layout em Pilha para Mobile */
 @media screen and (max-width: 768px) {
   .table-container {
     background: transparent;
@@ -275,7 +288,7 @@ table {
     display: block;
   }
 
-  /* Hide table headers on mobile */
+  /* Esconder cabeçalhos da tabela no mobile */
   thead tr {
     position: absolute;
     top: -9999px;
@@ -308,7 +321,7 @@ table {
     justify-content: flex-end;
   }
 
-  /* Show labels using data-label attribute */
+  /* Mostrar etiquetas usando atributo data-label */
   td::before {
     content: attr(data-label);
     position: absolute;
@@ -354,7 +367,7 @@ table tr:last-child td {
   border-bottom: none;
 }
 
-/* Actions column usually needs less width or specific alignment */
+/* Coluna de ações geralmente precisa de menos largura ou alinhamento específico */
 table th:last-child,
 table td:last-child {
   min-width: 100px;
@@ -366,7 +379,7 @@ table td:last-child {
   box-shadow: 0 0 0 2px var(--primary-glow);
 }
 
-/* Sidebar Specific (We'll use these in the component) */
+/* Específico da Barra Lateral (Usaremos estes no componente) */
 .sidebar {
   width: var(--sidebar-width);
   height: 100vh;
@@ -434,7 +447,7 @@ table td:last-child {
   border-radius: 4px 12px 12px 4px;
 }
 
-/* Utilities */
+/* Utilitários */
 .text-gradient {
   background: linear-gradient(to right, var(--primary), var(--accent));
   -webkit-background-clip: text;
@@ -442,7 +455,7 @@ table td:last-child {
   -webkit-text-fill-color: transparent;
 }
 
-/* Progress Bars */
+/* Barras de Progresso */
 .progress-container {
   width: 100%;
   height: 12px;
@@ -459,7 +472,7 @@ table td:last-child {
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
 
-/* Glass Buttons */
+/* Botões de Vidro */
 .btn-glass {
   background: rgba(255, 255, 255, 0.03);
   backdrop-filter: blur(4px);
@@ -484,7 +497,7 @@ table td:last-child {
   transform: scale(0.98);
 }
 
-/* Calendar Global Styling Overrides */
+/* Substituições de Estilo Global do Calendário */
 .rbc-calendar {
   color: var(--text-primary);
   font-family: var(--font-main);

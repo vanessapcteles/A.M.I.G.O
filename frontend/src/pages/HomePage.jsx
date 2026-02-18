@@ -97,6 +97,9 @@ function HomePage() {
                         @media (max-width: 1200px) {
                             .dashboard-grid-bottom { grid-template-columns: 1fr !important; }
                         }
+                        @media (max-width: 768px) {
+                            .dashboard-grid-bottom { gap: 1rem !important; }
+                        }
                     `}
                 </style>
                 <div className="glass-card">

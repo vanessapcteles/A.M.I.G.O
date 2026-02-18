@@ -16,7 +16,7 @@ export const turmaService = {
         });
         if (!response.ok) throw new Error('Erro ao carregar turmas');
         const data = await response.json();
-        return data.data || []; // Extract data array from paginated response
+        return data.data || []; // Extrair array de dados da resposta paginada
     },
 
     getCursos: async () => {
