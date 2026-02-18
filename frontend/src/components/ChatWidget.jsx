@@ -6,81 +6,67 @@ const ChatWidget = () => {
         const TAWK_PROPERTY_ID = '6973f8914a0f82197e62106d';
         const TAWK_WIDGET_ID = '1jgsae490';
 
-        if (document.getElementById('tawkToScript')) {
-            console.log('Tawk.to já está carregado');
-            return;
-        }
+        const scriptId = 'tawkToScript';
 
-        // Inicializa a API do Tawk.to
-        window.Tawk_API = window.Tawk_API || {};
-        window.Tawk_LoadStart = new Date();
+        // Função para carregar o widget
+        const loadWidget = () => {
+            // Se já existir o script, não fazemos nada (mas atualizamos user)
+            if (document.getElementById(scriptId)) {
+                updateUser();
+                return;
+            }
 
-        // Cria e injeta o script do Tawk.to
-        const script = document.createElement('script');
-        script.id = 'tawkToScript';
-        script.async = true;
-        script.src = `https://embed.tawk.to/${TAWK_PROPERTY_ID}/${TAWK_WIDGET_ID}`;
-        script.charset = 'UTF-8';
-        script.setAttribute('crossorigin', '*');
+            // Inicializa variáveis globais
+            window.Tawk_API = window.Tawk_API || {};
+            window.Tawk_LoadStart = new Date();
 
-        const firstScript = document.getElementsByTagName('script')[0];
-        firstScript.parentNode.insertBefore(script, firstScript);
+            // Cria o script
+            const s1 = document.createElement("script");
+            const s0 = document.getElementsByTagName("script")[0];
+            s1.id = scriptId;
+            s1.async = true;
+            s1.src = `https://embed.tawk.to/${TAWK_PROPERTY_ID}/${TAWK_WIDGET_ID}`;
+            s1.charset = 'UTF-8';
+            s1.setAttribute('crossorigin', '*');
 
-        // Configuração quando o widget carregar
-        window.Tawk_API.onLoad = function () {
-            console.log('Tawk.to chat carregado com sucesso!');
+            // Define o callback de load ANTES de injetar
+            s1.onload = () => {
+                updateUser();
+            };
 
-            // Integra dados do usuário logado (se disponível)
-            try {
-                const user = authService.getCurrentUser();
-                if (user) {
-                    window.Tawk_API.setAttributes({
-                        'name': user.nome || 'Usuário',
-                        'email': user.email || '',
-                        'role': user.tipo_utilizador || 'Visitante',
-                        'userId': user.id_utilizador || ''
-                    }, function (error) {
-                        if (error) {
-                            console.error('Erro ao definir atributos do Tawk.to:', error);
-                        } else {
-                            console.log('Dados do usuário enviados ao Tawk.to');
-                        }
-                    });
-                }
-            } catch (error) {
-                console.warn('Não foi possível obter dados do usuário:', error);
+            s0.parentNode.insertBefore(s1, s0);
+        };
+
+        // Função para atualizar dados do utilizador
+        const updateUser = () => {
+            if (window.Tawk_API && window.Tawk_API.setAttributes) {
+                try {
+                    const user = authService.getCurrentUser();
+                    if (user) {
+                        window.Tawk_API.setAttributes({
+                            'name': user.nome_completo || user.nome || 'Utilizador',
+                            'email': user.email || '',
+                            'role': user.tipo_utilizador || 'Visitante',
+                            'hash': user.id  // Útil para identificar
+                        }, function (error) { });
+                    }
+                } catch (e) { console.warn(e); }
             }
         };
 
-        // Tratamento de erros
-        window.Tawk_API.onError = function (error) {
-            console.error('Erro no Tawk.to:', error);
-        };
+        loadWidget();
 
-        // Cleanup quando o componente for desmontado
+        // Cleanup
         return () => {
-            const tawkScript = document.getElementById('tawkToScript');
-            if (tawkScript) {
-                tawkScript.remove();
-            }
-
-            // Remove o widget do DOM
-            const tawkWidget = document.getElementById('tawkId');
-            if (tawkWidget) {
-                tawkWidget.remove();
-            }
-
-            // Limpa variáveis globais
-            if (window.Tawk_API) {
-                delete window.Tawk_API;
-            }
-            if (window.Tawk_LoadStart) {
-                delete window.Tawk_LoadStart;
+            // Não removemos o script para evitar quebras se o user apenas mudar de página
+            // Mas podemos esconder o widget se necessário
+            if (window.Tawk_API && window.Tawk_API.hideWidget) {
+                window.Tawk_API.hideWidget();
             }
         };
     }, []);
 
-    return null; // O widget é injetado no HTML, não renderiza nada visual
+    return null;
 };
 
 export default ChatWidget;
