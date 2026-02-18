@@ -132,7 +132,7 @@ const DashboardScreen = () => {
                 </View>
 
                 <View style={styles.greetingContainer}>
-                    <Text style={[styles.greetingTitle, { color: colors.cardBlue }]}>Olá, {user?.nome?.split(' ')[0] || 'Utilizador'}!</Text>
+                    <Text style={[styles.greetingTitle, { color: colors.cardBlue }]}>Olá, {user?.nome_completo?.split(' ')[0] || 'Utilizador'}!</Text>
                     <Text style={[styles.greetingSubtitle, { color: colors.textLight }]}>O teu Dashboard</Text>
                 </View>
 
